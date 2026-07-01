@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Teacher</title>
+  <style>
+    :root {
+      --bg: #14151d; --panel: #1e212b; --surface: #262a37; --ink: #e8eaef;
+      --muted: #8b93a7; --accent: #6b8aff; --ok: #43d6a4; --warn: #d4a843; --line: #3a4052;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; font-family: "Segoe UI", system-ui, sans-serif; color: var(--ink);
+      background: var(--bg); min-height: 100vh; display: grid; grid-template-rows: auto 1fr;
+    }
+    .topbar {
+      padding: 8px 14px; border-bottom: 1px solid var(--line); background: var(--panel);
+      display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    }
+    .topbar h1 { margin: 0; font-size: 14px; font-weight: 700; }
+    .topbar .meta { font-size: 11px; color: var(--muted); display: flex; gap: 12px; }
+    .topbar .status { margin-left: auto; font-size: 11px; color: var(--muted); max-width: 36%; text-align: right; }
+    .topbar .status.ok { color: var(--ok); }
+    .topbar .status.warn { color: var(--warn); }
+    .topbar button.ghost {
+      border: 1px solid var(--line); background: transparent; color: var(--muted);
+      padding: 5px 10px; border-radius: 8px; font-size: 11px; cursor: pointer;
+    }
+    .layout {
+      display: grid; grid-template-columns: 260px minmax(0, 1fr) minmax(0, 1fr);
+      gap: 10px; padding: 10px; min-height: 0; height: calc(100vh - 41px);
+      background: var(--bg); box-sizing: border-box;
+    }
+    .capture-col {
+      border: 1px solid var(--line); border-radius: 12px; background: var(--panel);
+      display: flex; flex-direction: column; align-items: center; padding: 20px 14px 14px; min-height: 0;
+    }
+    .mic-wrap { position: relative; width: 72px; height: 72px; margin-bottom: 14px; }
+    .mic-btn {
+      width: 72px; height: 72px; border-radius: 50%; border: 2px solid var(--line);
+      background: var(--surface); cursor: pointer; display: flex; align-items: center; justify-content: center;
+      transition: border-color .15s, background .15s;
+    }
+    .mic-btn svg { width: 28px; height: 28px; stroke: var(--muted); fill: none; stroke-width: 1.75; }
+    .mic-btn:hover { border-color: var(--accent); }
+    .mic-btn:hover svg { stroke: var(--accent); }
+    .mic-btn.active { border-color: var(--accent); background: rgba(107,138,255,.12); }
+    .mic-btn.active svg { stroke: var(--accent); }
+    .mic-btn.processing { pointer-events: none; }
+    .mic-btn.processing svg.icon-mic { opacity: 0.25; }
+    .mic-spinner {
+      display: none; position: absolute; inset: 0; margin: auto;
+      width: 72px; height: 72px; border-radius: 50%;
+      border: 2px solid transparent; border-top-color: var(--accent);
+      animation: spin .7s linear infinite;
+    }
+    .mic-btn.processing .mic-spinner { display: block; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .waveform {
+      width: 100%; height: 44px; margin-bottom: 12px; border-radius: 10px;
+      background: var(--bg); border: 1px solid var(--line);
+    }
+    .live-text {
+      width: 100%; flex: 1; min-height: 72px; font-size: 13px; line-height: 1.55;
+      color: var(--ink); background: var(--bg); border: 1px solid var(--line);
+      border-radius: 10px; padding: 10px; overflow: auto; white-space: pre-wrap;
+    }
+    .live-text:empty::before {
+      content: 'Speak — pause the mic to add to session and update the brief.';
+      color: var(--muted); font-style: italic;
+    }
+    .pane {
+      display: grid; grid-template-rows: auto 1fr; min-height: 0;
+      border: 1px solid var(--line); border-radius: 12px; overflow: hidden; background: var(--panel);
+    }
+    .pane-head {
+      padding: 0 14px; border-bottom: 1px solid var(--line); display: flex; align-items: center;
+      background: var(--panel); height: 49px; min-height: 49px; box-sizing: border-box;
+    }
+    .pane-head h2 {
+      margin: 0; font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted);
+    }
+    .pane-actions { margin-left: auto; display: flex; gap: 6px; }
+    .icon-btn {
+      border: 1px solid var(--line); background: transparent; color: var(--muted);
+      border-radius: 8px; width: 32px; height: 28px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; padding: 0;
+    }
+    .icon-btn svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 1.75; }
+    .icon-btn:hover { color: var(--accent); border-color: var(--accent); }
+    .pane-body {
+      padding: 12px; min-height: 0; background: var(--panel);
+      display: flex; flex-direction: column;
+    }
+    .panel-inner {
+      flex: 1; min-height: 0; overflow: auto;
+      background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 10px;
+      font-size: 13px; line-height: 1.55;
+    }
+    .compiled-wrap { display: flex; flex-direction: column; }
+    .empty { color: var(--muted); font-size: 13px; margin: 0; }
+    .seg { margin-bottom: 10px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); }
+    .seg summary {
+      cursor: pointer; padding: 10px 12px; list-style: none;
+      display: grid; grid-template-columns: auto auto auto 1fr; gap: 8px; align-items: center; font-size: 12px;
+    }
+    .seg summary::-webkit-details-marker { display: none; }
+    .seg-chevron {
+      width: 7px; height: 7px; border-right: 1.5px solid var(--muted); border-bottom: 1.5px solid var(--muted);
+      transform: rotate(-45deg); transition: transform .15s;
+    }
+    .seg[open] .seg-chevron { transform: rotate(45deg); margin-top: -3px; }
+    .seg-num { color: var(--muted); font-weight: 700; }
+    .seg-label { font-size: 9px; font-weight: 800; text-transform: uppercase; padding: 2px 6px; border-radius: 999px; }
+    .tag-included { background: rgba(67,214,164,.12); color: var(--ok); }
+    .tag-correction { background: rgba(107,138,255,.15); color: var(--accent); }
+    .tag-constraint { background: rgba(212,168,67,.14); color: var(--warn); }
+    .tag-superseded { background: rgba(212,168,67,.12); color: var(--warn); }
+    .seg-preview { color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .seg-body { padding: 0 12px 12px; }
+    .seg-text {
+      font-size: 13px; line-height: 1.55; white-space: pre-wrap; outline: none;
+      border: 1px solid transparent; border-radius: 8px; padding: 8px; min-height: 2.5em;
+    }
+    .seg-text:focus { border-color: var(--accent); background: rgba(107,138,255,.06); }
+    .fix-word {
+      background: rgba(212,168,67,.14); border-bottom: 2px solid var(--warn);
+      padding-bottom: 1px;
+    }
+    .fix-log { margin-top: 8px; font-size: 11px; color: var(--muted); }
+    .fix-log-label { font-weight: 700; color: var(--warn); margin-right: 4px; }
+    .brief-section { margin-bottom: 10px; }
+    .brief-heading {
+      font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em;
+      color: var(--muted); margin-bottom: 4px;
+    }
+    .brief-text { user-select: text; }
+    .compile-error { color: var(--warn); line-height: 1.55; }
+    .fix-popover {
+      position: fixed; z-index: 100; background: var(--panel); border: 1px solid var(--line);
+      border-radius: 10px; padding: 10px 12px; font-size: 12px; color: var(--ink);
+      box-shadow: 0 8px 24px rgba(0,0,0,.35); min-width: 160px;
+    }
+    .fix-popover p { margin: 0 0 8px; color: var(--muted); }
+    .fix-popover b { color: var(--warn); }
+    .fix-popover button {
+      border: 1px solid var(--line); background: var(--surface); color: var(--ink);
+      border-radius: 6px; padding: 4px 10px; font-size: 11px; cursor: pointer;
+    }
+    .fix-popover button:hover { border-color: var(--accent); color: var(--accent); }
+    .brief-card-actions {
+      display: flex; justify-content: flex-end; gap: 8px; margin-top: 10px; padding-top: 8px;
+      border-top: 1px solid var(--line);
+    }
+    .card-action {
+      display: inline-flex; align-items: center; gap: 5px;
+      border: 1px solid var(--line); background: transparent; color: var(--muted);
+      border-radius: 8px; padding: 4px 10px; font-size: 11px; cursor: pointer;
+    }
+    .card-action svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 1.75; }
+    .card-action:hover { color: var(--accent); border-color: var(--accent); }
+    .icon-btn.pulse-hint {
+      animation: refresh-pulse 1.6s ease-in-out infinite;
+      border-color: var(--accent); color: var(--accent);
+    }
+    @keyframes refresh-pulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(107,138,255,0); }
+      50% { box-shadow: 0 0 0 4px rgba(107,138,255,.25); }
+    }
+    @media (max-width: 960px) {
+      .layout { grid-template-columns: 1fr; grid-template-rows: auto auto auto; height: auto; padding: 8px; gap: 8px; }
+      .capture-col, .pane { min-height: 260px; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <h1>Teacher</h1>
+    <div class="meta">
+      <span id="speechLabel" title="How your voice is transcribed in the browser">Speech: …</span>
+      <span id="compileLabel" title="How the agent prompt is built">Brief: …</span>
+      <span id="contextLabel" title="Workspace filenames used only when STT term hints are enabled">Context: …</span>
+    </div>
+    <div class="status" id="status">Connecting…</div>
+    <button type="button" class="ghost" id="clear">Clear session</button>
+  </header>
+
+  <main class="layout">
+    <section class="capture-col" aria-label="Voice capture">
+      <div class="mic-wrap">
+        <button type="button" id="mic" class="mic-btn" title="Start / pause recording" aria-label="Microphone">
+          <svg class="icon-mic" viewBox="0 0 24 24" aria-hidden="true">
+            <rect x="9" y="3" width="6" height="11" rx="3"/>
+            <path d="M5 11a7 7 0 0 0 14 0M12 18v3"/>
+          </svg>
+          <span class="mic-spinner" aria-hidden="true"></span>
+        </button>
+      </div>
+      <canvas id="waveform" class="waveform" width="232" height="44" aria-hidden="true"></canvas>
+      <div id="liveText" class="live-text" aria-live="polite"></div>
+    </section>
+
+    <section class="pane">
+      <div class="pane-head">
+        <h2>Your Words</h2>
+        <div class="pane-actions">
+          <button type="button" class="icon-btn" id="copyWords" title="Copy your words">
+            <svg viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="1"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>
+          </button>
+          <button type="button" class="icon-btn" id="sendWords" title="Send your words to agent">
+            <svg viewBox="0 0 24 24"><path d="M6 8l8 4-8 4V8z"/><path d="M16 8l4 4-4 4V8z"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="pane-body">
+        <div class="panel-inner" id="transcript"><p class="empty">Session ready.</p></div>
+      </div>
+    </section>
+
+    <section class="pane">
+      <div class="pane-head">
+        <h2>Agent Prompt</h2>
+        <div class="pane-actions">
+          <button type="button" class="icon-btn" id="refresh" title="Recompile agent prompt">
+            <svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 0 1 13.4-5.9"/><path d="M20 3v6h-6"/><path d="M20 12a8 8 0 0 1-13.4 5.9"/><path d="M4 21v-6h6"/></svg>
+          </button>
+          <button type="button" class="icon-btn" id="copy" title="Copy agent prompt">
+            <svg viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="1"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>
+          </button>
+          <button type="button" class="icon-btn" id="send" title="Send agent prompt">
+            <svg viewBox="0 0 24 24"><path d="M6 8l8 4-8 4V8z"/><path d="M16 8l4 4-4 4V8z"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="pane-body">
+        <div class="panel-inner" id="brief"><p class="empty">Speak — Grok will scaffold an agent brief here after each pause.</p></div>
+      </div>
+    </section>
+  </main>
+
+  <div id="fixPopover" class="fix-popover" hidden>
+    <p>Heard: <b id="fixPopoverHeard"></b></p>
+    <button type="button" id="fixPopoverRevert">Revert</button>
+  </div>
+
+  <script>
+    const statusEl = document.getElementById('status');
+    const liveTextEl = document.getElementById('liveText');
+    const micBtn = document.getElementById('mic');
+    const briefEl = document.getElementById('brief');
+    const transcriptEl = document.getElementById('transcript');
+    const fixPopover = document.getElementById('fixPopover');
+    const fixPopoverHeard = document.getElementById('fixPopoverHeard');
+    const fixPopoverRevert = document.getElementById('fixPopoverRevert');
+    const speechLabelEl = document.getElementById('speechLabel');
+    const compileLabelEl = document.getElementById('compileLabel');
+    const contextLabelEl = document.getElementById('contextLabel');
+    const waveformCanvas = document.getElementById('waveform');
+    const wfCtx = waveformCanvas.getContext('2d');
+
+    let listening = false, flushing = false, mediaStream = null, mediaRecorder = null;
+    let activeMime = 'audio/webm', audioChunks = [], pendingBlob = null, chunkTranscript = '';
+    let recognition = null, briefMarkdown = '', briefByVersion = {}, health = { stt: 'webspeech' };
+    let activeFixTarget = null, editSnapshot = null;
+    const refreshBtn = document.getElementById('refresh');
+    let audioContext = null, analyser = null, waveAnim = null;
+
+    function setStatus(text, kind) {
+      statusEl.textContent = text;
+      statusEl.className = 'status' + (kind ? ' ' + kind : '');
+    }
+
+    function setProcessing(on) {
+      micBtn.classList.toggle('processing', on);
+      micBtn.disabled = on;
+    }
+
+    function applySession(session) {
+      if (!session) return;
+      if (session.transcriptHtml) transcriptEl.innerHTML = session.transcriptHtml;
+      if (session.briefHtml) briefEl.innerHTML = session.briefHtml;
+      if (session.compiled !== undefined) briefMarkdown = session.compiled;
+      if (session.briefMarkdownByVersion) briefByVersion = session.briefMarkdownByVersion;
+      if (session.sttLabel) speechLabelEl.textContent = 'Speech: ' + session.sttLabel;
+      if (session.compileLabel) compileLabelEl.textContent = 'Brief: ' + session.compileLabel;
+      if (session.contextHint) contextLabelEl.textContent = session.contextHint;
+      if (session.compileError) setStatus('Compile: ' + session.compileError, 'warn');
+      refreshBtn.classList.toggle('pulse-hint', !!session.needsRegenerate);
+    }
+
+    async function loadSession() {
+      applySession((await fetch('/api/session').then(r => r.json())).session);
+    }
+
+    async function refreshHealth() {
+      health = await fetch('/health').then(r => r.json());
+      let msg = 'Ready — tap mic to speak';
+      if (health.compile === 'grok') msg += ' · Grok compile + polish';
+      else if (!health.grokKeySet) msg += ' · NO GROK KEY';
+      else msg += ' · Grok unavailable';
+      setStatus(msg, health.compile === 'grok' ? 'ok' : 'warn');
+    }
+
+    function setLiveText(text) { liveTextEl.textContent = text; }
+
+    function startWaveform(stream) {
+      stopWaveform();
+      audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      const source = audioContext.createMediaStreamSource(stream);
+      analyser = audioContext.createAnalyser();
+      analyser.fftSize = 64;
+      source.connect(analyser);
+      const draw = () => {
+        if (!analyser) return;
+        const buf = new Uint8Array(analyser.frequencyBinCount);
+        analyser.getByteFrequencyData(buf);
+        wfCtx.clearRect(0, 0, waveformCanvas.width, waveformCanvas.height);
+        const bars = 24, step = Math.floor(buf.length / bars), w = waveformCanvas.width / bars;
+        for (let i = 0; i < bars; i++) {
+          const h = Math.max(3, (buf[i * step] / 255) * waveformCanvas.height * 0.88);
+          wfCtx.fillStyle = listening ? '#6b8aff' : '#3a4052';
+          wfCtx.fillRect(i * w + 2, (waveformCanvas.height - h) / 2, w - 4, h);
+        }
+        waveAnim = requestAnimationFrame(draw);
+      };
+      draw();
+    }
+
+    function stopWaveform() {
+      if (waveAnim) cancelAnimationFrame(waveAnim);
+      waveAnim = null;
+      if (audioContext) { audioContext.close().catch(() => {}); audioContext = null; }
+      analyser = null;
+      wfCtx.clearRect(0, 0, waveformCanvas.width, waveformCanvas.height);
+    }
+
+    async function startRecording() {
+      chunkTranscript = ''; pendingBlob = null; setLiveText('');
+      mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      startWaveform(mediaStream);
+      audioChunks = [];
+      activeMime = MediaRecorder.isTypeSupported('audio/webm;codecs=opus') ? 'audio/webm;codecs=opus' : 'audio/webm';
+      const recorder = new MediaRecorder(mediaStream, { mimeType: activeMime });
+      mediaRecorder = recorder;
+      recorder.ondataavailable = (e) => { if (e.data?.size) audioChunks.push(e.data); };
+      recorder.onstop = () => {
+        if (audioChunks.length) pendingBlob = new Blob(audioChunks, { type: activeMime });
+        audioChunks = [];
+        if (mediaStream) { mediaStream.getTracks().forEach(t => t.stop()); mediaStream = null; }
+        mediaRecorder = null;
+        stopWaveform();
+        void commitChunk();
+      };
+      recorder.start(250);
+      listening = true;
+      micBtn.classList.add('active');
+      setStatus('Listening… tap mic to pause.');
+      startWebSpeech();
+    }
+
+    function stopRecording() {
+      listening = false;
+      micBtn.classList.remove('active');
+      stopWebSpeech();
+      chunkTranscript = liveTextEl.textContent.trim();
+      const recorder = mediaRecorder;
+      if (recorder?.state === 'recording') {
+        setProcessing(true);
+        try { recorder.requestData(); } catch (_) {}
+        recorder.stop();
+      } else {
+        void commitChunk();
+      }
+    }
+
+    function startWebSpeech() {
+      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SR) return;
+      if (!recognition) {
+        recognition = new SR();
+        recognition.continuous = true;
+        recognition.interimResults = true;
+        recognition.lang = 'en-US';
+        recognition.onresult = (event) => {
+          let interim = '', finalText = '';
+          for (let i = event.resultIndex; i < event.results.length; i++) {
+            const res = event.results[i];
+            if (res.isFinal) finalText += res[0].transcript;
+            else interim += res[0].transcript;
+          }
+          if (finalText) {
+            chunkTranscript = (chunkTranscript + ' ' + finalText).trim();
+            setLiveText(chunkTranscript);
+          } else if (interim) {
+            setLiveText((chunkTranscript + ' ' + interim).trim());
+          }
+        };
+        recognition.onerror = (e) => {
+          if (e.error !== 'no-speech' && e.error !== 'aborted') setStatus('Speech: ' + e.error, 'warn');
+        };
+        recognition.onend = () => { if (listening) try { recognition.start(); } catch (_) {} };
+      }
+      try { recognition.start(); } catch (_) {}
+    }
+
+    function stopWebSpeech() { if (recognition) try { recognition.stop(); } catch (_) {} }
+
+    async function commitChunk() {
+      if (flushing) return;
+      const text = (liveTextEl.textContent || chunkTranscript || '').trim();
+      if (!text && !(pendingBlob?.size > 0)) {
+        setProcessing(false);
+        setStatus('Ready — tap mic to speak', 'ok');
+        return;
+      }
+      flushing = true;
+      setProcessing(true);
+      setStatus('Processing…');
+
+      try {
+        const useAudio = pendingBlob?.size > 0 && health.stt && health.stt !== 'webspeech';
+        let json;
+        if (useAudio) {
+          const res = await fetch('/api/audio', { method: 'POST', headers: { 'Content-Type': pendingBlob.type || activeMime }, body: pendingBlob });
+          json = await res.json();
+          if (!res.ok && !json.session) throw new Error(json.error || 'HTTP ' + res.status);
+        } else {
+          const res = await fetch('/api/segment', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text }) });
+          json = await res.json();
+          if (!res.ok) throw new Error(json.error || 'HTTP ' + res.status);
+        }
+        if (json?.session) applySession(json.session);
+        setLiveText(''); chunkTranscript = ''; pendingBlob = null;
+        const err = json?.session?.compileError;
+        setStatus(err ? 'Added — compile failed: ' + err : 'Added — brief updated.', err ? 'warn' : 'ok');
+      } catch (e) {
+        setStatus('Failed: ' + (e.message || e), 'warn');
+      } finally {
+        flushing = false;
+        setProcessing(false);
+      }
+    }
+
+    async function toggleMic() {
+      if (listening) stopRecording();
+      else try { await startRecording(); } catch { setStatus('Mic blocked — allow microphone.', 'warn'); }
+    }
+
+    async function saveSegmentEdit(index, text) {
+      const json = await fetch('/api/segment/' + index, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text, recompile: false })
+      }).then(r => r.json());
+      if (json.session) applySession(json.session);
+    }
+
+    async function revertFix(index, heard, corrected) {
+      const json = await fetch('/api/segment/' + index + '/fix', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ heard, corrected, action: 'revert' })
+      }).then(r => r.json());
+      if (json.session) applySession(json.session);
+      hideFixPopover();
+    }
+
+    function showFixPopover(el) {
+      activeFixTarget = {
+        index: Number(el.dataset.segmentIndex),
+        heard: el.dataset.heard,
+        corrected: el.dataset.corrected,
+        el
+      };
+      fixPopoverHeard.textContent = el.dataset.heard;
+      const rect = el.getBoundingClientRect();
+      fixPopover.hidden = false;
+      fixPopover.style.left = Math.min(rect.left, window.innerWidth - 180) + 'px';
+      fixPopover.style.top = (rect.bottom + 6) + 'px';
+    }
+
+    function hideFixPopover() {
+      fixPopover.hidden = true;
+      activeFixTarget = null;
+    }
+
+    transcriptEl.addEventListener('focusin', (e) => {
+      const el = e.target.closest('.seg-text');
+      if (el) editSnapshot = { index: Number(el.dataset.segmentIndex), text: el.innerText.trim() };
+    }, true);
+
+    transcriptEl.addEventListener('focusout', (e) => {
+      const el = e.target.closest('.seg-text');
+      if (!el || editSnapshot === null) return;
+      const idx = Number(el.dataset.segmentIndex);
+      const text = el.innerText.trim();
+      const snap = editSnapshot;
+      editSnapshot = null;
+      if (text === snap.text) return;
+      saveSegmentEdit(idx, text).catch(() => {});
+    }, true);
+
+    transcriptEl.addEventListener('click', (e) => {
+      const word = e.target.closest('.fix-word');
+      if (word) {
+        e.preventDefault();
+        showFixPopover(word);
+        return;
+      }
+      if (!fixPopover.contains(e.target)) hideFixPopover();
+    });
+
+    fixPopoverRevert.addEventListener('click', () => {
+      if (!activeFixTarget) return;
+      revertFix(activeFixTarget.index, activeFixTarget.heard, activeFixTarget.corrected).catch(() => {});
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!fixPopover.hidden && !fixPopover.contains(e.target) && !e.target.closest('.fix-word')) {
+        hideFixPopover();
+      }
+    });
+
+    function gatherWordsText() {
+      const parts = [...transcriptEl.querySelectorAll('.seg-text')].map(el => el.textContent.trim()).filter(Boolean);
+      return parts.join('\n\n');
+    }
+
+    async function copyBriefVersion(version) {
+      const text = (briefByVersion[version] || briefMarkdown || '').trim();
+      if (!text || text.startsWith('Speak')) { setStatus('Nothing to copy yet.', 'warn'); return; }
+      await navigator.clipboard.writeText(text);
+      setStatus('Prompt ' + version + ' copied.', 'ok');
+    }
+
+    async function copyBrief() {
+      const versions = Object.keys(briefByVersion).map(Number).sort((a, b) => b - a);
+      const latest = versions[0];
+      if (latest) return copyBriefVersion(latest);
+      const json = await fetch('/api/session').then(r => r.json()).catch(() => ({}));
+      const text = ((json.session && json.session.compiled) || briefMarkdown || '').trim();
+      if (!text || text.startsWith('Speak')) { setStatus('Nothing to copy yet.', 'warn'); return; }
+      await navigator.clipboard.writeText(text);
+      setStatus('Agent prompt copied.', 'ok');
+    }
+
+    async function copyWords() {
+      const text = gatherWordsText();
+      if (!text) { setStatus('No words to copy yet.', 'warn'); return; }
+      await navigator.clipboard.writeText(text);
+      setStatus('Your words copied.', 'ok');
+    }
+
+    async function sendToAgent(source, briefVersion) {
+      setStatus('Sending…');
+      const json = await fetch('/api/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ source, briefVersion })
+      }).then(r => r.json());
+      setStatus(json.message || (json.ok ? 'Sent.' : 'Send failed.'), json.ok ? 'ok' : 'warn');
+    }
+
+    async function recompileBrief() {
+      setStatus('Recompiling via Grok…');
+      refreshBtn.classList.remove('pulse-hint');
+      try {
+        const json = await fetch('/api/compile', { method: 'POST' }).then(r => r.json());
+        if (json.session) applySession(json.session);
+        setStatus(json.session?.compileError ? 'Compile failed: ' + json.session.compileError : 'Brief refreshed.', json.session?.compileError ? 'warn' : 'ok');
+      } catch (e) {
+        setStatus('Recompile failed: ' + (e.message || e), 'warn');
+      }
+    }
+
+    briefEl.addEventListener('click', (e) => {
+      const copyBtn = e.target.closest('.brief-copy');
+      const sendBtn = e.target.closest('.brief-send');
+      if (copyBtn) {
+        e.preventDefault();
+        copyBriefVersion(Number(copyBtn.dataset.briefVersion)).catch(() => {});
+        return;
+      }
+      if (sendBtn) {
+        e.preventDefault();
+        sendToAgent('brief', Number(sendBtn.dataset.briefVersion)).catch(() => {});
+      }
+    });
+
+    async function clearSession() {
+      if (!confirm('Clear this session?')) return;
+      applySession((await fetch('/api/reset', { method: 'POST' }).then(r => r.json())).session);
+      briefMarkdown = '';
+      setLiveText('');
+    }
+
+    micBtn.addEventListener('click', () => toggleMic().catch(() => {}));
+    document.getElementById('refresh').addEventListener('click', () => recompileBrief().catch(() => {}));
+    document.getElementById('copy').addEventListener('click', () => copyBrief().catch(() => {}));
+    document.getElementById('copyWords').addEventListener('click', () => copyWords().catch(() => {}));
+    document.getElementById('send').addEventListener('click', () => sendToAgent('brief').catch(() => {}));
+    document.getElementById('sendWords').addEventListener('click', () => sendToAgent('words').catch(() => {}));
+    document.getElementById('clear').addEventListener('click', () => clearSession().catch(() => {}));
+
+    refreshHealth().then(() => loadSession()).catch(() => setStatus('Cannot reach Teacher server', 'warn'));
+  </script>
+</body>
+</html>

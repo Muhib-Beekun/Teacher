@@ -2,7 +2,7 @@
     "name": "teacher",
     "displayName": "Teacher",
     "description": "Context-aware voice sessions and intent compilation for Cursor and VS Code compatible editors.",
-    "version": "0.0.3",
+    "version": "0.0.14",
     "publisher": "muhib-beekun",
     "author": "Muhib Beekun",
     "private": true,
@@ -62,13 +62,23 @@
                 "category": "Teacher"
             },
             {
+                "command": "teacher.setGrokApiKey",
+                "title": "Teacher: Set Grok API Key",
+                "category": "Teacher"
+            },
+            {
                 "command": "teacher.setDeepgramKey",
                 "title": "Teacher: Set Deepgram API Key",
                 "category": "Teacher"
             },
             {
+                "command": "teacher.openWebUi",
+                "title": "Teacher: Open Web UI",
+                "category": "Teacher"
+            },
+            {
                 "command": "teacher.openMicSidecar",
-                "title": "Teacher: Open Mic in Browser",
+                "title": "Teacher: Open Web UI (Browser)",
                 "category": "Teacher"
             }
         ],
@@ -150,6 +160,11 @@
                     "default": true,
                     "description": "After paste, attempt to submit the agent prompt automatically (best-effort; depends on Cursor version)."
                 },
+                "teacher.stt.homonymPass": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Suggest workspace term corrections for STT (off = verbatim what you said)."
+                },
                 "teacher.stt.provider": {
                     "type": "string",
                     "enum": ["auto", "webspeech", "whisper", "deepgram"],
@@ -173,9 +188,35 @@
                 },
                 "teacher.compile.provider": {
                     "type": "string",
-                    "enum": ["auto", "rules", "ollama"],
-                    "default": "auto",
-                    "description": "Compile provider. auto = Ollama if running locally, else rules-only."
+                    "enum": ["grok"],
+                    "default": "grok",
+                    "description": "Compile provider — Grok only. Requires API key; no fallback."
+                },
+                "teacher.compile.polishStt": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Fix speech-to-text errors via Grok before compiling (requires Grok API key)."
+                },
+                "teacher.inference.grok.apiKey": {
+                    "type": "string",
+                    "default": "",
+                    "description": "Optional Grok key (prefer Teacher: Set Grok API Key or XAI_API_KEY in workspace .env — do not commit)."
+                },
+                "teacher.inference.grok.url": {
+                    "type": "string",
+                    "default": "https://api.x.ai/v1",
+                    "description": "xAI Grok API base URL."
+                },
+                "teacher.inference.grok.model": {
+                    "type": "string",
+                    "default": "grok-4-fast-reasoning",
+                    "description": "Grok model for compile and STT polish (e.g. grok-4.3)."
+                },
+                "teacher.inference.grok.timeoutMs": {
+                    "type": "number",
+                    "default": 45000,
+                    "minimum": 5000,
+                    "description": "Grok API timeout in milliseconds."
                 },
                 "teacher.inference.ollama.url": {
                     "type": "string",
@@ -184,8 +225,8 @@
                 },
                 "teacher.inference.ollama.model": {
                     "type": "string",
-                    "default": "qwen2.5:7b-instruct",
-                    "description": "Ollama model for Teacher compile."
+                    "default": "qwen2.5-coder:14b",
+                    "description": "Ollama model for STT polish and compile (e.g. qwen2.5-coder:14b). Auto-fallback if tag differs."
                 },
                 "teacher.capture.sidecarPort": {
                     "type": "number",
@@ -202,12 +243,18 @@
         "package": "npm run build && npx @vscode/vsce package --allow-missing-repository --allow-star-activation",
         "dump-context": "node tools/dump-context-spike.mjs",
         "analyze-transcripts": "node tools/analyze-transcripts.mjs",
+        "mic-sidecar": "node tools/mic-sidecar-server.mjs",
+        "test:mic-sidecar": "node tools/test-mic-sidecar.mjs",
+        "test:grok": "node tools/test-grok.mjs",
+        "test:web-app": "npm run build && node tools/test-web-app.mjs",
+        "test:compiler": "npm run build && node tools/test-compiler.mjs",
         "vscode:prepublish": "npm run build"
     },
     "devDependencies": {
         "@types/node": "^20.14.10",
         "@types/vscode": "^1.92.0",
         "@vscode/vsce": "^3.6.0",
+        "puppeteer": "^24.10.0",
         "typescript": "^5.5.4"
     }
 }

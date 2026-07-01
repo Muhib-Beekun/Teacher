@@ -1,6 +1,6 @@
 import { SttFix } from '../session/types';
 
-/** Apply workspace dictionary corrections to STT text (vectorless homonym pass). */
+/** Apply workspace dictionary corrections — conservative; opt-in via teacher.stt.homonymPass. */
 export function applyHomonymPass(text: string, dictionary: string[]): { text: string; fixes: SttFix[] } {
     if (!text.trim() || !dictionary.length) {
         return { text, fixes: [] };
@@ -32,24 +32,23 @@ function findBestDictionaryMatch(word: string, dictionary: string[]): { term: st
     let best: { term: string; score: number } | null = null;
     for (const term of dictionary) {
         const t = term.toLowerCase();
-        if (t.length < 3) {
+        if (t.length < 3 || !looksLikeCodeTerm(term)) {
             continue;
         }
         const dist = levenshtein(lower, t);
         const maxLen = Math.max(lower.length, t.length);
         const similarity = 1 - dist / maxLen;
-        if (similarity >= 0.72 && dist <= 3) {
+        if (similarity >= 0.9 && dist <= 2) {
             if (!best || similarity > best.score) {
                 best = { term, score: similarity };
             }
         }
-        if (lower.includes(t) || t.includes(lower)) {
-            if (!best || 0.85 > best.score) {
-                best = { term, score: 0.85 };
-            }
-        }
     }
     return best;
+}
+
+function looksLikeCodeTerm(term: string): boolean {
+    return /[@./_-]|[A-Z].*[a-z]|[a-z]+[A-Z]/.test(term);
 }
 
 function preserveCase(original: string, replacement: string): string {

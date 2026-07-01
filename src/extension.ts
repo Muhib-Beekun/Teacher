@@ -1,44 +1,87 @@
 import * as vscode from 'vscode';
-import { MicSidecarServer } from './capture/MicSidecarServer';
+import { loadWorkspaceEnv } from './config/loadWorkspaceEnv';
+import { WebAppServer } from './capture/WebAppServer';
 import { WorkspaceContextIndex } from './context/WorkspaceContextIndex';
 import { sendBrief } from './insert/InsertRouter';
 import { CompileService } from './providers/compile/CompileService';
 import { SttService } from './providers/stt/SttService';
-import { promptDeepgramApiKey } from './secrets/SecretStorage';
+import { getGrokApiKey, promptDeepgramApiKey, promptGrokApiKey } from './secrets/SecretStorage';
 import { TeacherSessionPanel } from './ui/TeacherSessionPanel';
+import { BrowserSessionBridge } from './web/BrowserSessionBridge';
 
 const REBUILD_DEBOUNCE_MS = 2500;
 
 export function activate(context: vscode.ExtensionContext): void {
+    loadWorkspaceEnv();
     const contextIndex = new WorkspaceContextIndex();
     const output = vscode.window.createOutputChannel('Teacher');
     const sttService = new SttService(context.secrets, output);
-    const compileService = new CompileService(output);
-    const sidecar = new MicSidecarServer(context.extensionPath);
+    const compileService = new CompileService(output, () => getGrokApiKey(context.secrets));
+    const webApp = new WebAppServer(context.extensionPath);
+    webApp.setOutput(output);
 
-    const panel = new TeacherSessionPanel(context, {
+    const bridge = new BrowserSessionBridge({
         getVoiceContext: () => contextIndex.getContext(),
         rebuildContext: async (recentUtterance) => {
             await contextIndex.rebuild(recentUtterance ? { recentUtterance } : {});
         },
+        sttService,
+        compileService
+    });
+
+    webApp.setHealthProvider(async () => ({
+        stt: await sttService.resolveProviderId(),
+        compile: await compileService.resolveProviderId(),
+        grokKeySet: await compileService.isGrokConfigured()
+    }));
+
+    const startWebApp = () => webApp.start(bridge);
+
+    let panel: TeacherSessionPanel;
+    const openWebUi = async () => {
+        await startWebApp();
+        await webApp.openInBrowser();
+        await panel.notifyWebUiOpened(webApp.getUrl());
+    };
+
+    panel = new TeacherSessionPanel(context, {
+        bridge,
         sendBrief,
         sttService,
         compileService,
-        openSidecarMic: async () => {
-            await panel.startSession();
-            await sidecar.start((buffer, mimeType) => {
-                void panel.handleSidecarAudio(buffer, mimeType);
-            });
-            await sidecar.openInBrowser();
-            await panel.notifySidecarOpened();
-            output.appendLine(`[mic] Sidecar opened at ${sidecar.getCaptureUrl()}`);
-        }
+        openWebUi
     });
 
-    void sidecar.start((buffer, mimeType) => {
-        void panel.handleSidecarAudio(buffer, mimeType);
+    webApp.setSendHandler(async (source, briefVersion) => {
+        const result = await panel.sendToAgent(source, briefVersion);
+        if (!result) {
+            return { ok: false, message: 'Session is empty — speak first.' };
+        }
+        if (result.submitted) {
+            return { ok: true, message: 'Sent to Cursor agent.' };
+        }
+        if (result.pasted) {
+            return { ok: true, message: 'Pasted into Composer — press Enter if needed.' };
+        }
+        return { ok: true, message: 'Brief copied to clipboard.' };
+    });
+
+    bridge.onUpdated = () => {
+        void panel.refreshFromBridge();
+    };
+
+    void bridge.init().then(() => startWebApp()).then(async (port) => {
+        output.appendLine(`[web] Teacher UI ready at http://127.0.0.1:${port}/`);
+        output.appendLine('[web] Open in Chrome/Edge — speak, scaffold brief, copy into Cursor.');
+        const grokOk = await compileService.isGrokConfigured();
+        if (grokOk) {
+            output.appendLine('[grok] API key found — compile and STT polish use Grok.');
+        } else {
+            output.appendLine('[grok] No API key — run Teacher: Set Grok API Key, or add XAI_API_KEY to workspace .env');
+        }
     }).catch((err) => {
-        output.appendLine(`[mic] Sidecar server failed to start: ${err}`);
+        output.appendLine(`[web] Server failed to start: ${err}`);
+        void vscode.window.showErrorMessage(`Teacher web server failed: ${err}`);
     });
 
     const scheduleRebuild = debounce(() => {
@@ -53,7 +96,7 @@ export function activate(context: vscode.ExtensionContext): void {
 
     context.subscriptions.push(
         output,
-        { dispose: () => sidecar.stop() },
+        { dispose: () => webApp.stop() },
         vscode.workspace.onDidChangeTextDocument(() => scheduleRebuild()),
         vscode.workspace.onDidOpenTextDocument(() => scheduleRebuild()),
         vscode.window.onDidChangeActiveTextEditor(() => scheduleRebuild()),
@@ -63,20 +106,14 @@ export function activate(context: vscode.ExtensionContext): void {
             await panel.startSession();
         }),
 
-        vscode.commands.registerCommand('teacher.openMicSidecar', async () => {
-            await vscode.commands.executeCommand('teacher.startSession');
-            await sidecar.start((buffer, mimeType) => {
-                void panel.handleSidecarAudio(buffer, mimeType);
-            });
-            await sidecar.openInBrowser();
-            await panel.notifySidecarOpened();
-        }),
+        vscode.commands.registerCommand('teacher.openMicSidecar', openWebUi),
+        vscode.commands.registerCommand('teacher.openWebUi', openWebUi),
 
         vscode.commands.registerCommand('teacher.appendSegment', async () => {
             await panel.startSession();
             const segmentText = await vscode.window.showInputBox({
                 title: 'Teacher: Append Segment',
-                placeHolder: 'Type a segment (or use mic in the Teacher panel).',
+                placeHolder: 'Type a segment.',
                 prompt: 'Adds to the current session without ending it.'
             });
             if (segmentText?.trim()) {
@@ -104,6 +141,10 @@ export function activate(context: vscode.ExtensionContext): void {
             } else {
                 vscode.window.showInformationMessage('Brief copied to clipboard.');
             }
+        }),
+
+        vscode.commands.registerCommand('teacher.setGrokApiKey', async () => {
+            await promptGrokApiKey(context.secrets);
         }),
 
         vscode.commands.registerCommand('teacher.setDeepgramKey', async () => {

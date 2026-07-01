@@ -32,12 +32,18 @@ function compileVerbatim(rawSegments: string[]): CompiledBrief {
 function compileTeacher(segments: Segment[], voiceContext: VoiceSessionContext): CompiledBrief {
     const active = segments.filter((s) => !s.superseded);
     const superseded = segments.filter((s) => s.superseded);
+    const intentSegments = getIntentSegments(active);
 
-    const goal = extractGoal(active);
+    const goal = extractGoal(active, intentSegments);
     const constraints = extractConstraints(active);
     const verification = extractVerification(active);
-    const target = extractTarget(active, voiceContext);
-    const supersededQuotes = superseded.map((s) => s.text).filter(Boolean);
+    const latestText = intentSegments.length ? intentSegments[intentSegments.length - 1].text : '';
+    const target = extractTarget(latestText, voiceContext);
+    const priorChunks = intentSegments.slice(0, -1).map((s) => s.text).filter(Boolean);
+    const supersededQuotes = [
+        ...superseded.map((s) => s.text).filter(Boolean),
+        ...priorChunks
+    ];
 
     const markdown = formatMarkdown(goal, target, constraints, verification, supersededQuotes);
 
@@ -51,7 +57,15 @@ function compileTeacher(segments: Segment[], voiceContext: VoiceSessionContext):
     };
 }
 
-function extractGoal(active: Segment[]): string {
+function getIntentSegments(active: Segment[]): Segment[] {
+    return active.filter(
+        (s) =>
+            !/^(ignore that|disregard that|scratch that|forget that)\b/i.test(s.text.trim()) &&
+            !s.tags.some((t) => t.kind === 'retract' && t.scope === 'previous_segment')
+    );
+}
+
+function extractGoal(active: Segment[], intentSegments?: Segment[]): string {
     for (let i = active.length - 1; i >= 0; i--) {
         const correct = active[i].tags.find((t) => t.kind === 'correct');
         if (correct && correct.kind === 'correct' && correct.phrase) {
@@ -59,17 +73,13 @@ function extractGoal(active: Segment[]): string {
         }
     }
 
-    const intentSegments = active.filter(
-        (s) =>
-            !/^(ignore that|disregard that|scratch that|forget that)\b/i.test(s.text.trim()) &&
-            !s.tags.some((t) => t.kind === 'retract' && t.scope === 'previous_segment')
-    );
+    const intents = intentSegments ?? getIntentSegments(active);
 
-    if (!intentSegments.length) {
+    if (!intents.length) {
         return 'No current intent detected yet.';
     }
 
-    return intentSegments.map((s) => s.text).join(' ');
+    return intents[intents.length - 1].text;
 }
 
 function extractConstraints(active: Segment[]): string[] {
@@ -79,9 +89,6 @@ function extractConstraints(active: Segment[]): string[] {
             if (tag.kind === 'constraint') {
                 items.push(tag.text);
             }
-        }
-        if (/\b(don't|do not|never|without|must not)\b/i.test(seg.text)) {
-            items.push(seg.text);
         }
     }
     return [...new Set(items)];
@@ -97,24 +104,35 @@ function extractVerification(active: Segment[]): string[] {
         }
     }
     if (!items.length) {
-        items.push('Define how done is verified.');
+        return [];
     }
     return items;
 }
 
-function extractTarget(active: Segment[], voiceContext: VoiceSessionContext): string[] {
-    const targets = new Set<string>(voiceContext.targetFiles.slice(0, 8));
+function extractTarget(latestSpeech: string, voiceContext: VoiceSessionContext): string[] {
+    const targets = new Set<string>();
+    if (!latestSpeech.trim()) {
+        return [];
+    }
+    const speech = latestSpeech;
+    const speechLower = speech.toLowerCase();
 
-    const speech = active.map((s) => s.text).join(' ');
-    const pathLike = speech.match(/[`'"]?([\w./-]+\.(ts|tsx|js|jsx|py|go|rs|md|html|json))[`'"]?/gi);
+    const pathLike = speech.match(/[`'"]?([\w./\\-]+\.(ts|tsx|js|jsx|py|go|rs|md|html|json|mjs))[`'"]?/gi);
     if (pathLike) {
         for (const match of pathLike) {
             targets.add(match.replace(/[`'"]/g, ''));
         }
     }
 
-    for (const term of voiceContext.dictionary_context.slice(0, 20)) {
-        if (speech.toLowerCase().includes(term.toLowerCase()) && term.includes('.')) {
+    for (const file of voiceContext.targetFiles) {
+        const base = file.split(/[/\\]/).pop() ?? file;
+        if (speech.includes(file) || speechLower.includes(base.toLowerCase())) {
+            targets.add(file);
+        }
+    }
+
+    for (const term of voiceContext.dictionary_context.slice(0, 50)) {
+        if (term.includes('.') && speechLower.includes(term.toLowerCase())) {
             targets.add(term);
         }
     }
@@ -140,7 +158,7 @@ function formatMarkdown(
         ...(constraints.length ? constraints.map((c) => `- ${c}`) : ['- (none detected)']),
         '',
         '## Verification',
-        ...verification.map((v) => `- ${v}`),
+        ...(verification.length ? verification.map((v) => `- ${v}`) : ['- (none yet — say how to verify when ready)']),
         '',
         '---',
         '**Reference only (superseded — do not implement unless asked again)**'

@@ -57,9 +57,11 @@ async function sendToComposer(
         return { target: 'composer', pasted: false, submitted: false };
     }
 
-    const opened = await tryCommand('composer.newAgentChat')
-        || await tryCommand('composer.focusComposer')
-        || await tryCommand('aichat.newchataction');
+    const opened =
+        (await tryCommand('composer.focusComposer'))
+        || (await tryCommand('aichat.focus'))
+        || (await tryCommand('composer.newAgentChat'))
+        || (await tryCommand('aichat.newchataction'));
 
     if (!opened) {
         vscode.window.showWarningMessage(

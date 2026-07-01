@@ -74,12 +74,20 @@ function detectTags(text: string, lower: string): SegmentTag[] {
         tags.push({ kind: 'correct', phrase: really[1].trim() });
     }
 
-    const actually = trimmed.match(/^actually[,.]?\s*(.+)/i);
+    const actually = trimmed.match(/^actually[,.]?\s+(.+)/i);
     if (actually && !meant) {
         tags.push({ kind: 'correct', phrase: actually[1].trim() });
     }
 
-    const only = trimmed.match(/\bonly (.+)/i);
+    if (
+        /\b(wasn't actually telling|wasn't telling you|not telling you to do|why did you give|have a concern|don't know what that|do you have a concern)\b/i.test(
+            lower
+        )
+    ) {
+        tags.push({ kind: 'correct', phrase: 'Feedback on prior agent output' });
+    }
+
+    const only = trimmed.match(/^(?:only|just)\s+(.+)/i);
     if (only) {
         tags.push({ kind: 'constraint', text: `Only ${only[1].trim()}` });
     }
@@ -89,6 +97,14 @@ function detectTags(text: string, lower: string): SegmentTag[] {
         if (notMatch) {
             tags.push({ kind: 'constraint', text: `Not the ${notMatch[1].trim()}` });
         }
+    }
+
+    if (
+        /\b(instead of always|when possible|do not generate|unless (?:the )?user provides|ensure the|remove the extraneous|target the currently open|must not|should not|don't invent)\b/i.test(
+            lower
+        )
+    ) {
+        tags.push({ kind: 'constraint', text: 'Behavior or format constraint' });
     }
 
     if (/\b(make sure|verify that|how do we know|tell me if)\b/i.test(lower)) {

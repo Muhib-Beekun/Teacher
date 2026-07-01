@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import { VoiceSessionContext } from '../../context/VoiceSessionContext';
 import { applyHomonymPass } from '../../stt/HomonymPass';
+import { SttFix } from '../../session/types';
 import { TranscriptResult, SttProviderId } from './types';
 import { DeepgramSttAdapter } from './DeepgramSttAdapter';
 import { WhisperCppSttAdapter } from './WhisperCppSttAdapter';
@@ -17,7 +18,6 @@ export class SttService {
         this.deepgram = new DeepgramSttAdapter(secrets, output);
     }
 
-    /** webspeech = browser-only; returns recorder for whisper/deepgram */
     async resolveRecorderMode(): Promise<'webspeech' | 'recorder'> {
         const id = await this.resolveProviderId();
         return id === 'webspeech' ? 'webspeech' : 'recorder';
@@ -50,12 +50,25 @@ export class SttService {
             textRaw = await this.deepgram.transcribe(audio, mimeType, ctx);
         }
 
+        return this.withOptionalHomonymPass(textRaw, ctx);
+    }
+
+    processWebSpeechText(text: string, ctx: VoiceSessionContext): TranscriptResult {
+        return this.withOptionalHomonymPass(text.trim(), ctx);
+    }
+
+    private withOptionalHomonymPass(textRaw: string, ctx: VoiceSessionContext): TranscriptResult {
+        if (!textRaw) {
+            return { text: '', textRaw: '', fixes: [] };
+        }
+        if (!this.isHomonymPassEnabled()) {
+            return { text: textRaw, textRaw, fixes: [] };
+        }
         const { text, fixes } = applyHomonymPass(textRaw, ctx.dictionary_context);
         return { text, textRaw, fixes };
     }
 
-    processWebSpeechText(text: string, ctx: VoiceSessionContext): TranscriptResult {
-        const { text: corrected, fixes } = applyHomonymPass(text, ctx.dictionary_context);
-        return { text: corrected, textRaw: text, fixes };
+    private isHomonymPassEnabled(): boolean {
+        return vscode.workspace.getConfiguration('teacher.stt').get<boolean>('homonymPass', false);
     }
 }
