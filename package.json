@@ -59,6 +59,11 @@
                 "command": "teacher.rebuildIndex",
                 "title": "Teacher: Rebuild Context Index",
                 "category": "Teacher"
+            },
+            {
+                "command": "teacher.setDeepgramKey",
+                "title": "Teacher: Set Deepgram API Key",
+                "category": "Teacher"
             }
         ],
         "configuration": {
@@ -138,6 +143,43 @@
                     "type": "boolean",
                     "default": true,
                     "description": "After paste, attempt to submit the agent prompt automatically (best-effort; depends on Cursor version)."
+                },
+                "teacher.stt.provider": {
+                    "type": "string",
+                    "enum": ["auto", "webspeech", "whisper", "deepgram"],
+                    "default": "auto",
+                    "description": "STT provider. auto = whisper if configured, else Deepgram if key set, else browser Web Speech."
+                },
+                "teacher.stt.whisper.binaryPath": {
+                    "type": "string",
+                    "default": "",
+                    "description": "Path to whisper.cpp CLI (whisper-cli or main.exe)."
+                },
+                "teacher.stt.whisper.modelPath": {
+                    "type": "string",
+                    "default": "",
+                    "description": "Path to whisper.cpp GGML/GGUF model file."
+                },
+                "teacher.stt.deepgram.model": {
+                    "type": "string",
+                    "default": "nova-2",
+                    "description": "Deepgram model id (BYOK)."
+                },
+                "teacher.compile.provider": {
+                    "type": "string",
+                    "enum": ["auto", "rules", "ollama"],
+                    "default": "auto",
+                    "description": "Compile provider. auto = Ollama if running locally, else rules-only."
+                },
+                "teacher.inference.ollama.url": {
+                    "type": "string",
+                    "default": "http://127.0.0.1:11434",
+                    "description": "Ollama API base URL for compile step."
+                },
+                "teacher.inference.ollama.model": {
+                    "type": "string",
+                    "default": "qwen2.5:7b-instruct",
+                    "description": "Ollama model for Teacher compile."
                 }
             }
         }
@@ -146,6 +188,7 @@
         "build": "tsc -p ./",
         "watch": "tsc -watch -p ./",
         "dump-context": "node tools/dump-context-spike.mjs",
+        "analyze-transcripts": "node tools/analyze-transcripts.mjs",
         "vscode:prepublish": "npm run build"
     },
     "devDependencies": {

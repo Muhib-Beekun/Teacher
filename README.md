@@ -4,17 +4,30 @@ Context-aware voice input and **intent compilation** for VS Code, Cursor, and ot
 
 **Teacher** (the mode) takes a **continuous** dictation session — keep speaking after the first pass, fix mistakes with your voice not the keyboard — then **re-scaffolds** an agent-ready brief from everything you've said (including *ignore that* / *I meant…*).
 
-**Status:** Private repo. v0 dogfood ready — mic session, rules compiler, Composer Send handoff.
+**Status:** Full v1 stack implemented. See [docs/PLAN.md](./docs/PLAN.md).
 
-**Canonical plan:** [docs/PLAN.md](./docs/PLAN.md)
+## Use it
 
-## Dogfood flow
+```powershell
+npm install && npm run build
+```
 
-1. **Run and Debug** → **Run Teacher Extension**
-2. **Teacher: Start Session**
-3. Click **mic** → speak → click mic to pause → speak again (same session)
-4. Review left (your words) / right (scaffolded brief)
-5. **Send to Agent** → brief pastes into Composer and submits (best-effort)
+**Run and Debug** → **Run Teacher Extension** → **Teacher: Start Session**
+
+| Step | Action |
+|------|--------|
+| Speak | Click mic (toggle). Pause mic between chunks — session stays open. |
+| STT | Auto: whisper.cpp if paths set → else Deepgram if key set → else Web Speech |
+| Review | Left = your words (yellow = workspace fix). Right = scaffolded brief |
+| Send | **Send to Agent** → Composer paste + submit |
+
+### Optional setup
+
+**Whisper (local):** Settings → `teacher.stt.whisper.binaryPath` + `modelPath`
+
+**Deepgram (BYOK):** Command **Teacher: Set Deepgram API Key**
+
+**Ollama (compile):** Run Ollama with `qwen2.5:7b-instruct` — auto-detected
 
 ## vs Cursor voice
 

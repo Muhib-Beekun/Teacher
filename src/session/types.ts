@@ -1,3 +1,14 @@
+export interface SttFix {
+    heard: string;
+    corrected: string;
+}
+
+export interface RawSegment {
+    text: string;
+    textRaw: string;
+    fixes: SttFix[];
+}
+
 export type SegmentTag =
     | { kind: 'retract'; scope: 'previous_segment' | 'phrase'; phrase?: string }
     | { kind: 'correct'; phrase: string }

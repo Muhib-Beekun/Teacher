@@ -1,6 +1,9 @@
 import * as vscode from 'vscode';
 import { WorkspaceContextIndex } from './context/WorkspaceContextIndex';
 import { sendBrief } from './insert/InsertRouter';
+import { CompileService } from './providers/compile/CompileService';
+import { SttService } from './providers/stt/SttService';
+import { promptDeepgramApiKey } from './secrets/SecretStorage';
 import { TeacherSessionPanel } from './ui/TeacherSessionPanel';
 
 const REBUILD_DEBOUNCE_MS = 2500;
@@ -8,19 +11,23 @@ const REBUILD_DEBOUNCE_MS = 2500;
 export function activate(context: vscode.ExtensionContext): void {
     const contextIndex = new WorkspaceContextIndex();
     const output = vscode.window.createOutputChannel('Teacher');
+    const sttService = new SttService(context.secrets, output);
+    const compileService = new CompileService(output);
 
     const panel = new TeacherSessionPanel(context, {
         getVoiceContext: () => contextIndex.getContext(),
         rebuildContext: async (recentUtterance) => {
             await contextIndex.rebuild(recentUtterance ? { recentUtterance } : {});
         },
-        sendBrief
+        sendBrief,
+        sttService,
+        compileService
     });
 
     const scheduleRebuild = debounce(() => {
         void contextIndex.rebuild().then((ctx) => {
             output.appendLine(
-                `[context] Rebuilt index: ${ctx.dictionary_context.length} terms, ${ctx.targetFiles.length} target paths`
+                `[context] ${ctx.dictionary_context.length} terms, ${ctx.targetFiles.length} targets`
             );
         });
     }, REBUILD_DEBOUNCE_MS);
@@ -35,65 +42,54 @@ export function activate(context: vscode.ExtensionContext): void {
 
         vscode.commands.registerCommand('teacher.startSession', async () => {
             await contextIndex.rebuild();
-            panel.startSession();
+            await panel.startSession();
         }),
 
         vscode.commands.registerCommand('teacher.appendSegment', async () => {
-            panel.startSession();
-
+            await panel.startSession();
             const segmentText = await vscode.window.showInputBox({
                 title: 'Teacher: Append Segment',
                 placeHolder: 'Type a segment (or use mic in the Teacher panel).',
                 prompt: 'Adds to the current session without ending it.'
             });
-
-            if (segmentText === undefined || !segmentText.trim()) {
-                return;
+            if (segmentText?.trim()) {
+                await panel.appendSegment(segmentText.trim());
             }
-
-            await panel.appendSegment(segmentText.trim());
         }),
 
         vscode.commands.registerCommand('teacher.compile', async () => {
-            panel.startSession();
-            panel.forceCompile();
+            await panel.startSession();
+            await panel.forceCompile();
             vscode.window.showInformationMessage('Teacher re-scaffolded the agent prompt.');
         }),
 
         vscode.commands.registerCommand('teacher.send', async () => {
             const result = await panel.sendToAgent();
-
             if (!result) {
                 vscode.window.showWarningMessage('Teacher session is empty. Add a segment before sending.');
                 return;
             }
-
             output.appendLine(`[send] target=${result.target} pasted=${result.pasted} submitted=${result.submitted}`);
-
             if (result.submitted) {
                 vscode.window.showInformationMessage('Teacher sent your compiled brief to the agent.');
             } else if (result.pasted) {
-                vscode.window.showInformationMessage(
-                    'Teacher pasted your brief into Composer. Press Enter if the agent did not start automatically.'
-                );
+                vscode.window.showInformationMessage('Teacher pasted into Composer. Press Enter if needed.');
             } else {
-                vscode.window.showInformationMessage(
-                    'Teacher copied your brief to the clipboard (Composer handoff unavailable).'
-                );
+                vscode.window.showInformationMessage('Brief copied to clipboard.');
             }
+        }),
+
+        vscode.commands.registerCommand('teacher.setDeepgramKey', async () => {
+            await promptDeepgramApiKey(context.secrets);
         }),
 
         vscode.commands.registerCommand('teacher.dictateHere', async () => {
             const editor = vscode.window.activeTextEditor;
             if (!editor) {
-                vscode.window.showWarningMessage('No active editor found for Teacher: Dictate Here.');
+                vscode.window.showWarningMessage('No active editor for Dictate Here.');
                 return;
             }
-
-            const placeholder = '[Teacher verbatim placeholder]';
-            await editor.edit((editBuilder) => {
-                editBuilder.insert(editor.selection.active, placeholder);
-            });
+            await editor.edit((b) => b.insert(editor.selection.active, '[Teacher verbatim]'));
         }),
 
         vscode.commands.registerCommand('teacher.endSession', async () => {
@@ -104,34 +100,19 @@ export function activate(context: vscode.ExtensionContext): void {
             const ctx = await contextIndex.rebuild();
             output.clear();
             output.show(true);
-            output.appendLine('Teacher context index rebuilt.');
-            output.appendLine(`Terms (${ctx.dictionary_context.length}): ${ctx.dictionary_context.slice(0, 40).join(', ')}${ctx.dictionary_context.length > 40 ? '…' : ''}`);
-            output.appendLine(`Target files (${ctx.targetFiles.length}):`);
-            for (const file of ctx.targetFiles.slice(0, 15)) {
-                output.appendLine(`  - ${file}`);
-            }
-            if (ctx.stt_prompt) {
-                output.appendLine('');
-                output.appendLine(`STT prompt: ${ctx.stt_prompt.slice(0, 240)}${ctx.stt_prompt.length > 240 ? '…' : ''}`);
-            }
-            panel.forceCompile();
-            vscode.window.showInformationMessage(
-                `Teacher context index rebuilt (${ctx.dictionary_context.length} terms). See Teacher output channel.`
-            );
+            output.appendLine(`Index rebuilt: ${ctx.dictionary_context.length} terms`);
+            await panel.forceCompile();
+            vscode.window.showInformationMessage(`Context index rebuilt (${ctx.dictionary_context.length} terms).`);
         })
     );
 }
 
-export function deactivate(): void {
-    // Cleanup via disposables.
-}
+export function deactivate(): void { }
 
 function debounce(fn: () => void, ms: number): () => void {
     let timer: ReturnType<typeof setTimeout> | undefined;
     return () => {
-        if (timer) {
-            clearTimeout(timer);
-        }
+        if (timer) clearTimeout(timer);
         timer = setTimeout(fn, ms);
     };
 }

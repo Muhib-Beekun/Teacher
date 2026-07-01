@@ -2,7 +2,7 @@
 
 **Last updated:** June 2026  
 **Repo:** [AmpliJob/Teacher](https://github.com/AmpliJob/Teacher) (private)  
-**Status:** Extension v0 dogfood — session panel, mic (Web Speech API), rules compiler, Composer handoff. Local whisper/BYOK STT deferred.
+**Status:** Full v1 stack — mic session, whisper/Deepgram STT, homonym pass, Ollama/rules compile, Composer Send.
 
 This document consolidates founder intent, Cursor pain points, AmpliJob UI reference, inference/training posture, and the implementation roadmap. When other docs disagree, **this plan wins** until explicitly revised.
 
@@ -156,22 +156,22 @@ Transcript export: **never automatic**; output gitignored; opt-in only. See [TRA
 
 ### Done
 
-- [x] Design docs (CONTEXT, ARCHITECTURE, TEACHER-COMPILER, CONTEXT-INDEX, INFERENCE, TRAINING-DATA)
-- [x] Extension shell (`package.json`, commands, settings)
-- [x] Dual-pane webview panel with mic toggle (Web Speech API) + Type fallback
-- [x] Rules compiler + retraction detector (`TeacherCompiler`, `RetractionDetector`)
-- [x] Composer handoff (`InsertRouter` — autoPaste + autoSubmit, Option A)
-- [x] Workspace context index (`WorkspaceContextIndex`, `teacher.rebuildIndex`)
-- [x] `teacher.compile.mode`, `teacher.send.*` settings
-- [x] Extension Development Host launch config
+- [x] Design docs
+- [x] Extension shell + dual-pane session panel (mic toggle, Type fallback)
+- [x] Rules compiler + retraction detector
+- [x] Homonym pass + AmpliJob-style fix markers (tap yellow word → heard)
+- [x] STT: Web Speech, whisper.cpp, Deepgram BYOK (`teacher.stt.provider`)
+- [x] Compile: rules + Ollama auto (`teacher.compile.provider`)
+- [x] Composer handoff (Option A: autoPaste + autoSubmit)
+- [x] Workspace context index
+- [x] `tools/analyze-transcripts.mjs`
 
-### Next
+### Later
 
-1. **Local STT** — whisper.cpp adapter; pass `VoiceSessionContext` keywords
-2. **BYOK STT** — Deepgram / OpenAI with dictionary biasing
-3. **Ollama compile adapter** — optional LLM scaffold refinement
-4. **STT fix markers** — AmpliJob 2b tap-to-see-heard (homonym pass)
-5. **Open VSX publish** after dogfood
+- Open VSX publish
+- OpenAI Whisper STT adapter
+- Hosted Teacher inference tier
+- Fine-tune pipeline
 
 ### Deferred
 
