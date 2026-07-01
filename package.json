@@ -1,0 +1,126 @@
+{
+    "name": "teacher",
+    "displayName": "Teacher",
+    "description": "Context-aware voice sessions and intent compilation for Cursor and VS Code compatible editors.",
+    "version": "0.0.1",
+    "publisher": "amplijob",
+    "private": true,
+    "license": "UNLICENSED",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/AmpliJob/Teacher.git"
+    },
+    "engines": {
+        "vscode": "^1.92.0"
+    },
+    "categories": [
+        "Other"
+    ],
+    "keywords": [
+        "voice",
+        "stt",
+        "cursor",
+        "teacher"
+    ],
+    "main": "./out/extension.js",
+    "contributes": {
+        "commands": [
+            {
+                "command": "teacher.startSession",
+                "title": "Teacher: Start Session",
+                "category": "Teacher"
+            },
+            {
+                "command": "teacher.appendSegment",
+                "title": "Teacher: Append Segment",
+                "category": "Teacher"
+            },
+            {
+                "command": "teacher.compile",
+                "title": "Teacher: Compile Session",
+                "category": "Teacher"
+            },
+            {
+                "command": "teacher.send",
+                "title": "Teacher: Send",
+                "category": "Teacher"
+            },
+            {
+                "command": "teacher.dictateHere",
+                "title": "Teacher: Dictate Here (Verbatim)",
+                "category": "Teacher"
+            },
+            {
+                "command": "teacher.endSession",
+                "title": "Teacher: End Session",
+                "category": "Teacher"
+            },
+            {
+                "command": "teacher.rebuildIndex",
+                "title": "Teacher: Rebuild Context Index",
+                "category": "Teacher"
+            }
+        ],
+        "configuration": {
+            "title": "Teacher",
+            "properties": {
+                "teacher.preview.layout": {
+                    "type": "string",
+                    "enum": [
+                        "dual",
+                        "single"
+                    ],
+                    "default": "dual",
+                    "description": "Preview layout shown in the Teacher panel."
+                },
+                "teacher.compile.live": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Re-scaffold the compiled prompt after each appended segment."
+                },
+                "teacher.compile.debounceMs": {
+                    "type": "number",
+                    "default": 800,
+                    "minimum": 100,
+                    "description": "Debounce for live compile updates while receiving speech segments."
+                },
+                "teacher.session.holdChatBox": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Keep chat input empty until Teacher Send is explicitly invoked."
+                },
+                "teacher.context.maxTerms": {
+                    "type": "number",
+                    "default": 200,
+                    "minimum": 10,
+                    "description": "Maximum ranked context terms to keep in VoiceSessionContext."
+                },
+                "teacher.context.excludeGlobs": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "default": [
+                        "**/node_modules/**",
+                        "**/.git/**",
+                        "**/dist/**",
+                        "**/out/**",
+                        "**/.env*"
+                    ],
+                    "description": "Glob patterns excluded from basename indexing."
+                }
+            }
+        }
+    },
+    "scripts": {
+        "build": "tsc -p ./",
+        "watch": "tsc -watch -p ./",
+        "dump-context": "node tools/dump-context-spike.mjs",
+        "vscode:prepublish": "npm run build"
+    },
+    "devDependencies": {
+        "@types/node": "^20.14.10",
+        "@types/vscode": "^1.92.0",
+        "typescript": "^5.5.4"
+    }
+}
