@@ -158,6 +158,8 @@ Teacher session opens a **dedicated panel** (webview or sidebar) — not the Cur
 
 Why two panes: you see **what you actually said** (trust + audit) alongside **what the agent should get** (clarity). Fixes the Cursor problem where imperfect raw text is the only artifact.
 
+**AmpliJob reference (literal UX):** `environment/docs/product/mockups/evidence-intake-journey-mockup.html` — **Shared tail · Facts frames 2 & 2b**. Mobile stacks transcript (collapsible “What you said”) above scaffolded fact rows (Included / Off-topic, STT fix highlights, tap word → heard vs corrected). Teacher uses the same **two-layer contract** side-by-side on desktop. See [PLAN.md](./PLAN.md).
+
 **Single pane mode** (`teacher.preview.layout: single`): compiled prompt only, transcript collapsible — for minimalists; dual pane remains default.
 
 ### Chrome
