@@ -1,5 +1,7 @@
 # Teacher
 
+**Author:** [Muhib Beekun](https://github.com/AmpliJob/Teacher) — personal project, not an AmpliJob product.
+
 Context-aware voice input and **intent compilation** for VS Code, Cursor, and other VS Code–compatible editors.
 
 **Teacher** (the mode) takes a **continuous** dictation session — keep speaking after the first pass, fix mistakes with your voice not the keyboard — then **re-scaffolds** an agent-ready brief from everything you've said (including *ignore that* / *I meant…*).
@@ -18,7 +20,7 @@ npm install
 npm run package
 ```
 
-Then in Cursor: **`Ctrl+Shift+P`** → **`Extensions: Install from VSIX...`** → pick **`teacher-0.0.1.vsix`** → Reload.
+Then in Cursor: **`Ctrl+Shift+P`** → **`Extensions: Install from VSIX...`** → pick **`teacher-0.0.2.vsix`** → Reload.
 
 Then in any project: **`Teacher: Start Session`**
 
@@ -55,9 +57,9 @@ Open **Run and Debug** → **Run Teacher Extension** in Cursor. Commands under *
 | [docs/TRAINING-DATA.md](./docs/TRAINING-DATA.md) | Cursor conversation exports as supervision (later) |
 | [docs/CONTINUE-PROMPT.md](./docs/CONTINUE-PROMPT.md) | Agent session handoff prompt |
 
-## Related AmpliJob work
+## Related work (not ownership)
 
-Voice STT context seeding in product backlog: `environment/docs/product/backlog.md` items **39–42**. Dual-pane UX reference: `environment/docs/product/mockups/evidence-intake-journey-mockup.html` (Shared tail · Facts frames 2 & 2b).
+Teacher is **by Muhib Beekun**. The UX borrows patterns from evidence-intake mockups in the separate AmpliJob `environment` repo (Shared tail · Facts frames 2/2b). Shared ideas only — not an AmpliJob shipping product.
 
 ## License
 

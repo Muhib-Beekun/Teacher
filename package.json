@@ -2,8 +2,9 @@
     "name": "teacher",
     "displayName": "Teacher",
     "description": "Context-aware voice sessions and intent compilation for Cursor and VS Code compatible editors.",
-    "version": "0.0.1",
-    "publisher": "amplijob",
+    "version": "0.0.3",
+    "publisher": "muhib-beekun",
+    "author": "Muhib Beekun",
     "private": true,
     "license": "UNLICENSED",
     "repository": {
@@ -63,6 +64,11 @@
             {
                 "command": "teacher.setDeepgramKey",
                 "title": "Teacher: Set Deepgram API Key",
+                "category": "Teacher"
+            },
+            {
+                "command": "teacher.openMicSidecar",
+                "title": "Teacher: Open Mic in Browser",
                 "category": "Teacher"
             }
         ],
@@ -180,6 +186,12 @@
                     "type": "string",
                     "default": "qwen2.5:7b-instruct",
                     "description": "Ollama model for Teacher compile."
+                },
+                "teacher.capture.sidecarPort": {
+                    "type": "number",
+                    "default": 3721,
+                    "minimum": 1024,
+                    "description": "Localhost port for Chrome/Edge mic capture page (Cursor webviews cannot access the microphone)."
                 }
             }
         }

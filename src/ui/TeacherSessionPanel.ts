@@ -13,6 +13,7 @@ export interface SessionPanelDeps {
     sendBrief: (text: string) => Promise<SendResult>;
     sttService: SttService;
     compileService: CompileService;
+    openSidecarMic: () => Promise<void>;
 }
 
 export class TeacherSessionPanel {
@@ -99,7 +100,7 @@ export class TeacherSessionPanel {
         await this.deps.rebuildContext(result.text);
         this.session.appendSegment(result.text, result.textRaw, result.fixes);
         await this.maybeCompile();
-        await this.pushContentUpdate('Ready — click mic to add more.');
+        await this.pushContentUpdate('Ready — open mic in browser to add more.');
     }
 
     private async handleMessage(message: {
@@ -118,6 +119,9 @@ export class TeacherSessionPanel {
                     );
                     await this.appendTranscript(result);
                 }
+                break;
+            case 'openSidecarMic':
+                await this.deps.openSidecarMic();
                 break;
             case 'audioChunk':
                 if (message.audioBase64) {
@@ -140,6 +144,14 @@ export class TeacherSessionPanel {
             default:
                 break;
         }
+    }
+
+    public async handleSidecarAudio(buffer: Buffer, mimeType: string): Promise<void> {
+        await this.handleAudioChunk(buffer.toString('base64'), mimeType);
+    }
+
+    public async notifySidecarOpened(): Promise<void> {
+        await this.pushContentUpdate('Mic open in browser — speak there, then Send chunk to Teacher.');
     }
 
     private async handleAudioChunk(base64: string, mimeType: string): Promise<void> {
@@ -236,12 +248,12 @@ export class TeacherSessionPanel {
 </head>
 <body>
   <div class="toolbar">
-    <button id="mic" class="mic-btn" title="Toggle mic">🎤</button>
+    <button id="mic" class="mic-btn" title="Open mic in browser">🎤</button>
     <button id="type">Type</button>
     <button id="send" class="primary">Send to Agent</button>
     <div class="status" id="status">Session open · chat untouched until Send</div>
   </div>
-  <div class="provider" id="provider">STT: …</div>
+  <div class="provider" id="provider">Mic runs in Chrome/Edge (Cursor blocks in-panel mic) · STT: …</div>
   <div class="interim" id="interim"></div>
   <div class="grid">
     <section class="pane"><h2>Your Words</h2><div class="pane-body" id="transcript"><p class="empty">Session ready.</p></div></section>
@@ -255,11 +267,6 @@ export class TeacherSessionPanel {
     const providerEl = document.getElementById('provider');
     const compiledEl = document.getElementById('compiled');
     const transcriptEl = document.getElementById('transcript');
-    let listening = false;
-    let mediaStream = null;
-    let mediaRecorder = null;
-    let audioChunks = [];
-    let recognition = null;
     let compiledDirty = false;
 
     compiledEl.addEventListener('input', () => {
@@ -269,6 +276,7 @@ export class TeacherSessionPanel {
 
     document.getElementById('type').addEventListener('click', () => vscode.postMessage({ command: 'typeSegment' }));
     document.getElementById('send').addEventListener('click', () => vscode.postMessage({ command: 'send' }));
+    document.getElementById('mic').addEventListener('click', () => vscode.postMessage({ command: 'openSidecarMic' }));
 
     transcriptEl.addEventListener('click', (e) => {
       const el = e.target.closest('.fix-word');
@@ -277,120 +285,12 @@ export class TeacherSessionPanel {
       alert('Heard: "' + heard + '"\\nUsing: "' + el.textContent + '"');
     });
 
-    function setListening(on) {
-      listening = on;
-      micBtn.classList.toggle('active', on);
-      statusEl.textContent = on
-        ? 'Listening… click mic again when you pause (session stays open).'
-        : 'Paused — click mic to add more.';
-    }
-
-    async function startMediaRecorder() {
-      mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      audioChunks = [];
-      const mime = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
-        ? 'audio/webm;codecs=opus' : 'audio/webm';
-      mediaRecorder = new MediaRecorder(mediaStream, { mimeType: mime });
-      mediaRecorder.ondataavailable = (e) => { if (e.data.size) audioChunks.push(e.data); };
-      mediaRecorder.onstop = async () => {
-        if (!audioChunks.length) return;
-        const blob = new Blob(audioChunks, { type: mediaRecorder.mimeType || 'audio/webm' });
-        const buf = await blob.arrayBuffer();
-        const bytes = new Uint8Array(buf);
-        let binary = '';
-        for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
-        vscode.postMessage({ command: 'audioChunk', audioBase64: btoa(binary), mimeType: blob.type });
-        audioChunks = [];
-      };
-      mediaRecorder.start();
-      setListening(true);
-    }
-
-    function stopMediaRecorder() {
-      setListening(false);
-      if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-        mediaRecorder.stop();
-      }
-      if (mediaStream) {
-        mediaStream.getTracks().forEach(t => t.stop());
-        mediaStream = null;
-      }
-      mediaRecorder = null;
-    }
-
-    function startWebSpeech() {
-      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-      if (!SR) throw new Error('Web Speech not available');
-      if (!recognition) {
-        recognition = new SR();
-        recognition.continuous = true;
-        recognition.interimResults = true;
-        recognition.lang = 'en-US';
-        recognition.onresult = (event) => {
-          let interim = '', finalText = '';
-          for (let i = event.resultIndex; i < event.results.length; i++) {
-            const res = event.results[i];
-            if (res.isFinal) finalText += res[0].transcript;
-            else interim += res[0].transcript;
-          }
-          if (interim) interimEl.textContent = interim;
-          if (finalText.trim()) {
-            interimEl.textContent = '';
-            vscode.postMessage({ command: 'segmentFinal', text: finalText.trim() });
-          }
-        };
-        recognition.onerror = (e) => {
-          if (e.error === 'no-speech' || e.error === 'aborted') return;
-          statusEl.textContent = 'Mic error: ' + e.error;
-        };
-        recognition.onend = () => {
-          if (listening) {
-            try { recognition.start(); } catch (_) {}
-          }
-        };
-      }
-      recognition.start();
-      setListening(true);
-    }
-
-    function stopWebSpeech() {
-      setListening(false);
-      interimEl.textContent = '';
-      if (recognition) {
-        try { recognition.stop(); } catch (_) {}
-      }
-    }
-
-    async function toggleMic() {
-      if (listening) {
-        if (mediaRecorder) stopMediaRecorder();
-        else stopWebSpeech();
-        return;
-      }
-      try {
-        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-          await startMediaRecorder();
-        } else {
-          startWebSpeech();
-        }
-      } catch (err) {
-        try {
-          startWebSpeech();
-        } catch (_) {
-          statusEl.textContent = 'Mic unavailable — allow microphone or use Type.';
-          setListening(false);
-        }
-      }
-    }
-
-    micBtn.addEventListener('click', () => { toggleMic().catch(() => {}); });
-
     window.addEventListener('message', (event) => {
       const msg = event.data;
       if (msg.command !== 'update') return;
       if (msg.transcriptHtml) transcriptEl.innerHTML = msg.transcriptHtml;
       if (msg.compiled !== undefined && !compiledDirty) compiledEl.value = msg.compiled;
-      if (msg.sttProvider) providerEl.textContent = 'STT: ' + msg.sttProvider + ' · mic records audio → extension transcribes';
+      if (msg.sttProvider) providerEl.textContent = 'Mic: Chrome/Edge sidecar · STT: ' + msg.sttProvider;
       if (msg.status) statusEl.textContent = msg.status;
     });
   </script>

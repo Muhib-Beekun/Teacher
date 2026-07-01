@@ -9,7 +9,7 @@ Copy everything in the block below into a **new Cursor chat** with workspace roo
 ## Prompt (copy from here)
 
 ```markdown
-You are implementing **Teacher** — a VS Code / Open VSX extension that works in **Cursor**. Repo: `C:\Users\Public\Projects\Teacher` (private GitHub: AmpliJob/Teacher).
+You are implementing **Teacher** — a personal VS Code / Open VSX extension by **Muhib Beekun**. Works in **Cursor**. Repo: `C:\Users\Public\Projects\Teacher` (private GitHub: AmpliJob/Teacher — org name is hosting only).
 
 **Read first (in order):**
 1. `docs/PLAN.md` — canonical product plan and roadmap

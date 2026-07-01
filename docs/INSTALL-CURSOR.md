@@ -20,7 +20,7 @@ npm install
 npm run package
 ```
 
-That creates **`teacher-0.0.1.vsix`** in the repo root.
+That creates **`teacher-0.0.2.vsix`** in the repo root.
 
 ### 2. Install in Cursor
 
@@ -29,7 +29,7 @@ That creates **`teacher-0.0.1.vsix`** in the repo root.
 1. Open **Cursor** (your normal Cursor window, not VS Code)
 2. `Ctrl+Shift+P`
 3. Type: **`Extensions: Install from VSIX...`**
-4. Select `C:\Users\Public\Projects\Teacher\teacher-0.0.1.vsix`
+4. Select `C:\Users\Public\Projects\Teacher\teacher-0.0.2.vsix`
 5. **Reload** when Cursor asks
 
 **Option 2 — Extensions sidebar**
@@ -37,7 +37,7 @@ That creates **`teacher-0.0.1.vsix`** in the repo root.
 1. Open Extensions (`Ctrl+Shift+X`)
 2. Click the **`...`** menu at the top of the Extensions panel
 3. **Install from VSIX...**
-4. Pick `teacher-0.0.1.vsix`
+4. Pick `teacher-0.0.2.vsix`
 
 ### 3. Use it
 
@@ -110,7 +110,7 @@ When ready, Teacher will publish to **Open VSX** (and optionally the Microsoft V
 | Reason | Detail |
 |--------|--------|
 | Early / private | Repo is private; extension is still moving fast |
-| No publisher setup yet | Open VSX needs an Eclipse account + namespace claim (`amplijob`) |
+| No publisher setup yet | Open VSX needs an Eclipse account + namespace claim (e.g. `muhib-beekun`) |
 | Review time | Open VSX manual review can take days; MS Marketplace similar |
 | Cursor | Cursor can install VSIX or Open VSX extensions; VSIX is fine for you solo |
 

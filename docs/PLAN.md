@@ -1,7 +1,7 @@
 # Teacher — product plan (canonical)
 
-**Last updated:** June 2026  
-**Repo:** [AmpliJob/Teacher](https://github.com/AmpliJob/Teacher) (private)  
+**Author:** Muhib Beekun  
+**Repo:** [AmpliJob/Teacher](https://github.com/AmpliJob/Teacher) (private — personal project; org name is legacy hosting only)  
 **Status:** Full v1 stack — mic session, whisper/Deepgram STT, homonym pass, Ollama/rules compile, Composer Send.
 
 This document consolidates founder intent, Cursor pain points, AmpliJob UI reference, inference/training posture, and the implementation roadmap. When other docs disagree, **this plan wins** until explicitly revised.
@@ -135,7 +135,7 @@ Transcript export: **never automatic**; output gitignored; opt-in only. See [TRA
 
 **What phones home in local-first mode:** nothing. Index builds locally. Cloud STT/compile only if user configures BYOK.
 
-**Paid path through AmpliJob:** future Tier E — explicit opt-in hosted inference; adapter interface designed now, built when needed.
+**Paid hosted inference (later):** optional Tier E — explicit opt-in; not AmpliJob unless Muhib chooses to offer it separately.
 
 ---
 
@@ -143,7 +143,7 @@ Transcript export: **never automatic**; output gitignored; opt-in only. See [TRA
 
 | Choice | Decision |
 |--------|----------|
-| GitHub | **Private** (AmpliJob/Teacher) |
+| GitHub | **Private** — personal repo (Muhib Beekun); `AmpliJob/Teacher` is hosting namespace only |
 | Marketplace | Open VSX primary; VS Code Marketplace optional |
 | Editor targets | Cursor-first; standard VS Code extension APIs only |
 | Secrets | VS Code `SecretStorage` only |

@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Teacher Mic</title>
+  <style>
+    :root {
+      --bg: #0f1117; --panel: #1a1d27; --ink: #e8eaef; --muted: #8b93a7;
+      --accent: #6b8aff; --ok: #43d6a4; --warn: #efc14e; --line: #2e3343;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; min-height: 100vh; font-family: "Segoe UI", system-ui, sans-serif;
+      background: var(--bg); color: var(--ink);
+      display: grid; place-items: center; padding: 24px;
+    }
+    .card {
+      width: min(420px, 100%); background: var(--panel); border: 1px solid var(--line);
+      border-radius: 16px; padding: 24px; text-align: center;
+    }
+    h1 { margin: 0 0 8px; font-size: 20px; }
+    p { margin: 0 0 16px; color: var(--muted); font-size: 13px; line-height: 1.5; }
+    button {
+      border: none; border-radius: 12px; padding: 12px 20px; font-size: 14px;
+      font-weight: 700; cursor: pointer; width: 100%; margin-bottom: 8px;
+    }
+    .primary { background: linear-gradient(120deg, var(--accent), #5d55f0); color: #fff; }
+    .secondary { background: transparent; border: 1px solid var(--line); color: var(--ink); }
+    .mic-btn { width: 72px; height: 72px; border-radius: 50%; font-size: 28px; margin: 12px auto; }
+    .mic-btn.active { box-shadow: 0 0 0 4px rgba(107,138,255,.35); background: rgba(107,138,255,.2); }
+    .status { font-size: 12px; color: var(--accent); min-height: 20px; margin-top: 8px; }
+    .interim { font-size: 13px; color: var(--muted); font-style: italic; min-height: 48px; margin-top: 12px; text-align: left; }
+    .ok { color: var(--ok); }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Teacher Mic</h1>
+    <p>Real browser capture (Chrome / Edge). Cursor's panel cannot access the mic — this page can. Speak, pause, speak again; segments return to Teacher in Cursor.</p>
+    <button id="mic" class="secondary mic-btn" title="Toggle recording">🎤</button>
+    <div class="status" id="status">Click mic to start</div>
+    <div class="interim" id="interim"></div>
+    <button id="sendChunk" class="primary" disabled>Send chunk to Teacher</button>
+    <p style="font-size:11px;margin-top:12px;">Keep this tab open while your Teacher session runs in Cursor.</p>
+  </div>
+  <script>
+    const statusEl = document.getElementById('status');
+    const interimEl = document.getElementById('interim');
+    const micBtn = document.getElementById('mic');
+    const sendBtn = document.getElementById('sendChunk');
+    let listening = false;
+    let mediaStream = null;
+    let mediaRecorder = null;
+    let audioChunks = [];
+    let pendingBlob = null;
+    let recognition = null;
+
+    function setListening(on) {
+      listening = on;
+      micBtn.classList.toggle('active', on);
+      statusEl.textContent = on ? 'Listening… click mic when you pause.' : 'Paused — click mic to record next chunk.';
+    }
+
+    async function startRecording() {
+      mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      audioChunks = [];
+      pendingBlob = null;
+      sendBtn.disabled = true;
+      const mime = MediaRecorder.isTypeSupported('audio/webm;codecs=opus') ? 'audio/webm;codecs=opus' : 'audio/webm';
+      mediaRecorder = new MediaRecorder(mediaStream, { mimeType: mime });
+      mediaRecorder.ondataavailable = (e) => { if (e.data.size) audioChunks.push(e.data); };
+      mediaRecorder.onstop = () => {
+        if (audioChunks.length) {
+          pendingBlob = new Blob(audioChunks, { type: mediaRecorder.mimeType || 'audio/webm' });
+          sendBtn.disabled = false;
+          statusEl.textContent = 'Chunk ready — Send chunk to Teacher (or record more).';
+        }
+        audioChunks = [];
+      };
+      mediaRecorder.start();
+      setListening(true);
+      startWebSpeech();
+    }
+
+    function stopRecording() {
+      setListening(false);
+      stopWebSpeech();
+      if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
+      if (mediaStream) {
+        mediaStream.getTracks().forEach(t => t.stop());
+        mediaStream = null;
+      }
+      mediaRecorder = null;
+    }
+
+    function startWebSpeech() {
+      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SR) return;
+      if (!recognition) {
+        recognition = new SR();
+        recognition.continuous = true;
+        recognition.interimResults = true;
+        recognition.lang = 'en-US';
+        recognition.onresult = (event) => {
+          let interim = '', finalText = '';
+          for (let i = event.resultIndex; i < event.results.length; i++) {
+            const res = event.results[i];
+            if (res.isFinal) finalText += res[0].transcript;
+            else interim += res[0].transcript;
+          }
+          interimEl.textContent = interim || finalText || interimEl.textContent;
+        };
+        recognition.onerror = (e) => {
+          if (e.error === 'no-speech' || e.error === 'aborted') return;
+          statusEl.textContent = 'Speech preview: ' + e.error;
+        };
+        recognition.onend = () => { if (listening) try { recognition.start(); } catch (_) {} };
+      }
+      try { recognition.start(); } catch (_) {}
+    }
+
+    function stopWebSpeech() {
+      if (recognition) try { recognition.stop(); } catch (_) {}
+    }
+
+    async function toggleMic() {
+      if (listening) stopRecording();
+      else {
+        try { await startRecording(); }
+        catch (e) {
+          statusEl.textContent = 'Mic blocked — allow microphone for this browser in Windows Settings.';
+        }
+      }
+    }
+
+    async function sendChunk() {
+      if (!pendingBlob) return;
+      sendBtn.disabled = true;
+      statusEl.textContent = 'Sending to Teacher…';
+      try {
+        const res = await fetch('/audio', {
+          method: 'POST',
+          headers: { 'Content-Type': pendingBlob.type || 'audio/webm' },
+          body: pendingBlob
+        });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        statusEl.innerHTML = '<span class="ok">Sent to Teacher in Cursor.</span> Record another chunk anytime.';
+        interimEl.textContent = '';
+        pendingBlob = null;
+      } catch (e) {
+        statusEl.textContent = 'Send failed — is Teacher session open in Cursor?';
+        sendBtn.disabled = false;
+      }
+    }
+
+    micBtn.addEventListener('click', () => toggleMic().catch(() => {}));
+    sendBtn.addEventListener('click', () => sendChunk().catch(() => {}));
+  </script>
+</body>
+</html>

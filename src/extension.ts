@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import { MicSidecarServer } from './capture/MicSidecarServer';
 import { WorkspaceContextIndex } from './context/WorkspaceContextIndex';
 import { sendBrief } from './insert/InsertRouter';
 import { CompileService } from './providers/compile/CompileService';
@@ -13,6 +14,7 @@ export function activate(context: vscode.ExtensionContext): void {
     const output = vscode.window.createOutputChannel('Teacher');
     const sttService = new SttService(context.secrets, output);
     const compileService = new CompileService(output);
+    const sidecar = new MicSidecarServer(context.extensionPath);
 
     const panel = new TeacherSessionPanel(context, {
         getVoiceContext: () => contextIndex.getContext(),
@@ -21,7 +23,22 @@ export function activate(context: vscode.ExtensionContext): void {
         },
         sendBrief,
         sttService,
-        compileService
+        compileService,
+        openSidecarMic: async () => {
+            await panel.startSession();
+            await sidecar.start((buffer, mimeType) => {
+                void panel.handleSidecarAudio(buffer, mimeType);
+            });
+            await sidecar.openInBrowser();
+            await panel.notifySidecarOpened();
+            output.appendLine(`[mic] Sidecar opened at ${sidecar.getCaptureUrl()}`);
+        }
+    });
+
+    void sidecar.start((buffer, mimeType) => {
+        void panel.handleSidecarAudio(buffer, mimeType);
+    }).catch((err) => {
+        output.appendLine(`[mic] Sidecar server failed to start: ${err}`);
     });
 
     const scheduleRebuild = debounce(() => {
@@ -36,6 +53,7 @@ export function activate(context: vscode.ExtensionContext): void {
 
     context.subscriptions.push(
         output,
+        { dispose: () => sidecar.stop() },
         vscode.workspace.onDidChangeTextDocument(() => scheduleRebuild()),
         vscode.workspace.onDidOpenTextDocument(() => scheduleRebuild()),
         vscode.window.onDidChangeActiveTextEditor(() => scheduleRebuild()),
@@ -43,6 +61,15 @@ export function activate(context: vscode.ExtensionContext): void {
         vscode.commands.registerCommand('teacher.startSession', async () => {
             await contextIndex.rebuild();
             await panel.startSession();
+        }),
+
+        vscode.commands.registerCommand('teacher.openMicSidecar', async () => {
+            await vscode.commands.executeCommand('teacher.startSession');
+            await sidecar.start((buffer, mimeType) => {
+                void panel.handleSidecarAudio(buffer, mimeType);
+            });
+            await sidecar.openInBrowser();
+            await panel.notifySidecarOpened();
         }),
 
         vscode.commands.registerCommand('teacher.appendSegment', async () => {
