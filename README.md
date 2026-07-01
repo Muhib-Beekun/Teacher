@@ -8,26 +8,19 @@ Context-aware voice input and **intent compilation** for VS Code, Cursor, and ot
 
 ## Use it
 
+**Teacher is not in the Extension Marketplace yet.** Install locally — full steps: **[docs/INSTALL-CURSOR.md](./docs/INSTALL-CURSOR.md)**
+
+Quick version:
+
 ```powershell
-npm install && npm run build
+cd C:\Users\Public\Projects\Teacher
+npm install
+npm run package
 ```
 
-**Run and Debug** → **Run Teacher Extension** → **Teacher: Start Session**
+Then in Cursor: **`Ctrl+Shift+P`** → **`Extensions: Install from VSIX...`** → pick **`teacher-0.0.1.vsix`** → Reload.
 
-| Step | Action |
-|------|--------|
-| Speak | Click mic (toggle). Pause mic between chunks — session stays open. |
-| STT | Auto: whisper.cpp if paths set → else Deepgram if key set → else Web Speech |
-| Review | Left = your words (yellow = workspace fix). Right = scaffolded brief |
-| Send | **Send to Agent** → Composer paste + submit |
-
-### Optional setup
-
-**Whisper (local):** Settings → `teacher.stt.whisper.binaryPath` + `modelPath`
-
-**Deepgram (BYOK):** Command **Teacher: Set Deepgram API Key**
-
-**Ollama (compile):** Run Ollama with `qwen2.5:7b-instruct` — auto-detected
+Then in any project: **`Teacher: Start Session`**
 
 ## vs Cursor voice
 

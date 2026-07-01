@@ -187,6 +187,7 @@
     "scripts": {
         "build": "tsc -p ./",
         "watch": "tsc -watch -p ./",
+        "package": "npm run build && npx @vscode/vsce package --allow-missing-repository --allow-star-activation",
         "dump-context": "node tools/dump-context-spike.mjs",
         "analyze-transcripts": "node tools/analyze-transcripts.mjs",
         "vscode:prepublish": "npm run build"
@@ -194,6 +195,7 @@
     "devDependencies": {
         "@types/node": "^20.14.10",
         "@types/vscode": "^1.92.0",
+        "@vscode/vsce": "^3.6.0",
         "typescript": "^5.5.4"
     }
 }
