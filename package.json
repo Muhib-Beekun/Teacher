@@ -108,6 +108,36 @@
                         "**/.env*"
                     ],
                     "description": "Glob patterns excluded from basename indexing."
+                },
+                "teacher.compile.mode": {
+                    "type": "string",
+                    "enum": [
+                        "teacher",
+                        "verbatim",
+                        "polish"
+                    ],
+                    "default": "teacher",
+                    "description": "teacher = structured agent brief with superseded block. verbatim = joined segments only. polish = deferred."
+                },
+                "teacher.send.target": {
+                    "type": "string",
+                    "enum": [
+                        "composer",
+                        "editor",
+                        "clipboard"
+                    ],
+                    "default": "composer",
+                    "description": "Where Send delivers the compiled brief. composer = Cursor Agent (Option A handoff)."
+                },
+                "teacher.send.autoPaste": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Automatically open Composer and paste the compiled brief on Send."
+                },
+                "teacher.send.autoSubmit": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "After paste, attempt to submit the agent prompt automatically (best-effort; depends on Cursor version)."
                 }
             }
         }

@@ -2,7 +2,7 @@
 
 **Last updated:** June 2026  
 **Repo:** [AmpliJob/Teacher](https://github.com/AmpliJob/Teacher) (private)  
-**Status:** Extension scaffold + context index implemented; compiler, STT, and mic capture next.
+**Status:** Extension v0 dogfood — session panel, mic (Web Speech API), rules compiler, Composer handoff. Local whisper/BYOK STT deferred.
 
 This document consolidates founder intent, Cursor pain points, AmpliJob UI reference, inference/training posture, and the implementation roadmap. When other docs disagree, **this plan wins** until explicitly revised.
 
@@ -158,20 +158,20 @@ Transcript export: **never automatic**; output gitignored; opt-in only. See [TRA
 
 - [x] Design docs (CONTEXT, ARCHITECTURE, TEACHER-COMPILER, CONTEXT-INDEX, INFERENCE, TRAINING-DATA)
 - [x] Extension shell (`package.json`, commands, settings)
-- [x] Dual-pane webview panel (`TeacherSessionPanel`)
-- [x] Commands: startSession, appendSegment, compile, send, dictateHere, endSession, rebuildIndex
-- [x] Workspace context index (`WorkspaceContextIndex`, `VoiceSessionContext`)
-- [x] CLI lexical spike (`npm run dump-context`)
+- [x] Dual-pane webview panel with mic toggle (Web Speech API) + Type fallback
+- [x] Rules compiler + retraction detector (`TeacherCompiler`, `RetractionDetector`)
+- [x] Composer handoff (`InsertRouter` — autoPaste + autoSubmit, Option A)
+- [x] Workspace context index (`WorkspaceContextIndex`, `teacher.rebuildIndex`)
+- [x] `teacher.compile.mode`, `teacher.send.*` settings
 - [x] Extension Development Host launch config
 
-### Next (recommended order for “act tonight”)
+### Next
 
-1. **Retraction detector + rules compiler** — regex patterns; superseded block; current-intent filtering
-2. **AmpliJob-style panel UX** — collapsible segments, STT fix markers, Included/Superseded grouping on right pane
-3. **Webview mic capture** — `getUserMedia` in session panel
-4. **STT adapter** — local whisper.cpp if installed; BYOK optional; pass `VoiceSessionContext`
-5. **Ollama compile adapter** — optional; rules-only remains default fallback
-6. **`teacher.compile.mode` setting** — wire verbatim vs teacher in panel compile path
+1. **Local STT** — whisper.cpp adapter; pass `VoiceSessionContext` keywords
+2. **BYOK STT** — Deepgram / OpenAI with dictionary biasing
+3. **Ollama compile adapter** — optional LLM scaffold refinement
+4. **STT fix markers** — AmpliJob 2b tap-to-see-heard (homonym pass)
+5. **Open VSX publish** after dogfood
 
 ### Deferred
 

@@ -4,9 +4,17 @@ Context-aware voice input and **intent compilation** for VS Code, Cursor, and ot
 
 **Teacher** (the mode) takes a **continuous** dictation session — keep speaking after the first pass, fix mistakes with your voice not the keyboard — then **re-scaffolds** an agent-ready brief from everything you've said (including *ignore that* / *I meant…*).
 
-**Status:** Private repo. Extension scaffold + workspace context index implemented. Compiler, STT, and mic capture next.
+**Status:** Private repo. v0 dogfood ready — mic session, rules compiler, Composer Send handoff.
 
 **Canonical plan:** [docs/PLAN.md](./docs/PLAN.md)
+
+## Dogfood flow
+
+1. **Run and Debug** → **Run Teacher Extension**
+2. **Teacher: Start Session**
+3. Click **mic** → speak → click mic to pause → speak again (same session)
+4. Review left (your words) / right (scaffolded brief)
+5. **Send to Agent** → brief pastes into Composer and submits (best-effort)
 
 ## vs Cursor voice
 
