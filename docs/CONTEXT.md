@@ -11,6 +11,7 @@ This document captures the design conversation that spawned the **Teacher** proj
 - **No workspace vocabulary** — mishears symbols, file names, stack terms (*Kafka* → *Cavka*, *That’s a feature* → *Teacher*).
 - **Chat-only / inconsistent surfaces** — Agents window vs main Chat behave differently; terminal and editor are second-class.
 - **Raw transcript to agent** — long, contradictory monologues; early wrong ideas weigh heavily; corrections (*I meant bottom right*, *ignore the regenerate part*) buried in the middle.
+- **One-shot dictation** — speak once, imperfect text lands in the chat box, session ends; you **type by hand** to fix what voice got wrong instead of **speaking again**.
 - **No structured brief** — agents parse better with Goal / Target / Constraints / Verification; voice users rarely speak in that shape on the first pass.
 
 **Teacher the project** ships as an **Open VSX–compatible VS Code extension** (works in **Cursor**, VS Code, VSCodium). It is **not** a Cursor-only fork.
@@ -38,6 +39,8 @@ After a **multi-segment** dictation session, compile:
 4. **Voice preservation** — reorder and label; do not ghostwrite into corporate prose.
 
 User **previews and confirms** before text is inserted into Chat, Composer, Cmd+K, or the editor.
+
+**Continuous session (core UX):** The input surface does **not** close after the first utterance. You keep talking — add detail, correct STT errors by voice (*"I meant frame seven not frame four"*), or retract (*"ignore the button part"*) — and Teacher **re-scaffolds** the compiled prompt from the **full session** each time. You should rarely need the keyboard until final send.
 
 ---
 

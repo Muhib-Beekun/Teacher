@@ -79,11 +79,12 @@ teacher/
 
 | Command | Action |
 |---------|--------|
-| `teacher.startSession` | Begin multi-segment dictation |
-| `teacher.appendSegment` | Push-to-talk chunk |
-| `teacher.compile` | Run Teacher compiler → preview |
-| `teacher.send` | Confirm preview → insert |
-| `teacher.dictateHere` | Single-shot verbatim to cursor |
+| `teacher.startSession` | Begin session; open dual-pane panel; mic ready |
+| `teacher.appendSegment` | Push-to-talk chunk (or auto in continuous mode) |
+| `teacher.compile` | Force re-scaffold preview (usually automatic) |
+| `teacher.send` | Insert **compiled** prompt → Chat / editor |
+| `teacher.dictateHere` | Single-shot verbatim to cursor (bypass session) |
+| `teacher.endSession` | Close panel without send |
 | `teacher.rebuildIndex` | Force context index refresh |
 
 ---
@@ -99,7 +100,10 @@ teacher/
   "teacher.context.excludeGlobs": ["**/node_modules/**", "**/.env*"],
   "teacher.inference.ollama.model": "qwen2.5:7b-instruct",
   "teacher.inference.huggingface.model": "…",
-  "teacher.preview.required": true
+  "teacher.preview.layout": "dual | single",
+  "teacher.compile.live": true,
+  "teacher.compile.debounceMs": 800,
+  "teacher.session.holdChatBox": true,
 }
 ```
 

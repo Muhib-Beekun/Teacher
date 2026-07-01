@@ -2,10 +2,17 @@
 
 Context-aware voice input and **intent compilation** for VS Code, Cursor, and other VS Code–compatible editors.
 
-**Teacher** (the mode) takes a multi-utterance dictation session — including mid-stream corrections like *"ignore that"* or *"I meant…"* — and compiles an agent-ready brief that preserves your voice while separating **current intent** from **superseded reference**.
+**Teacher** (the mode) takes a **continuous** dictation session — keep speaking after the first pass, fix mistakes with your voice not the keyboard — then **re-scaffolds** an agent-ready brief from everything you've said (including *ignore that* / *I meant…*).
 
 **Status:** Private design phase. Extension scaffold not yet started.
 
+## vs Cursor voice
+
+| Cursor | Teacher |
+|--------|---------|
+| One shot → text dumped in box | **Session stays open** — append more speech anytime |
+| Imperfect → type corrections by hand | **Speak corrections**; compiler re-drives the brief |
+| What you see is raw transcript | Optional **dual pane**: your words ↔ compiled prompt |
 ## Docs
 
 | Doc | Contents |

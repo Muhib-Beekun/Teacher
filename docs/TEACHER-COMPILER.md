@@ -6,19 +6,59 @@ Specification for the **Teacher** intent compilation mode.
 
 ## User story
 
-As a developer dictating to Cursor, I speak for 30–120 seconds, change my mind mid-stream, and want the agent to receive **one clear brief** — not a transcript where paragraph one contradicts paragraph four.
+As a developer dictating to Cursor, I speak for 30–120 seconds (often longer), change my mind mid-stream, and want the agent to receive **one clear brief** — not a transcript where paragraph one contradicts paragraph four.
+
+**Critical pain (Cursor today):** Voice stops after one batch; wrong words sit in the chat box; you **type fixes by hand** because dictation already ended. Teacher keeps the **session alive** so the next thing you say **updates the whole prompt**, not a frozen blob of text.
+
+---
+
+## Continuous session vs one-shot (design requirement)
+
+| Behavior | Cursor native STT | Teacher |
+|----------|-------------------|---------|
+| After first utterance | Text inserted; mic session typically **over** | Session **open**; mic ready again |
+| Fix STT mistake | Keyboard edit in box | **Speak again** (*"not Cavka, Kafka"*) → re-compile |
+| Add more requirements | Type or start new voice capture | **Append segment** → re-scaffold brief |
+| What agent sees | Raw accumulated box text | **Compiled brief** (unless verbatim mode) |
+| Box state during session | Cursor owns chat input | Teacher owns **session buffer** until **Send** |
+
+**Rule:** Never finalize into Chat/Composer until user explicitly **Send** or **Insert**. Until then, the chat box can stay empty or show a lightweight *"Teacher session active…"* indicator — optional setting.
+
+### Re-scaffold on every append
+
+After each new segment (and on debounce while continuous listening):
+
+```text
+all segments + tags + workspace context
+        → Teacher compile (rules or LLM)
+        → update Preview pane (compiled prompt)
+        → Transcript pane appends raw segment (audit trail)
+```
+
+User always sees **latest scaffold** of their intent, not a growing unedited paragraph.
+
+Configurable:
+
+- `teacher.compile.live` — re-scaffold after each segment (default **on**)
+- `teacher.compile.debounceMs` — 800ms while streaming STT partials (avoid compile thrash)
 
 ---
 
 ## Session lifecycle
 
 ```text
-startSession → [appendSegment]* → compile → preview → confirm → insert
-                    ↑                    │
-                    └── "Teacher" or Ctrl+Shift+Enter ──┘
+startSession → [appendSegment → live re-scaffold]* → confirm → insert
+                    ↑              ↑
+                    │              └── preview updates (dual pane)
+                    └── keep speaking; session never "locks" the chat box
 ```
 
-Each **segment** is one push-to-talk (or continuous) utterance:
+Finalize triggers (optional — session can also stay open until Send):
+
+- **Send / Insert** button
+- **"Teacher"** or **Ctrl+Shift+Enter** compile-only (refresh preview without insert)
+
+Each **segment** is one push-to-talk chunk **or** a pause-boundary in continuous mode:
 
 ```typescript
 interface Segment {
@@ -107,15 +147,28 @@ Rules-only compile (no LLM) still produces template with retracted bullets verba
 
 ## Preview UI (required v1)
 
-Webview panel before insert:
+Teacher session opens a **dedicated panel** (webview or sidebar) — not the Cursor chat box — until you send.
 
-| Pane | Content |
-|------|---------|
-| Left (collapsible) | Raw segments, timestamps, tags |
-| Right | Compiled brief + superseded |
-| Footer | Edit textarea, **Send to agent**, **Copy**, **Cancel** |
+### Dual pane (default — recommended)
 
-User must be able to edit compiled text without re-recording.
+| Pane | Content | Updates |
+|------|---------|---------|
+| **Left — Your words** | Full session transcript, segment boundaries, retraction tags highlighted | Append on each STT segment |
+| **Right — Agent prompt** | Live **re-scaffolded** brief + superseded block | Re-compile after each segment (debounced) |
+
+Why two panes: you see **what you actually said** (trust + audit) alongside **what the agent should get** (clarity). Fixes the Cursor problem where imperfect raw text is the only artifact.
+
+**Single pane mode** (`teacher.preview.layout: single`): compiled prompt only, transcript collapsible — for minimalists; dual pane remains default.
+
+### Chrome
+
+- **Keep talking** — mic / push-to-talk always available while panel open
+- **Send to agent** — insert compiled prompt (not raw transcript unless verbatim mode)
+- **Copy** — either pane
+- **Edit** — inline edit on **right** pane before send; left stays read-only audit
+- **Cancel** — discard session; chat box never polluted
+
+User must be able to edit compiled text without re-recording. Editing the right pane does not delete left-pane history.
 
 ---
 
