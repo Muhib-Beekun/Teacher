@@ -4,6 +4,7 @@ export interface SessionSnapshot {
     compiled: string;
     compileError?: string;
     needsRegenerate?: boolean;
+    briefVersion?: number;
     briefMarkdownByVersion: Record<number, string>;
     segmentCount: number;
     sttLabel: string;

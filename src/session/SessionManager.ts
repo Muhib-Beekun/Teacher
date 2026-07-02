@@ -18,6 +18,9 @@ export class SessionManager {
     private compiledBrief: CompiledBrief | null = null;
     private lastCompileError: string | undefined;
     private needsRegenerate = false;
+    private briefVersionCounter = 0;
+
+    private static readonly MAX_BRIEF_VERSIONS = 20;
 
     public getRawTexts(): string[] {
         return this.segments.map((s) => s.text);
@@ -102,19 +105,26 @@ export class SessionManager {
         getContext: () => VoiceSessionContext,
         mode: CompileMode,
         compileService: CompileService,
-        options?: { fresh?: boolean }
+        _options?: { fresh?: boolean }
     ): Promise<CompiledBrief | null> {
         this.lastCompileError = undefined;
         try {
-            const priorBrief = options?.fresh ? undefined : (this.compiledBrief ?? undefined);
-            this.compiledBrief = await compileService.compile(this.getRawTexts(), getContext(), mode, priorBrief);
-            this.briefVersions = [
-                {
-                    version: 1,
-                    segmentCount: this.segments.length,
-                    brief: this.compiledBrief
-                }
-            ];
+            this.compiledBrief = await compileService.compile(
+                this.getRawTexts(),
+                getContext(),
+                mode,
+                undefined
+            );
+            this.briefVersionCounter += 1;
+            const version = this.briefVersionCounter;
+            this.briefVersions.unshift({
+                version,
+                segmentCount: this.segments.length,
+                brief: this.compiledBrief
+            });
+            if (this.briefVersions.length > SessionManager.MAX_BRIEF_VERSIONS) {
+                this.briefVersions.length = SessionManager.MAX_BRIEF_VERSIONS;
+            }
             this.needsRegenerate = false;
             return this.compiledBrief;
         } catch (err) {
@@ -135,6 +145,10 @@ export class SessionManager {
         return this.briefVersions;
     }
 
+    public getLatestBriefVersion(): number | undefined {
+        return this.briefVersions[0]?.version;
+    }
+
     public getBriefMarkdown(version?: number): string {
         if (version !== undefined) {
             return this.briefVersions.find((v) => v.version === version)?.brief.markdown ?? '';
@@ -145,6 +159,7 @@ export class SessionManager {
     /** Harness/tests only — inject a compiled brief without calling Grok. */
     public setCompiledBrief(brief: CompiledBrief): void {
         this.compiledBrief = brief;
+        this.briefVersionCounter = 1;
         this.briefVersions = [{ version: 1, segmentCount: this.segments.length, brief }];
         this.lastCompileError = undefined;
     }
@@ -171,6 +186,7 @@ export class SessionManager {
         this.compiledBrief = null;
         this.lastCompileError = undefined;
         this.needsRegenerate = false;
+        this.briefVersionCounter = 0;
     }
 
     public formatTranscriptHtml(): string {
@@ -222,14 +238,15 @@ export class SessionManager {
         if (!v) {
             return '<p class="empty">Speak. Your agent brief appears here after each pause.</p>';
         }
-        return `<div class="brief-current" data-brief-version="1">
+        return `<div class="brief-current" data-brief-version="${v.version}">
+  <div class="brief-version-label">Version ${v.version}</div>
   ${renderBriefSections(v.brief)}
   <div class="brief-card-actions">
-    <button type="button" class="card-action brief-copy" data-brief-version="1" title="Copy agent prompt">
+    <button type="button" class="card-action brief-copy" data-brief-version="${v.version}" title="Copy agent prompt">
       <svg viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="1"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>
       Copy
     </button>
-    <button type="button" class="card-action brief-send" data-brief-version="1" title="Send to agent">
+    <button type="button" class="card-action brief-send" data-brief-version="${v.version}" title="Send to agent">
       <svg viewBox="0 0 24 24"><path d="M6 8l8 4-8 4V8z"/><path d="M16 8l4 4-4 4V8z"/></svg>
       Send
     </button>

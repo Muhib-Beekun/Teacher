@@ -7,6 +7,15 @@ Version numbers match `package.json` and `teacher-<version>.vsix` builds.
 
 ## [Unreleased]
 
+## [0.0.49] - 2026-07-02
+
+### Added
+- **Speech: network** (and related errors) show unsupported-browser banner — including Cursor's built-in browser.
+- Agent prompt **version numbers** increment on each compile (`Agent Prompt · vN`, handoff `## Agent prompt (vN)`).
+
+### Changed
+- Compile no longer merges the previous agent brief into the LLM prompt (each version is synthesized from session segments only).
+
 ## [0.0.48] - 2026-07-02
 
 ### Changed
@@ -135,3 +144,4 @@ Each row is one packaged VSIX build during dogfood. Grouped entries above summar
 | 0.0.46 | MIT license, public repo, Open VSX install docs |
 | 0.0.47 | Mic browser gate, fresh refresh compile, revert → recompile |
 | 0.0.48 | Mic/cancel centering; remove green ready banner |
+| 0.0.49 | Speech network → browser warning; agent prompt versioning |

@@ -104,6 +104,10 @@
     .settings-footer button:hover { border-color: var(--accent); color: var(--accent); }
     .settings-panel { display: flex; flex-direction: column; }
     .brief-current { border: 1px solid var(--line); border-radius: 12px; padding: 12px; background: var(--panel); }
+    .brief-version-label {
+      font-size: 10px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted);
+      margin-bottom: 10px;
+    }
     .layout {
       display: grid; grid-template-columns: 260px minmax(0, 1fr) minmax(0, 1fr);
       gap: 10px; padding: 10px; min-height: 0; height: calc(100vh - 41px);
@@ -452,8 +456,8 @@
   <main class="layout">
     <section class="capture-col" aria-label="Voice capture">
       <div class="mic-browser-hint mic-unsupported" id="micUnsupported" hidden>
-        <strong>Microphone needs Chrome or Edge</strong>
-        <span>This browser cannot capture voice. In Cursor run <em>Teacher: Open Web UI</em> so the page opens in Chrome or Edge, then bookmark the URL.</span>
+        <strong>This browser cannot use voice</strong>
+        <span>Cursor's built-in browser and some embedded views fail with <em>Speech: network</em>. Run <em>Teacher: Open Web UI</em> in <strong>Chrome</strong> or <strong>Edge</strong> instead, then bookmark the URL below.</span>
         <div class="copy-row">
           <code id="teacherUrl">http://127.0.0.1:3721/</code>
           <button type="button" id="copyTeacherUrl" title="Copy Teacher URL">Copy</button>
@@ -497,7 +501,7 @@
 
     <section class="pane">
       <div class="pane-head">
-        <h2>Agent Prompt</h2>
+        <h2 id="agentPromptTitle">Agent Prompt</h2>
         <div class="pane-actions">
           <button type="button" class="icon-btn" id="refresh" title="Recompile agent prompt">
             <svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 0 1 13.4-5.9"/><path d="M20 3v6h-6"/><path d="M20 12a8 8 0 0 1-13.4 5.9"/><path d="M4 21v-6h6"/></svg>
@@ -551,6 +555,9 @@
     let recordingArmed = false, micRuntime = 'idle';
     let liveEditLock = false;
     let compilingBrief = false;
+    let micSpeechBlocked = false;
+
+    const UNSUPPORTED_SPEECH_ERRORS = new Set(['network', 'service-not-allowed', 'audio-capture']);
 
     function isMicCapableBrowser() {
       const ua = navigator.userAgent;
@@ -559,7 +566,19 @@
       return false;
     }
 
+    function showMicUnsupportedBrowser() {
+      micSpeechBlocked = true;
+      const capture = document.getElementById('micCaptureUi');
+      const wrong = document.getElementById('micUnsupported');
+      if (capture) capture.hidden = true;
+      if (wrong) wrong.hidden = false;
+    }
+
     function applyMicBrowserUi() {
+      if (micSpeechBlocked) {
+        showMicUnsupportedBrowser();
+        return;
+      }
       const supported = isMicCapableBrowser() && !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
       const capture = document.getElementById('micCaptureUi');
       const wrong = document.getElementById('micUnsupported');
@@ -656,6 +675,12 @@
       if (session.briefHtml) briefEl.innerHTML = session.briefHtml;
       if (session.compiled !== undefined) briefMarkdown = session.compiled;
       if (session.briefMarkdownByVersion) briefByVersion = session.briefMarkdownByVersion;
+      const agentPromptTitle = document.getElementById('agentPromptTitle');
+      if (agentPromptTitle) {
+        agentPromptTitle.textContent = session.briefVersion
+          ? `Agent Prompt · v${session.briefVersion}`
+          : 'Agent Prompt';
+      }
       if (session.compileError) setStatus('Compile: ' + session.compileError, 'warn');
       refreshBtn.classList.toggle('pulse-hint', !!session.needsRegenerate);
     }
@@ -914,7 +939,11 @@
 
     function startWebSpeech() {
       const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-      if (!SR) return;
+      if (!SR) {
+        showMicUnsupportedBrowser();
+        setStatus('Voice not supported in this browser. Open in Chrome or Edge.', 'warn');
+        return;
+      }
       if (!recognition) {
         recognition = new SR();
         recognition.continuous = true;
@@ -935,7 +964,14 @@
           }
         };
         recognition.onerror = (e) => {
-          if (e.error !== 'no-speech' && e.error !== 'aborted') setStatus('Speech: ' + e.error, 'warn');
+          if (e.error === 'no-speech' || e.error === 'aborted') return;
+          if (UNSUPPORTED_SPEECH_ERRORS.has(e.error)) {
+            showMicUnsupportedBrowser();
+            if (listening) stopRecording();
+            setStatus('Voice not supported in this browser. Open in Chrome or Edge.', 'warn');
+            return;
+          }
+          setStatus('Speech: ' + e.error, 'warn');
         };
         recognition.onend = () => { if (listening) try { recognition.start(); } catch (_) {} };
       }

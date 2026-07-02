@@ -14,6 +14,8 @@ export function buildAgentHandoff(session: SessionManager): string {
         return `${index + 1}. [${role}] ${seg.text}`;
     });
 
+    const version = session.getLatestBriefVersion();
+
     const parts: string[] = [
         '# Teacher session handoff',
         '',
@@ -22,7 +24,8 @@ export function buildAgentHandoff(session: SessionManager): string {
     ];
 
     if (briefMd && !briefMd.startsWith('Speak')) {
-        parts.push('## Agent prompt (current)', '', briefMd, '');
+        const header = version ? `## Agent prompt (v${version})` : '## Agent prompt (current)';
+        parts.push(header, '', briefMd, '');
     }
 
     if (wordsLines.length) {

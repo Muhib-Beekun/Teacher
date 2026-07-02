@@ -253,6 +253,7 @@ export class BrowserSessionBridge {
                 : this.session.getCompiledMarkdown() || compileError || EMPTY_COMPILED_PLACEHOLDER,
             compileError,
             needsRegenerate: this.session.getNeedsRegenerate(),
+            briefVersion: this.session.getLatestBriefVersion(),
             briefMarkdownByVersion,
             segmentCount: this.session.getSegments().length,
             sttLabel: formatSttLabel(this.sttProviderLabel),
