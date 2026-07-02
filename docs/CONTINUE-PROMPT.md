@@ -14,6 +14,8 @@ Local path: C:\Users\Public\Projects\Teacher
 
 Continuous voice session for Cursor: dual pane (transcript | scaffolded agent brief), workspace STT index, LLM/rules compile, explicit Send gate. Scaffold + dual pane on by default.
 
+Mic pause auto-recompiles the agent prompt. Manual edits in **Your Words** mark the brief stale (blue glow on refresh) until refresh completes.
+
 ## Canonical docs (read first)
 
 - docs/PLAN.md — product scope

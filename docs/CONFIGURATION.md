@@ -45,7 +45,7 @@ Use **Inference provider** preset in the web UI Settings, or set URL + model man
 
 | Setting | Default | Notes |
 |---------|---------|-------|
-| `teacher.compile.live` | `true` | Recompile after each mic pause |
+| `teacher.compile.live` | `true` | Re-scaffold after each mic pause; manual Your Words edits show refresh glow until recompile |
 | `teacher.compile.mode` | `teacher` | `teacher` = structured brief; `verbatim` = joined text |
 | `teacher.compile.polishStt` | `true` | LLM fixes STT before compile (needs compiler) |
 | `teacher.stt.provider` | `auto` | `webspeech` \| `whisper` \| `deepgram` \| `auto` |

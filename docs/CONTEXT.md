@@ -6,9 +6,9 @@ This document captures the design conversation that spawned the **Teacher** proj
 
 ## Problem statement
 
-**Cursor’s built-in voice input** (≈3.1 Agents window, batch STT) is adequate for short agent prompts but weak for how power users actually work:
+**Cursor's built-in voice input** (≈3.1 Agents window, batch STT) is adequate for short agent prompts but weak for how power users actually work:
 
-- **No workspace vocabulary** — mishears symbols, file names, stack terms (*Kafka* → *Cavka*, *That’s a feature* → *Teacher*).
+- **No workspace vocabulary** — mishears symbols, file names, stack terms (*Kafka* → *Cavka*, *That's a feature* → *Teacher*).
 - **Chat-only / inconsistent surfaces** — Agents window vs main Chat behave differently; terminal and editor are second-class.
 - **Raw transcript to agent** — long, contradictory monologues; early wrong ideas weigh heavily; corrections (*I meant bottom right*, *ignore the regenerate part*) buried in the middle.
 - **One-shot dictation** — speak once, imperfect text lands in the chat box, session ends; you **type by hand** to fix what voice got wrong instead of **speaking again**.
@@ -25,7 +25,7 @@ This document captures the design conversation that spawned the **Teacher** proj
 Before transcription, build a **`VoiceSessionContext`** from the active workspace:
 
 - Open files, workspace symbols, `package.json` dependencies, path basenames, user glossary (`.codewords`).
-- Pass to STT provider as `dictionary_context` / keywords / prompt (provider-specific).
+- Pass to STT service as `dictionary_context` / keywords / prompt (provider-specific).
 
 Reduces homonym and proper-noun errors **upstream** via workspace symbols, dependencies, and `.teacher/codewords.txt`.
 
@@ -46,7 +46,7 @@ User **previews and confirms** before text is inserted into Chat, Composer, Cmd+
 
 ## Naming
 
-**Teacher** emerged from a dictation mishear: *"That’s a feature I want"* → *"Teacher, that I want."* The mode name sticks: it **teaches the agent what you meant** after you talk your way to clarity.
+I said *feature*. Autocorrect wrote **Teacher**. I kept the name anyway because it fits: I lecture my AI until the agent understands what I meant. The homonym shows up in the wild too (*That's a feature* → *Teacher*).
 
 Optional finalize cue: say *"Teacher"* or run command **Teacher: Compile Session**.
 
@@ -98,7 +98,7 @@ Prior art in founder transcripts (correction patterns observed):
 
 ## Non-goals (v0)
 
-- Replacing Cursor’s agent runtime or private APIs.
+- Replacing Cursor's agent runtime or private APIs.
 - Cloud-hosted founder transcript storage without explicit export/consent workflow.
 - Fine-tuning a public model on private chats without redaction pipeline.
 - Vector database requirement for codebase context (see [CONTEXT-INDEX.md](./CONTEXT-INDEX.md)).

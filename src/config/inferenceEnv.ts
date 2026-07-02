@@ -3,7 +3,7 @@ export function normalizeInferenceBaseUrl(url: string): string {
     return url.trim().replace(/\/chat\/completions\/?$/i, '').replace(/\/$/, '');
 }
 
-/** Env vars read for cloud inference (documented in .env.example, docs/SETUP.md, CHANGELOG.md). */
+/** Env vars for cloud inference (see `.env.example`, docs/SETUP.md, CHANGELOG.md). */
 export const INFERENCE_ENV_KEYS = {
     apiKey: ['INFERENCE_API_KEY', 'OPENAI_API_KEY', 'XAI_API_KEY', 'GROK_API_KEY'],
     baseUrl: ['INFERENCE_BASE_URL'],

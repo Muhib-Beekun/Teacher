@@ -69,7 +69,7 @@ export async function readAppSettings(deps: {
     const rawProvider = config.get<string>('compile.provider', 'auto');
     const compileProvider = rawProvider === 'grok' ? 'cloud' : rawProvider;
     return {
-        compileLive: config.get<boolean>('compile.live', false),
+        compileLive: config.get<boolean>('compile.live', true),
         polishStt: config.get<boolean>('compile.polishStt', true),
         homonymPass: config.get<boolean>('stt.homonymPass', true),
         sendAutoPaste: config.get<boolean>('send.autoPaste', true),

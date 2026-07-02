@@ -4,11 +4,11 @@
 
 **Author:** [Muhib Beekun](https://github.com/Muhib-Beekun/Teacher)
 
-The name **Teacher** stuck because this is how I work: I don't drop one-liners into the agent — I **lecture**. I talk through what I want, correct myself mid-stream, retract half-baked ideas, and keep going until the model understands. Teacher holds the session open, hears you with workspace vocabulary, and **teaches the agent what you meant** before anything hits Composer.
+I said *feature*. Autocorrect wrote **Teacher**. I kept the name anyway because it fits how I work: I **lecture** my AI, talk through what I want, correct myself mid-stream, retract half-baked ideas, and keep going until the model understands. Teacher holds the session open, biases STT with workspace vocabulary, and **teaches the agent what I meant** before anything hits Composer.
 
 Context-aware voice input and **intent compilation** for VS Code, Cursor, and other VS Code–compatible editors.
 
-**Teacher** (the mode) takes a **continuous** dictation session — keep speaking after the first pass, fix mistakes with your voice not the keyboard — then **re-scaffolds** an agent-ready brief from everything you've said (including *ignore that* / *I meant…*).
+**Teacher** (the mode) keeps a **continuous** dictation session. I keep speaking after the first pass and fix mistakes with my voice. The extension **re-scaffolds** an agent-ready brief from everything I said (including *ignore that* / *I meant…*).
 
 **Status:** Full v1 stack implemented. See [docs/PLAN.md](./docs/PLAN.md).
 
@@ -44,7 +44,7 @@ Then in any project: **`Teacher: Open Web UI`** → allow mic in **Chrome or Edg
 | Cursor | Teacher |
 |--------|---------|
 | One shot → text dumped in box | **Session stays open** — append more speech anytime |
-| Stop ends the prompt — can't add more by voice | **Stop = chunk done** — review, append, clarify, Send when ready |
+| Stop ends the prompt | **Stop = chunk done** — review, append, clarify, Send when ready |
 | Partial STT wipes/replaces text in box | **Audit pane** keeps your words; scaffold updates separately |
 | Imperfect → type corrections by hand | **Speak corrections**; compiler re-drives the brief |
 | What you see is raw transcript | **Dual pane**: your words ↔ compiled agent prompt |

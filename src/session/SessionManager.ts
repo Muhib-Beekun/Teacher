@@ -50,7 +50,6 @@ export class SessionManager {
             fixes: sanitizeFixes(trimmed, fixes),
             audit
         });
-        this.needsRegenerate = true;
     }
 
     public updateSegment(index: number, text: string): boolean {
@@ -133,6 +132,7 @@ export class SessionManager {
             return this.compiledBrief;
         } catch (err) {
             this.lastCompileError = err instanceof Error ? err.message : String(err);
+            this.needsRegenerate = true;
             return null;
         }
     }

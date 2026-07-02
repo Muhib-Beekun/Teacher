@@ -7,6 +7,14 @@ Version numbers match `package.json` and `teacher-<version>.vsix` builds.
 
 ## [Unreleased]
 
+## [0.0.53] - 2026-06-30
+
+### Changed
+- **Finish speaking** auto-recompiles the agent prompt again (`teacher.compile.live`, default on).
+- **Blue glow** on the refresh button only when **Your Words** are edited manually (segment text or STT revert), not after each mic pause.
+- Glow clears after a successful refresh compile (new agent prompt version).
+- README origin story and handoff docs updated in founder voice.
+
 ## [0.0.52] - 2026-07-02
 
 ### Changed

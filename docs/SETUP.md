@@ -27,7 +27,7 @@ See [INSTALL-CURSOR.md](./INSTALL-CURSOR.md) for troubleshooting.
    - Open **Chrome** or **Edge** manually.
    - Paste the URL from the **Teacher** output channel (`View` → `Output` → **Teacher**), or copy it from the yellow box above the mic button in the web UI.
 5. When the page asks for **microphone** permission, click **Allow**.
-6. Tap the **mic** button, speak, tap again to pause — your words appear in **Your Words**; the **Agent Prompt** updates on the right.
+6. Tap the **mic** button, speak, tap again to pause — words land in **Your Words**; **Agent Prompt** re-scaffolds on the right after each pause. Edit a segment by hand and the refresh button glows until recompile.
 
 **Bookmark the URL** in Chrome/Edge so you can return after reload. The extension must be running in Cursor (same workspace) for the page to work.
 

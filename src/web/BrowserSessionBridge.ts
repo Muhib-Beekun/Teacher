@@ -52,9 +52,10 @@ export class BrowserSessionBridge {
         const { text, textRaw, fixes, audit } = await this.runSttPipeline(trimmed);
         await this.maybeRebuildAfterSegment(text);
         this.session.appendSegment(text, textRaw, fixes, audit);
+        await this.maybeCompileLive();
         await this.refreshProviderLabel();
         this.notifyUpdated();
-        const status = formatSegmentStatus('Added', text, textRaw, fixes);
+        const status = formatSegmentStatus('Added', text, textRaw, fixes, this.session.getLastCompileError());
         return this.getSnapshot(status);
     }
 
@@ -67,9 +68,10 @@ export class BrowserSessionBridge {
         const { text, textRaw, fixes, audit } = await this.runSttPipeline(result.textRaw, result.fixes);
         await this.maybeRebuildAfterSegment(text);
         this.session.appendSegment(text, textRaw, fixes, audit);
+        await this.maybeCompileLive();
         await this.refreshProviderLabel();
         this.notifyUpdated();
-        const status = formatSegmentStatus('Transcribed', text, result.textRaw, fixes);
+        const status = formatSegmentStatus('Transcribed', text, result.textRaw, fixes, this.session.getLastCompileError());
         return this.getSnapshot(status);
     }
 
@@ -265,6 +267,21 @@ export class BrowserSessionBridge {
         }
     }
 
+    private async maybeCompileLive(): Promise<void> {
+        if (!this.isLiveCompileEnabled() || this.session.isEmpty()) {
+            return;
+        }
+        await this.session.compile(
+            this.deps.getVoiceContext,
+            this.getCompileMode(),
+            this.deps.compileService
+        );
+    }
+
+    private isLiveCompileEnabled(): boolean {
+        return vscode.workspace.getConfiguration('teacher.compile').get<boolean>('live', true);
+    }
+
     private getCompileMode(): CompileMode {
         return vscode.workspace.getConfiguration().get<CompileMode>('teacher.compile.mode', 'teacher');
     }
@@ -313,7 +330,8 @@ function formatSegmentStatus(
     verb: string,
     text: string,
     textRaw: string,
-    fixes: SttFix[]
+    fixes: SttFix[],
+    compileError?: string
 ): string {
     const parts: string[] = [];
     if (fixes.length) {
@@ -322,10 +340,13 @@ function formatSegmentStatus(
     } else if (text.trim() !== textRaw.trim()) {
         parts.push('Transcript polished (word-level detail unavailable)');
     }
+    const compileNote = compileError
+        ? 'Agent prompt compile failed — tap refresh to retry.'
+        : 'Agent prompt updated.';
     if (parts.length) {
-        return `${verb}. ${parts.join('. ')}. Tap refresh to update agent prompt.`;
+        return `${verb}. ${parts.join('. ')}. ${compileNote}`;
     }
     return verb === 'Transcribed'
-        ? 'Transcribed and added. Tap refresh to update agent prompt.'
-        : 'Added. Tap refresh to update agent prompt.';
+        ? `Transcribed and added. ${compileNote}`
+        : `Added. ${compileNote}`;
 }

@@ -1011,7 +1011,7 @@
         if (json?.session?.status) setStatus(json.session.status, json.session.compileError ? 'warn' : 'ok');
         else {
           const err = json?.session?.compileError;
-          const statusMsg = err ? 'Added. Compile pending — tap refresh.' : 'Added. Tap refresh to update agent prompt.';
+          const statusMsg = err ? 'Added. Compile failed — tap refresh.' : 'Added. Agent prompt updated.';
           setStatus(statusMsg, err ? 'warn' : 'ok');
         }
         loadSettings().catch(() => {});

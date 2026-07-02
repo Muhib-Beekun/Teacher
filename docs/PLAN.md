@@ -10,13 +10,13 @@ This document consolidates founder intent, Cursor pain points, dual-pane UX, inf
 
 ## One sentence
 
-**Teacher is a VS Code extension (Cursor-first) that keeps a voice session open, biases STT with workspace vocabulary, and re-scaffolds a structured agent brief from everything you said — without dumping raw transcript into chat until you Send.**
+**Teacher is a VS Code extension (Cursor-first) that keeps a voice session open, biases STT with workspace vocabulary, and re-scaffolds a structured agent brief from everything I said in the session — without dumping raw transcript into chat until Send.**
 
 ---
 
-## Problem (why Cursor native STT is not enough)
+## Problem (why Cursor native STT falls short for my workflow)
 
-Founder experience dictating to Cursor today:
+How I dictate to Cursor today:
 
 | Pain | Cursor behavior | Teacher target |
 |------|-----------------|----------------|
@@ -61,8 +61,9 @@ After each segment (debounced while streaming): **re-scaffold** the agent brief 
 1. **Continuous session** — speak → stop → review → speak again → … → Send.
 2. **Dual pane default** — left: your words (audit); right: agent prompt (scaffold).
 3. **Hold chat box** — Cursor chat stays empty until explicit Send (`teacher.session.holdChatBox`, default on).
-4. **Live re-scaffold** — right pane updates after each segment (`teacher.compile.live`, default on).
-5. **Explicit Send gate** — compiled brief only, not raw transcript (unless verbatim mode).
+4. **Live re-scaffold on mic pause** — right pane updates after each spoken segment (`teacher.compile.live`, default on).
+5. **Manual edit hint** — editing words in **Your Words** (or reverting an STT fix) marks the brief stale; refresh button glows until recompile succeeds.
+6. **Explicit Send gate** — compiled brief only, not raw transcript (unless verbatim mode).
 
 ---
 
@@ -187,7 +188,7 @@ Two separate jobs:
 | Setting | Default | Notes |
 |---------|---------|-------|
 | `teacher.preview.layout` | `dual` | `single` = compiled only, transcript collapsible |
-| `teacher.compile.live` | `true` | Re-scaffold after each segment |
+| `teacher.compile.live` | `true` | Re-scaffold after each mic pause |
 | `teacher.compile.debounceMs` | `800` | While streaming partial STT |
 | `teacher.session.holdChatBox` | `true` | Don't insert into chat until Send |
 | `teacher.context.maxTerms` | `200` | Cap on `dictionary_context` |

@@ -39,7 +39,8 @@ User always sees **latest scaffold** of their intent, not a growing unedited par
 
 Configurable:
 
-- `teacher.compile.live` — re-scaffold after each segment (default **on**)
+- `teacher.compile.live` — re-scaffold after each mic pause (default **on**)
+- Manual edits in **Your Words** (segment text or STT revert) mark the brief stale; refresh button glows until recompile succeeds
 - `teacher.compile.debounceMs` — 800ms while streaming STT partials (avoid compile thrash)
 
 ---
