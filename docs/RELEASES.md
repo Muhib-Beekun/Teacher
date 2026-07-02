@@ -55,15 +55,26 @@ Publisher namespace: **`muhib-beekun`**
 
 ### One-time setup
 
-1. Create an account at [open-vsx.org](https://open-vsx.org).
-2. Create publisher **`muhib-beekun`** (must match `package.json` `publisher`).
-3. Generate a personal access token.
-4. Add GitHub repo secret **`OVSX_PAT`** (for CI), or use locally:
+1. Log in at [open-vsx.org](https://open-vsx.org) with GitHub.
+2. **Settings** → **Log in with Eclipse** → sign the **Publisher Agreement** (separate from the Eclipse Contributor Agreement).
+3. **Settings → Access Tokens** → generate a token.
+4. Create the namespace (once per publisher name):
+
+```powershell
+npx ovsx create-namespace muhib-beekun -p <your-ovsx-token>
+npx ovsx verify-pat muhib-beekun -p <your-ovsx-token>
+```
+
+5. Add GitHub repo secret **`OVSX_PAT`** (for CI), or use locally:
 
 ```powershell
 npm run package
 npm run publish:ovsx -- <your-ovsx-token>
 ```
+
+On Windows, `publish:ovsx` reads the version from `package.json` via `tools/publish-ovsx.mjs` (or pass token with `$env:OVSX_PAT` set).
+
+**Live listing:** [open-vsx.org/extension/muhib-beekun/teacher](https://open-vsx.org/extension/muhib-beekun/teacher)
 
 Users can then install **Teacher** from the Extensions view in Open VSX–compatible editors.
 

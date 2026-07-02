@@ -295,7 +295,7 @@
         "build": "tsc -p ./",
         "watch": "tsc -watch -p ./",
         "package": "npm run build && npx @vscode/vsce package --allow-missing-repository --allow-star-activation",
-        "publish:ovsx": "npx ovsx publish teacher-$(node -p \"require('./package.json').version\").vsix -p",
+        "publish:ovsx": "node tools/publish-ovsx.mjs",
         "mic-sidecar": "node tools/mic-sidecar-server.mjs",
         "test:mic-sidecar": "node tools/test-mic-sidecar.mjs",
         "test:grok": "node tools/test-grok.mjs",

@@ -7,6 +7,9 @@ Version numbers match `package.json` and `teacher-<version>.vsix` builds.
 
 ## [Unreleased]
 
+### Fixed
+- `npm run publish:ovsx` on Windows (replaces bash `$(...)` with `tools/publish-ovsx.mjs`).
+
 ## [0.0.46] - 2026-06-30
 
 ### Added
