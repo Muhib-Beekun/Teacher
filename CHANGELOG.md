@@ -7,6 +7,11 @@ Version numbers match `package.json` and `teacher-<version>.vsix` builds.
 
 ## [Unreleased]
 
+## [0.0.56] - 2026-07-02
+
+### Fixed
+- **Compile validation** parses LLM output before rejecting it, so near-valid briefs (heading case, preamble, fences, `Goal:` labels) no longer fail with "Compile output missing ## Goal section". One bounded reformat retry and clearer validation logs in the Teacher output channel.
+
 ## [0.0.55] - 2026-07-02
 
 ### Added

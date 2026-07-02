@@ -1,12 +1,17 @@
 import * as vscode from 'vscode';
 
 import { compileSession, CompileMode } from '../../compiler/TeacherCompiler';
-import { detectPhraseFixes, parseCompiledMarkdown } from '../../compiler/parseCompiledMarkdown';
+import { detectPhraseFixes } from '../../compiler/parseCompiledMarkdown';
+import {
+    buildReformatCompileUser,
+    finalizeLlmCompiledBrief,
+    REFORMAT_COMPILE_SYSTEM
+} from '../../compiler/finalizeLlmBrief';
 import { VoiceSessionContext } from '../../context/VoiceSessionContext';
 import { CompiledBrief } from '../../session/types';
 import { SttFix } from '../../session/types';
 import { analyzeSegments } from '../../session/RetractionDetector';
-import { buildCompilePrompt, ensureSessionInBrief } from '../../compiler/buildCompilePrompt';
+import { buildCompilePrompt } from '../../compiler/buildCompilePrompt';
 import { LlmApiClient } from './LlmApiClient';
 import { OllamaApiClient } from './OllamaApiClient';
 import { VscodeLanguageModelClient } from './VscodeLanguageModelClient';
@@ -213,21 +218,42 @@ ${raw}`;
     ): Promise<CompiledBrief> {
         const segments = analyzeSegments(rawSegments);
         const { system, user } = buildCompilePrompt(segments, ctx, priorBrief);
-        const markdown = await this.chat(provider, 'compile', system, user, 0.2);
-        if (!markdown.includes('## Goal')) {
-            throw new Error('Compile output missing ## Goal section');
+        let markdown = await this.chat(provider, 'compile', system, user, 0.2);
+        let result = finalizeLlmCompiledBrief(markdown, segments);
+
+        if (!result.ok) {
+            this.logCompileValidationFailure(provider, result.reason, result.message, result.preview);
+            this.output.appendLine('[compile] attempting one reformat pass on malformed output');
+            markdown = await this.chat(
+                provider,
+                'compile-reformat',
+                REFORMAT_COMPILE_SYSTEM,
+                buildReformatCompileUser(markdown),
+                0.1
+            );
+            result = finalizeLlmCompiledBrief(markdown, segments);
+            if (result.ok) {
+                this.output.appendLine('[compile] repaired near-valid output on reformat retry');
+            } else {
+                this.logCompileValidationFailure(provider, result.reason, result.message, result.preview);
+                throw new Error(result.message);
+            }
         }
-        const latest = segments[segments.length - 1]?.text.trim() ?? '';
-        let brief = parseCompiledMarkdown(markdown);
-        brief = ensureSessionInBrief(brief, segments);
-        if (
-            segments.length === 1 &&
-            latest.length > 50 &&
-            brief.goal.trim().toLowerCase() === latest.toLowerCase()
-        ) {
-            throw new Error('Compiler returned a verbatim transcript instead of a synthesized agent brief');
+
+        return result.brief;
+    }
+
+    private logCompileValidationFailure(
+        provider: Exclude<CompileProviderId, 'none'>,
+        reason: 'malformed' | 'verbatim',
+        message: string,
+        preview: string
+    ): void {
+        const kind = reason === 'verbatim' ? 'verbatim transcript' : 'malformed structure';
+        this.output.appendLine(`[compile:validation] ${provider} returned ${kind}: ${message}`);
+        if (preview) {
+            this.output.appendLine(`[compile:preview] ${preview}`);
         }
-        return brief;
     }
 
     private setActive(provider: ActiveProvider, model: string): void {

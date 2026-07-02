@@ -1,4 +1,4 @@
-import { CompiledBrief } from '../session/types';
+import { CompiledBrief, Segment } from '../session/types';
 import { diffWordFixes } from '../stt/wordDiffFixes';
 
 const PLACEHOLDER_PATTERNS = [
@@ -11,9 +11,51 @@ const PLACEHOLDER_PATTERNS = [
 
 const GARBAGE_LINE = /^-{2,}$|^-?\s*---+\s*$|^\*\*reference only/i;
 
+export const DEFAULT_PLACEHOLDER_GOAL = 'No current intent detected yet.';
+
+/** Strip fences and preamble so the markdown parser can run on near-valid LLM output. */
+export function normalizeLlmBriefMarkdown(raw: string): string {
+    let md = raw.trim();
+    const fullFence = md.match(/^```(?:markdown|md)?\s*\r?\n([\s\S]*?)\r?\n```\s*$/i);
+    if (fullFence) {
+        md = fullFence[1].trim();
+    } else {
+        md = md.replace(/^```(?:markdown|md)?\s*\r?\n/i, '').replace(/\r?\n```\s*$/i, '').trim();
+    }
+    const headingIdx = md.search(/^##\s+/im);
+    if (headingIdx > 0) {
+        md = md.slice(headingIdx);
+    }
+    return md;
+}
+
+export function isPlaceholderGoal(goal: string): boolean {
+    const g = goal.trim();
+    if (!g || g === DEFAULT_PLACEHOLDER_GOAL) {
+        return true;
+    }
+    if (/^no (current )?intent detected/i.test(g)) {
+        return true;
+    }
+    if (/^no action needed/i.test(g)) {
+        return true;
+    }
+    return false;
+}
+
+/** True when a single long segment was echoed verbatim as Goal instead of synthesized. */
+export function isVerbatimTranscriptBrief(brief: CompiledBrief, segments: Segment[]): boolean {
+    const active = segments.filter((s) => !s.superseded);
+    const latest = active[active.length - 1]?.text.trim() ?? '';
+    if (active.length !== 1 || latest.length <= 50) {
+        return false;
+    }
+    return brief.goal.trim().toLowerCase() === latest.toLowerCase();
+}
+
 /** Parse Teacher markdown brief from LLM output into structured fields. */
 export function parseCompiledMarkdown(markdown: string): CompiledBrief {
-    const goal = extractSection(markdown, 'Goal') || 'No current intent detected yet.';
+    const goal = extractGoal(markdown) || DEFAULT_PLACEHOLDER_GOAL;
     const target = sanitizeBullets(extractBulletList(markdown, 'Target'));
     const constraints = sanitizeBullets(extractBulletList(markdown, 'Constraints'));
     const verification = sanitizeBullets(extractBulletList(markdown, 'Verification'));
@@ -73,6 +115,18 @@ export function formatBriefMarkdown(brief: CompiledBrief): string {
     }
 
     return lines.join('\n').trim();
+}
+
+function extractGoal(md: string): string {
+    const fromHeading = extractSection(md, 'Goal');
+    if (fromHeading) {
+        return fromHeading;
+    }
+    const labelMatch = md.match(/^Goal:\s*(.+)$/im);
+    if (labelMatch) {
+        return labelMatch[1].trim();
+    }
+    return '';
 }
 
 function extractSection(md: string, heading: string): string {

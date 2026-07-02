@@ -127,6 +127,87 @@ const dupBrief = parseCompiledMarkdown(`## Goal\nTest.\n\n## Session - your word
 assert(dupBrief.sessionLog.length === 1, 'duplicate audit disclaimer stripped from session log');
 assert(dupBrief.sessionLog[0].startsWith('[included]'), 'session log keeps segment after dedupe');
 
+const { finalizeLlmCompiledBrief } = await import('../out/compiler/finalizeLlmBrief.js');
+const { normalizeLlmBriefMarkdown } = await import('../out/compiler/parseCompiledMarkdown.js');
+
+const longSeg =
+    'We need to refactor the compile validation so it parses model output before rejecting it instead of requiring an exact heading substring match in the raw text.';
+const longSegs = analyzeSegments([longSeg]);
+
+function assertFinalizeOk(raw, label, segs = longSegs) {
+    const r = finalizeLlmCompiledBrief(raw, segs);
+    assert(r.ok, `${label}: ${!r.ok ? r.message : 'ok'}`);
+    if (r.ok) {
+        assert(r.brief.markdown.includes('## Goal'), `${label}: canonical markdown has ## Goal`);
+    }
+}
+
+assertFinalizeOk(
+    `## goal
+Refactor compile validation to parse before rejecting.`,
+    'lowercase ## goal heading'
+);
+
+assertFinalizeOk(
+    `Goal: Refactor compile validation to parse before rejecting.
+
+## Target
+- src/providers/compile/CompileService.ts`,
+    'Goal: label without markdown heading'
+);
+
+assertFinalizeOk(
+    `Here is the synthesized brief for your voice session.
+
+## Goal
+Refactor compile validation to parse before rejecting.
+
+## Target
+- src/providers/compile/CompileService.ts`,
+    'prose preamble before first heading'
+);
+
+const missingSessionResult = finalizeLlmCompiledBrief(
+    `## Goal
+Refactor compile validation.
+
+## Target
+- src/providers/compile/CompileService.ts`,
+    longSegs
+);
+assert(missingSessionResult.ok, 'missing session heading with active segments');
+assert(
+    missingSessionResult.ok && missingSessionResult.brief.sessionLog.length === 1,
+    'missing session heading injects session log from segments'
+);
+
+assertFinalizeOk(
+    `\`\`\`markdown
+## Goal
+Refactor compile validation to parse before rejecting.
+
+## Target
+- src/providers/compile/CompileService.ts
+\`\`\``,
+    'fenced markdown wrapper'
+);
+
+const verbatimResult = finalizeLlmCompiledBrief(
+    `## Goal
+${longSeg}
+
+## Target
+- (no targets inferred: speak file paths; browser UI cannot open files)`,
+    longSegs
+);
+assert(!verbatimResult.ok && verbatimResult.reason === 'verbatim', 'verbatim transcript still rejected');
+
+const emptyResult = finalizeLlmCompiledBrief('Thanks for using Teacher!', analyzeSegments([]));
+assert(!emptyResult.ok && emptyResult.reason === 'malformed', 'empty unusable output still rejected');
+
+const normalized = normalizeLlmBriefMarkdown('Preamble\n\n## goal\nFix it.');
+assert(normalized.startsWith('## goal'), 'normalize strips preamble before first heading');
+
 if (failed) {
     process.exitCode = 1;
     console.error('compiler tests had failures');
