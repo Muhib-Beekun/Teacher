@@ -63,6 +63,19 @@ const spurious = filterSpuriousFixes([
     { heard: 'key', corrected: 'INFERENCE_API_KEY' }
 ], 'teacher inference INFERENCE_API_KEY');
 assert(spurious.length === 1 && spurious[0].heard.includes('API key'), 'drop key→INFERENCE_API_KEY artifact');
+const launchRaw =
+    "and I don't know exactly how but it should be made painfully obvious to the user exactly how they're supposed to like launch web browser";
+const launchFinal =
+    "and I don't know exactly how but it should be made painfully obvious to the user exactly how they're supposed to launch the web browser";
+const launchSpurious = filterSpuriousFixes(
+    [
+        { heard: 'like', corrected: 'launch', source: 'polish' },
+        { heard: 'launch', corrected: 'the', source: 'polish' }
+    ],
+    launchFinal,
+    launchRaw
+);
+assert(launchSpurious.length === 0, 'drop like→launch and launch→the polish rephrase artifacts');
 const polishFixes = diffWordFixes(
     "they're also should be no em dashes and tell maybe later",
     'there also should be no em dashes until maybe later'

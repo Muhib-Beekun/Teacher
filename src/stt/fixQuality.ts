@@ -1,8 +1,9 @@
 import { SttFix } from '../session/types';
 import { FixRange } from './wordDiffFixes';
 
-/** Drop word-diff artifacts like `key` → `INFERENCE_API_KEY` when a longer fix already covers the span. */
-export function filterSpuriousFixes(fixes: SttFix[], text: string): SttFix[] {
+/** Drop word-diff artifacts like `key` → `INFERENCE_API_KEY` or polish `like` → `launch` when both words were spoken. */
+export function filterSpuriousFixes(fixes: SttFix[], text: string, textRaw?: string): SttFix[] {
+    const raw = textRaw?.trim() ?? '';
     const valid = fixes.filter((f) => {
         if (!f.heard || !f.corrected || f.heard === f.corrected) {
             return false;
@@ -18,6 +19,9 @@ export function filterSpuriousFixes(fixes: SttFix[], text: string): SttFix[] {
             correctedCore.includes(heardCore) &&
             /_/.test(f.corrected)
         ) {
+            return false;
+        }
+        if (raw && isPolishRephraseArtifact(f, raw)) {
             return false;
         }
         return true;
@@ -46,8 +50,8 @@ export function filterSpuriousFixes(fixes: SttFix[], text: string): SttFix[] {
 }
 
 /** Map stored fixes to non-overlapping highlight ranges in final text. */
-export function resolveFixRanges(text: string, fixes: SttFix[]): FixRange[] {
-    const filtered = filterSpuriousFixes(fixes, text);
+export function resolveFixRanges(text: string, fixes: SttFix[], textRaw?: string): FixRange[] {
+    const filtered = filterSpuriousFixes(fixes, text, textRaw);
     const occupied = new Array<boolean>(text.length).fill(false);
     const ranges: FixRange[] = [];
     const sorted = [...filtered].sort(
@@ -159,4 +163,44 @@ function stripEdgePunctuation(value: string): string {
 
 function escapeRegExp(value: string): string {
     return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+const POLISH_STOPWORDS = new Set([
+    'a', 'an', 'the', 'to', 'on', 'in', 'at', 'of', 'no', 'so', 'and', 'or', 'like', 'just'
+]);
+
+/** Polish word-diff often mis-tags filler words the mic already captured (e.g. "like launch" → like→launch). */
+function isPolishRephraseArtifact(fix: SttFix, textRaw: string): boolean {
+    if (fix.source !== 'polish') {
+        return false;
+    }
+
+    const heard = fix.heard.trim();
+    const corrected = fix.corrected.trim();
+    if (!heard || !corrected) {
+        return false;
+    }
+
+    const heardLower = heard.toLowerCase();
+    const correctedLower = corrected.toLowerCase();
+    const correctedCore = correctedLower.replace(/[^\w]/g, '');
+
+    const spokenInOrder = new RegExp(
+        `\\b${escapeRegExp(heardLower)}\\s+${escapeRegExp(correctedLower)}\\b`,
+        'i'
+    );
+    if (spokenInOrder.test(textRaw)) {
+        return true;
+    }
+
+    const heardThenNext = new RegExp(`\\b${escapeRegExp(heardLower)}\\s+(\\S+)`, 'i');
+    const match = heardThenNext.exec(textRaw);
+    if (match) {
+        const nextCore = match[1].toLowerCase().replace(/[^\w]/g, '');
+        if (nextCore !== correctedCore && POLISH_STOPWORDS.has(correctedCore)) {
+            return true;
+        }
+    }
+
+    return false;
 }

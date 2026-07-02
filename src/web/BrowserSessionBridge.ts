@@ -123,7 +123,7 @@ export class BrowserSessionBridge {
         return {
             text,
             textRaw,
-            fixes: filterSpuriousFixes(fixes, text),
+            fixes: filterSpuriousFixes(fixes, text, textRaw),
             audit: { sttHeard: textRaw, afterLexicon, afterDictionary, afterPolish }
         };
     }

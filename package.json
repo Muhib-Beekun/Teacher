@@ -2,15 +2,18 @@
     "name": "teacher",
     "displayName": "Teacher",
     "description": "Lecture your AI: continuous voice sessions that teach the agent what you meant. Workspace-aware STT and structured agent briefs for Cursor and VS Code.",
-    "version": "0.0.44",
+    "version": "0.0.46",
     "publisher": "muhib-beekun",
     "icon": "icon.png",
     "author": "Muhib Beekun",
-    "private": true,
-    "license": "UNLICENSED",
+    "license": "MIT",
     "repository": {
         "type": "git",
         "url": "https://github.com/Muhib-Beekun/Teacher.git"
+    },
+    "homepage": "https://github.com/Muhib-Beekun/Teacher#readme",
+    "bugs": {
+        "url": "https://github.com/Muhib-Beekun/Teacher/issues"
     },
     "engines": {
         "vscode": "^1.92.0"
@@ -292,6 +295,7 @@
         "build": "tsc -p ./",
         "watch": "tsc -watch -p ./",
         "package": "npm run build && npx @vscode/vsce package --allow-missing-repository --allow-star-activation",
+        "publish:ovsx": "npx ovsx publish teacher-$(node -p \"require('./package.json').version\").vsix -p",
         "mic-sidecar": "node tools/mic-sidecar-server.mjs",
         "test:mic-sidecar": "node tools/test-mic-sidecar.mjs",
         "test:grok": "node tools/test-grok.mjs",

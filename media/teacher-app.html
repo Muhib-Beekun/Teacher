@@ -113,6 +113,13 @@
       border: 1px solid var(--line); border-radius: 12px; background: var(--panel);
       display: flex; flex-direction: column; align-items: center; padding: 20px 14px 14px; min-height: 0;
     }
+    .mic-browser-hint {
+      width: 100%; margin-bottom: 12px; padding: 10px 12px;
+      border: 1px solid var(--warn); border-radius: 10px; background: rgba(212,168,67,.08);
+      font-size: 11px; line-height: 1.5; color: var(--ink);
+    }
+    .mic-browser-hint strong { display: block; color: var(--warn); margin-bottom: 4px; }
+    .mic-browser-hint em { font-style: normal; color: var(--accent); }
     .mic-wrap { position: relative; width: 72px; height: 72px; margin-bottom: 8px; }
     .mic-actions button, .mic-cancel {
       border: 1px solid var(--line); background: transparent; color: var(--muted);
@@ -434,6 +441,14 @@
 
   <main class="layout">
     <section class="capture-col" aria-label="Voice capture">
+      <div class="mic-browser-hint" id="micBrowserHint">
+        <strong>Microphone: use Chrome or Edge</strong>
+        <span>Cursor cannot access the mic. In Cursor run <em>Teacher: Open Web UI</em> — it opens this page in your browser. Allow mic when prompted.</span>
+        <div class="copy-row">
+          <code id="teacherUrl">http://127.0.0.1:3721/</code>
+          <button type="button" id="copyTeacherUrl" title="Copy Teacher URL">Copy</button>
+        </div>
+      </div>
       <div class="mic-wrap">
         <button type="button" id="mic" class="mic-btn" title="Start / pause recording" aria-label="Microphone">
           <svg class="icon-mic" viewBox="0 0 24 24" aria-hidden="true">
@@ -725,6 +740,8 @@
 
     async function refreshHealth() {
       health = await fetch('/health').then(r => r.json());
+      const urlEl = document.getElementById('teacherUrl');
+      if (urlEl && health.url) urlEl.textContent = health.url;
       let msg = 'Ready. Tap mic to speak';
       if (health.compileReady) msg += ' · brief compiler ready';
       else if (!health.compileReady) msg += ' · compiler not ready (API key or Ollama)';
@@ -1146,6 +1163,10 @@
     document.getElementById('copySettingsFilter').addEventListener('click', () => {
       const filter = document.getElementById('settingsFilterText')?.textContent?.trim() || '@ext:muhib-beekun.teacher';
       copyText(filter, 'Copied settings filter. Press Ctrl+, and paste.');
+    });
+    document.getElementById('copyTeacherUrl')?.addEventListener('click', () => {
+      const url = document.getElementById('teacherUrl')?.textContent?.trim() || health.url || '';
+      if (url) copyText(url, 'Copied Teacher URL — bookmark in Chrome or Edge.');
     });
     document.getElementById('saveLlmKey').addEventListener('click', () => saveLlmKey().catch(() => {}));
     document.getElementById('setInferencePreset').addEventListener('change', (e) => {

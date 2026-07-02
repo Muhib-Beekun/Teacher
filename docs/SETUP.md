@@ -14,7 +14,31 @@ In Cursor: **Extensions: Install from VSIX...** → latest `teacher-*.vsix` in t
 
 See [INSTALL-CURSOR.md](./INSTALL-CURSOR.md) for troubleshooting.
 
-## 2. First run checklist
+## 2. Open your browser (required for microphone)
+
+**Cursor cannot access the microphone** in its embedded webviews. Teacher runs a small local web server and you **must use Chrome or Microsoft Edge** for voice capture.
+
+### Step by step
+
+1. Open any project workspace in Cursor.
+2. Press **`Ctrl+Shift+P`** and run **`Teacher: Open Web UI`** (or **`Teacher: Start Session`** then click **Open** in the panel).
+3. Your **default browser** opens to a URL like **`http://127.0.0.1:3721/`** (port from `teacher.capture.sidecarPort`).
+4. If the browser does not open automatically:
+   - Open **Chrome** or **Edge** manually.
+   - Paste the URL from the **Teacher** output channel (`View` → `Output` → **Teacher**), or copy it from the yellow box above the mic button in the web UI.
+5. When the page asks for **microphone** permission, click **Allow**.
+6. Tap the **mic** button, speak, tap again to pause — your words appear in **Your Words**; the **Agent Prompt** updates on the right.
+
+**Bookmark the URL** in Chrome/Edge so you can return after reload. The extension must be running in Cursor (same workspace) for the page to work.
+
+| Problem | Fix |
+|---------|-----|
+| Page won't load | Reload Cursor window; run **Teacher: Open Web UI** again |
+| No mic prompt | Use Chrome or Edge (not Firefox/Safari for Web Speech) |
+| Wrong port | Settings → Web UI port; reload extension |
+| "Compiler not ready" | See § First run checklist — API key or Ollama |
+
+## 3. First run checklist
 
 | Step | Action |
 |------|--------|
@@ -25,9 +49,9 @@ See [INSTALL-CURSOR.md](./INSTALL-CURSOR.md) for troubleshooting.
 | 5 | Save **Inference API key** (or copy `.env.example` → `.env`) |
 | 6 | Set **Compile provider**: Auto / Cloud API / Local Ollama |
 | 7 | Confirm **Compiler:** line shows ready (not "not configured") |
-| 8 | Speak in Chrome/Edge sidecar; review **Your Words** and **Agent Prompt** |
+| 8 | Speak in Chrome/Edge at `http://127.0.0.1:<port>/` (see § Open your browser); review **Your Words** and **Agent Prompt** |
 
-## 3. Two concepts (do not confuse)
+## 4. Two concepts (do not confuse)
 
 ### Inference provider (Connection)
 
@@ -57,7 +81,7 @@ Presets in Settings:
 
 The **Compiler:** status line shows the active backend, not just the preset.
 
-## 4. Environment variables
+## 5. Environment variables
 
 Copy [`.env.example`](../.env.example) → `.env` in the **workspace root** (gitignored).
 
@@ -78,7 +102,7 @@ Priority: workspace **`.env`** overrides VS Code settings for base URL and model
 
 Command Palette: **Teacher: Set Inference API Key** stores key in SecretStorage (not `settings.json`).
 
-## 5. Workspace glossary (STT)
+## 6. Workspace glossary (STT)
 
 Create or edit `.teacher/codewords.txt` (one term per line, gitignored):
 
@@ -91,7 +115,7 @@ INFERENCE_API_KEY
 
 Run **Teacher: Rebuild Context Index** after edits.
 
-## 6. Verify
+## 7. Verify
 
 ```powershell
 npm run test:compiler
@@ -100,7 +124,7 @@ npm run test:web-app
 
 With a cloud key: `npm run test:grok` (xAI smoke test).
 
-## 7. AI agent handoff block
+## 8. AI agent handoff block
 
 When asking an agent to configure Teacher, include:
 
@@ -119,5 +143,6 @@ Do not commit .env or API keys.
 |-----|----------|
 | [CONFIGURATION.md](./CONFIGURATION.md) | Settings reference |
 | [INSTALL-CURSOR.md](./INSTALL-CURSOR.md) | VSIX install |
-| [RELEASES.md](./RELEASES.md) | Build VSIX, GitHub Releases |
+| [RELEASES.md](./RELEASES.md) | Build VSIX, GitHub Releases, Open VSX |
+| [CHANGELOG.md](../CHANGELOG.md) | Version history |
 | [PLAN.md](./PLAN.md) | Product scope |

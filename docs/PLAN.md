@@ -128,8 +128,8 @@ Two separate jobs:
 
 | Choice | Decision |
 |--------|----------|
-| GitHub | [Muhib-Beekun/Teacher](https://github.com/Muhib-Beekun/Teacher) |
-| Marketplace | Open VSX primary; VS Code Marketplace optional |
+| GitHub | [Muhib-Beekun/Teacher](https://github.com/Muhib-Beekun/Teacher) (public, MIT) |
+| Marketplace | [Open VSX](https://open-vsx.org/extension/muhib-beekun/teacher) primary; VS Code Marketplace optional |
 | Editor targets | Cursor-first; standard VS Code extension APIs only |
 | Secrets | VS Code `SecretStorage` only |
 | Cursor private APIs | **None** |
@@ -152,7 +152,13 @@ Two separate jobs:
 
 ### Later
 
-- Open VSX publish (see [RELEASES.md](./RELEASES.md))
+- VS Code Marketplace listing (optional; Open VSX is primary)
+
+### Done (distribution)
+
+- [x] `CHANGELOG.md` — Keep a Changelog, versions 0.0.1–0.0.45
+- [x] MIT license + public GitHub repo
+- [x] Open VSX listing (after ECA + `publish:ovsx`)
 
 ### Deferred
 

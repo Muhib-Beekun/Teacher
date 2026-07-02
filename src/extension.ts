@@ -119,7 +119,7 @@ export function activate(context: vscode.ExtensionContext): void {
 
     void bridge.init().then(() => startWebApp()).then(async (port) => {
         output.appendLine(`[web] Teacher UI ready at http://127.0.0.1:${port}/`);
-        output.appendLine('[web] Open in Chrome/Edge: speak, scaffold brief, copy into Cursor.');
+        output.appendLine('[web] MICROPHONE: open Chrome or Edge at the URL above (Teacher: Open Web UI). Allow mic when prompted.');
         const llmOk = await compileService.isLlmConfigured();
         if (llmOk) {
             const { baseUrl, model } = resolveInferenceConfig();

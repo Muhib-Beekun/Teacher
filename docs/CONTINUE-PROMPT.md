@@ -20,6 +20,7 @@ Continuous voice session for Cursor: dual pane (transcript | scaffolded agent br
 - docs/SETUP.md — configuration for humans and AI agents
 - docs/ARCHITECTURE.md — extension shape
 - docs/TEACHER-COMPILER.md — session + compile contract
+- CHANGELOG.md — version history (update on user-facing changes)
 
 ## Constraints
 
@@ -28,6 +29,7 @@ Continuous voice session for Cursor: dual pane (transcript | scaffolded agent br
 - No notification on Clear session
 - Inference config: workspace `.env`, Settings UI, SecretStorage — not external monorepos
 - Publisher: muhib-beekun
+- **Changelog:** any user-facing change must add an entry under `[Unreleased]` in CHANGELOG.md (move to a version section on release)
 
 ## Build
 

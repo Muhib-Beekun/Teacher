@@ -14,10 +14,16 @@ Context-aware voice input and **intent compilation** for VS Code, Cursor, and ot
 
 ## Use it
 
-**Teacher is not in the Extension Marketplace yet.** Install locally:
+Install **Teacher** in Cursor or other VS Code–compatible editors:
+
+| Method | Best for |
+|--------|----------|
+| **[Open VSX](https://open-vsx.org/extension/muhib-beekun/teacher)** | VSCodium, Gitpod, etc. — search **Teacher** by **muhib-beekun** |
+| **VSIX (dogfood / latest)** | Cursor — build locally or download from [GitHub Releases](https://github.com/Muhib-Beekun/Teacher/releases) |
 
 - **[docs/SETUP.md](./docs/SETUP.md)** — first-time setup (humans and AI agents)
-- **[docs/INSTALL-CURSOR.md](./docs/INSTALL-CURSOR.md)** — VSIX install steps
+- **[docs/INSTALL-CURSOR.md](./docs/INSTALL-CURSOR.md)** — VSIX install + **open Chrome/Edge for mic**
+- **[CHANGELOG.md](./CHANGELOG.md)** — version history
 - **[docs/CONFIGURATION.md](./docs/CONFIGURATION.md)** — settings reference
 - **[docs/RELEASES.md](./docs/RELEASES.md)** — build VSIX and publish GitHub Releases
 
@@ -31,7 +37,7 @@ npm run package
 
 Then in Cursor: **`Ctrl+Shift+P`** → **`Extensions: Install from VSIX...`** → pick the latest **`teacher-*.vsix`** in the repo root → Reload.
 
-Then in any project: **`Teacher: Start Session`**
+Then in any project: **`Teacher: Open Web UI`** → allow mic in **Chrome or Edge** at `http://127.0.0.1:3721/` (see [SETUP.md](./docs/SETUP.md)).
 
 ## vs Cursor voice
 
@@ -58,7 +64,8 @@ Open **Run and Debug** → **Run Teacher Extension** in Cursor. Commands under *
 | Doc | Contents |
 |-----|----------|
 | [docs/SETUP.md](./docs/SETUP.md) | **First-time setup** (humans and AI agents) |
-| [docs/RELEASES.md](./docs/RELEASES.md) | **VSIX build and GitHub Releases** |
+| [docs/RELEASES.md](./docs/RELEASES.md) | **VSIX, GitHub Releases, Open VSX** |
+| [CHANGELOG.md](./CHANGELOG.md) | **Version history** |
 | [docs/PLAN.md](./docs/PLAN.md) | **Canonical product plan and roadmap** |
 | [docs/CONTEXT.md](./docs/CONTEXT.md) | Origin story, product wedge |
 | [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md) | Extension shape, pipeline, Open VSX / Cursor |
@@ -72,4 +79,4 @@ Teacher is **by Muhib Beekun**. Dual-pane voice UX patterns were inspired by ear
 
 ## License
 
-TBD (private repo until scope is settled).
+MIT — see [LICENSE](./LICENSE).

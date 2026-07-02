@@ -280,7 +280,7 @@ function renderSegmentTextHtml(raw: RawSegment, segmentIndex: number): string {
         return escapeHtml(raw.text);
     }
 
-    const ranges = resolveFixRanges(raw.text, fixes);
+    const ranges = resolveFixRanges(raw.text, fixes, raw.textRaw);
     if (!ranges.length) {
         return escapeHtml(raw.text);
     }
@@ -302,11 +302,11 @@ function renderSegmentTextHtml(raw: RawSegment, segmentIndex: number): string {
 }
 
 function effectiveFixes(raw: RawSegment): SttFix[] {
-    const stored = filterSpuriousFixes(sanitizeFixes(raw.text, raw.fixes), raw.text);
+    const stored = filterSpuriousFixes(sanitizeFixes(raw.text, raw.fixes), raw.text, raw.textRaw);
     if (stored.length) {
         return stored;
     }
-    const fromRaw = filterSpuriousFixes(sanitizeFixes(raw.text, diffWordFixes(raw.textRaw, raw.text)), raw.text);
+    const fromRaw = filterSpuriousFixes(sanitizeFixes(raw.text, diffWordFixes(raw.textRaw, raw.text)), raw.text, raw.textRaw);
     if (fromRaw.length) {
         return fromRaw;
     }
