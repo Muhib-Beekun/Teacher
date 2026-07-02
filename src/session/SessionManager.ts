@@ -109,7 +109,9 @@ export class SessionManager {
     ): Promise<CompiledBrief | null> {
         this.lastCompileError = undefined;
         try {
-            const priorBrief = options?.fresh ? undefined : (this.compiledBrief ?? undefined);
+            const priorBrief = options?.fresh
+                ? undefined
+                : (this.briefVersions[0]?.brief ?? this.compiledBrief ?? undefined);
             this.compiledBrief = await compileService.compile(
                 this.getRawTexts(),
                 getContext(),
@@ -235,24 +237,26 @@ export class SessionManager {
             return '<p class="empty">Speak. Your agent brief appears here after each pause.</p>';
         }
 
-        const v = this.briefVersions[0];
-        if (!v) {
-            return '<p class="empty">Speak. Your agent brief appears here after each pause.</p>';
-        }
-        return `<div class="brief-current" data-brief-version="${v.version}">
-  <div class="brief-version-label">Version ${v.version}</div>
-  ${renderBriefSections(v.brief)}
-  <div class="brief-card-actions">
-    <button type="button" class="card-action brief-copy" data-brief-version="${v.version}" title="Copy agent prompt">
+        return this.briefVersions
+            .map((v, idx) => {
+                const latest = idx === 0;
+                const labelClass = latest ? 'tag-included' : 'tag-superseded';
+                const label = latest ? 'current' : 'prior';
+                return `<details class="seg brief-seg" data-brief-version="${v.version}" ${latest ? 'open' : ''}>
+  <summary><span class="seg-chevron" aria-hidden="true"></span><span class="seg-num">${v.version}</span><span class="seg-label ${labelClass}">${label}</span><span class="seg-preview">${escapeHtml(preview(v.brief.goal))}</span></summary>
+  <div class="seg-body">${renderBriefSections(v.brief)}<div class="brief-card-actions">
+    <button type="button" class="card-action brief-copy" data-brief-version="${v.version}" title="Copy this prompt">
       <svg viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="1"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>
       Copy
     </button>
-    <button type="button" class="card-action brief-send" data-brief-version="${v.version}" title="Send to agent">
+    <button type="button" class="card-action brief-send" data-brief-version="${v.version}" title="Send this prompt">
       <svg viewBox="0 0 24 24"><path d="M6 8l8 4-8 4V8z"/><path d="M16 8l4 4-4 4V8z"/></svg>
       Send
     </button>
-  </div>
-</div>`;
+  </div></div>
+</details>`;
+            })
+            .join('');
     }
 }
 

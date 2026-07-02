@@ -7,6 +7,11 @@ Version numbers match `package.json` and `teacher-<version>.vsix` builds.
 
 ## [Unreleased]
 
+## [0.0.51] - 2026-07-02
+
+### Fixed
+- Restore collapsible agent prompt stack: **current** (open) + **prior** versions in `<details>` rows, matching pre-0.0.49 UX.
+
 ## [0.0.50] - 2026-07-02
 
 ### Fixed
@@ -156,3 +161,4 @@ Each row is one packaged VSIX build during dogfood. Grouped entries above summar
 | 0.0.48 | Mic/cancel centering; remove green ready banner |
 | 0.0.49 | Speech network → browser warning; agent prompt versioning |
 | 0.0.50 | Restore prior-brief in compile; keep prompt versioning |
+| 0.0.51 | Collapsible current + prior agent prompt versions |
