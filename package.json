@@ -2,7 +2,7 @@
     "name": "teacher",
     "displayName": "Teacher",
     "description": "Lecture your AI: continuous voice sessions that teach the agent what you meant. Workspace-aware STT and structured agent briefs for Cursor and VS Code.",
-    "version": "0.0.51",
+    "version": "0.0.52",
     "publisher": "muhib-beekun",
     "icon": "icon.png",
     "author": "Muhib Beekun",
@@ -126,8 +126,8 @@
                 },
                 "teacher.compile.live": {
                     "type": "boolean",
-                    "default": true,
-                    "description": "Re-scaffold the compiled prompt after each appended segment."
+                    "default": false,
+                    "description": "Deprecated: agent prompt recompiles on Refresh only. When true, legacy auto-compile after each segment (not recommended)."
                 },
                 "teacher.compile.debounceMs": {
                     "type": "number",

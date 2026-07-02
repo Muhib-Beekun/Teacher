@@ -7,6 +7,13 @@ Version numbers match `package.json` and `teacher-<version>.vsix` builds.
 
 ## [Unreleased]
 
+## [0.0.52] - 2026-07-02
+
+### Changed
+- Agent prompt **only recompiles on Refresh** — adding/editing segments marks the brief stale (blue glow on refresh button).
+- Refresh re-scaffolds from **all segments in Your Words** (full session history).
+- Default `teacher.compile.live` is **false** (legacy auto-compile opt-in only).
+
 ## [0.0.51] - 2026-07-02
 
 ### Fixed
@@ -162,3 +169,4 @@ Each row is one packaged VSIX build during dogfood. Grouped entries above summar
 | 0.0.49 | Speech network → browser warning; agent prompt versioning |
 | 0.0.50 | Restore prior-brief in compile; keep prompt versioning |
 | 0.0.51 | Collapsible current + prior agent prompt versions |
+| 0.0.52 | Manual refresh-only compile; blue glow when stale |

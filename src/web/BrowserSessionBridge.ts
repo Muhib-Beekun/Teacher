@@ -52,7 +52,6 @@ export class BrowserSessionBridge {
         const { text, textRaw, fixes, audit } = await this.runSttPipeline(trimmed);
         await this.maybeRebuildAfterSegment(text);
         this.session.appendSegment(text, textRaw, fixes, audit);
-        await this.maybeCompile();
         await this.refreshProviderLabel();
         this.notifyUpdated();
         const status = formatSegmentStatus('Added', text, textRaw, fixes);
@@ -68,7 +67,6 @@ export class BrowserSessionBridge {
         const { text, textRaw, fixes, audit } = await this.runSttPipeline(result.textRaw, result.fixes);
         await this.maybeRebuildAfterSegment(text);
         this.session.appendSegment(text, textRaw, fixes, audit);
-        await this.maybeCompile();
         await this.refreshProviderLabel();
         this.notifyUpdated();
         const status = formatSegmentStatus('Transcribed', text, result.textRaw, fixes);
@@ -132,16 +130,12 @@ export class BrowserSessionBridge {
         return buildAgentHandoff(this.session);
     }
 
-    public async updateSegment(index: number, text: string, recompile = false): Promise<SessionSnapshot> {
+    public async updateSegment(index: number, text: string, _recompile = false): Promise<SessionSnapshot> {
         if (!this.session.updateSegment(index, text)) {
             return this.getSnapshot();
         }
-        if (recompile) {
-            await this.session.compile(this.deps.getVoiceContext, this.getCompileMode(), this.deps.compileService);
-            await this.refreshProviderLabel();
-        }
         this.notifyUpdated();
-        return this.getSnapshot(recompile ? 'Segment updated. Brief refreshed.' : 'Segment updated. Refresh brief when ready.');
+        return this.getSnapshot('Segment updated. Tap refresh to recompile brief.');
     }
 
     public async getAppSettings(): Promise<AppSettingsView> {
@@ -177,17 +171,12 @@ export class BrowserSessionBridge {
         if (!this.session.dismissSuggestedFix(index, heard, corrected)) {
             return this.getSnapshot();
         }
-        if ((await this.deps.compileService.resolveProviderId()) !== 'none') {
-            await this.session.compile(this.deps.getVoiceContext, this.getCompileMode(), this.deps.compileService);
-            await this.refreshProviderLabel();
-            this.notifyUpdated();
-            return this.getSnapshot('Reverted correction. Brief refreshed.');
-        }
         this.notifyUpdated();
-        return this.getSnapshot('Reverted correction. Refresh brief when ready.');
+        return this.getSnapshot('Reverted correction. Tap refresh to recompile brief.');
     }
 
     public async forceCompile(): Promise<SessionSnapshot> {
+        const segmentCount = this.session.getSegments().length;
         await this.session.compile(
             this.deps.getVoiceContext,
             this.getCompileMode(),
@@ -196,7 +185,11 @@ export class BrowserSessionBridge {
         );
         await this.refreshProviderLabel();
         this.notifyUpdated();
-        return this.getSnapshot('Re-scaffolded.');
+        return this.getSnapshot(
+            segmentCount
+                ? `Re-scaffolded from ${segmentCount} segment(s) in Your Words.`
+                : 'Re-scaffolded.'
+        );
     }
 
     public async reset(): Promise<SessionSnapshot> {
@@ -272,13 +265,6 @@ export class BrowserSessionBridge {
         }
     }
 
-    private async maybeCompile(): Promise<void> {
-        const live = vscode.workspace.getConfiguration().get<boolean>('teacher.compile.live', true);
-        if (live && !this.session.isEmpty()) {
-            await this.session.compile(this.deps.getVoiceContext, this.getCompileMode(), this.deps.compileService);
-        }
-    }
-
     private getCompileMode(): CompileMode {
         return vscode.workspace.getConfiguration().get<CompileMode>('teacher.compile.mode', 'teacher');
     }
@@ -337,7 +323,9 @@ function formatSegmentStatus(
         parts.push('Transcript polished (word-level detail unavailable)');
     }
     if (parts.length) {
-        return `${verb}. ${parts.join('. ')}. Brief updated.`;
+        return `${verb}. ${parts.join('. ')}. Tap refresh to update agent prompt.`;
     }
-    return verb === 'Transcribed' ? 'Transcribed and added.' : 'Added. Brief updated.';
+    return verb === 'Transcribed'
+        ? 'Transcribed and added. Tap refresh to update agent prompt.'
+        : 'Added. Tap refresh to update agent prompt.';
 }

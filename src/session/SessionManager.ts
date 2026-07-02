@@ -50,6 +50,7 @@ export class SessionManager {
             fixes: sanitizeFixes(trimmed, fixes),
             audit
         });
+        this.needsRegenerate = true;
     }
 
     public updateSegment(index: number, text: string): boolean {

@@ -419,7 +419,7 @@
           </select>
         </div>
         <div class="setting-row">
-          <label for="setLiveCompile">Live compile after each pause</label>
+          <label for="setLiveCompile">Auto-compile after each pause (legacy)<span class="hint">Off by default — use Refresh to recompile from all Your Words segments.</span></label>
           <input type="checkbox" id="setLiveCompile" data-key="teacher.compile.live" />
         </div>
         <div class="setting-row">
@@ -1011,7 +1011,7 @@
         if (json?.session?.status) setStatus(json.session.status, json.session.compileError ? 'warn' : 'ok');
         else {
           const err = json?.session?.compileError;
-          const statusMsg = err ? 'Added. Compile failed: ' + err : 'Added. Brief updated.';
+          const statusMsg = err ? 'Added. Compile pending — tap refresh.' : 'Added. Tap refresh to update agent prompt.';
           setStatus(statusMsg, err ? 'warn' : 'ok');
         }
         loadSettings().catch(() => {});
@@ -1030,37 +1030,30 @@
     }
 
     async function saveSegmentEdit(index, text) {
-      setBriefCompiling(true);
-      setStatus('Recompiling brief…');
       try {
         const json = await fetch('/api/segment/' + index, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ text, recompile: true })
+          body: JSON.stringify({ text, recompile: false })
         }).then(r => r.json());
         if (json.session) applySession(json.session);
-        setStatus(json.session?.compileError ? 'Compile failed: ' + json.session.compileError : 'Brief refreshed.', json.session?.compileError ? 'warn' : 'ok');
+        if (json.session?.status) setStatus(json.session.status, 'ok');
       } catch (e) {
-        setStatus('Recompile failed: ' + (e.message || e), 'warn');
-      } finally {
-        setBriefCompiling(false);
+        setStatus('Could not save segment edit.', 'warn');
       }
     }
 
     async function revertFix(index, heard, corrected) {
-      setBriefCompiling(true);
-      setStatus('Recompiling brief…');
       try {
         const json = await fetch('/api/segment/' + index + '/fix', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ heard, corrected, action: 'revert' })
         }).then(r => r.json());
         if (json.session) applySession(json.session);
-        setStatus(json.session?.status || (json.session?.compileError ? 'Compile failed: ' + json.session.compileError : 'Brief refreshed.'), json.session?.compileError ? 'warn' : 'ok');
+        if (json.session?.status) setStatus(json.session.status, 'ok');
       } catch (e) {
-        setStatus('Recompile failed: ' + (e.message || e), 'warn');
+        setStatus('Could not revert correction.', 'warn');
       } finally {
-        setBriefCompiling(false);
         hideFixPopover();
       }
     }
