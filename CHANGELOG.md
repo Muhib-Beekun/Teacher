@@ -7,6 +7,9 @@ Version numbers match `package.json` and `teacher-<version>.vsix` builds.
 
 ## [Unreleased]
 
+### Added
+- README banner image (`media/banner.jpg`).
+
 ## [0.0.53] - 2026-06-30
 
 ### Changed

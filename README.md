@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="media/banner.jpg" alt="Teacher: Lecture your AI. Voice sessions for Cursor and VS Code." width="100%" />
+</p>
+
 # Teacher
 
 *Lecture your AI.*
