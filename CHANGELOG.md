@@ -7,6 +7,12 @@ Version numbers match `package.json` and `teacher-<version>.vsix` builds.
 
 ## [Unreleased]
 
+## [0.0.48] - 2026-07-02
+
+### Changed
+- Mic button and Cancel control centered in the capture column.
+- Removed green “Microphone ready” banner when Chrome/Edge is detected.
+
 ## [0.0.47] - 2026-06-30
 
 ### Added
@@ -128,3 +134,4 @@ Each row is one packaged VSIX build during dogfood. Grouped entries above summar
 | 0.0.45 | Changelog, release workflow, browser docs, STT highlight fix |
 | 0.0.46 | MIT license, public repo, Open VSX install docs |
 | 0.0.47 | Mic browser gate, fresh refresh compile, revert → recompile |
+| 0.0.48 | Mic/cancel centering; remove green ready banner |

@@ -120,10 +120,17 @@
     }
     .mic-browser-hint strong { display: block; color: var(--warn); margin-bottom: 4px; }
     .mic-browser-hint em { font-style: normal; color: var(--accent); }
-    .mic-wrap { position: relative; width: 72px; height: 72px; margin-bottom: 8px; }
+    .mic-unsupported { border-color: var(--warn); }
+    #micCaptureUi {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .mic-wrap { position: relative; width: 72px; height: 72px; margin-bottom: 8px; flex-shrink: 0; }
     .mic-actions button, .mic-cancel {
       border: 1px solid var(--line); background: transparent; color: var(--muted);
-      border-radius: 8px; padding: 4px 10px; font-size: 11px; cursor: pointer; margin-bottom: 14px;
+      border-radius: 8px; padding: 4px 10px; font-size: 11px; cursor: pointer; margin: 0 0 14px;
     }
     .mic-actions button:hover, .mic-cancel:hover:not(:disabled) { color: var(--warn); border-color: var(--warn); }
     .mic-cancel:disabled,
@@ -191,9 +198,6 @@
     .icon-btn.refreshing { pointer-events: none; color: var(--accent); border-color: var(--accent); }
     .icon-btn.refreshing svg { animation: spin .7s linear infinite; }
     .pane-body.brief-compiling { opacity: 0.55; pointer-events: none; }
-    .mic-browser-hint.ok { border-color: var(--ok); background: rgba(67,214,164,.08); }
-    .mic-browser-hint.ok strong { color: var(--ok); }
-    .mic-unsupported { border-color: var(--warn); }
     .pane-body {
       padding: 12px; min-height: 0; background: var(--panel);
       display: flex; flex-direction: column;
@@ -447,10 +451,6 @@
 
   <main class="layout">
     <section class="capture-col" aria-label="Voice capture">
-      <div class="mic-browser-hint ok" id="micBrowserOk" hidden>
-        <strong>Microphone ready</strong>
-        <span>Chrome or Edge detected. Allow mic when prompted, then tap the button below.</span>
-      </div>
       <div class="mic-browser-hint mic-unsupported" id="micUnsupported" hidden>
         <strong>Microphone needs Chrome or Edge</strong>
         <span>This browser cannot capture voice. In Cursor run <em>Teacher: Open Web UI</em> so the page opens in Chrome or Edge, then bookmark the URL.</span>
@@ -563,10 +563,8 @@
       const supported = isMicCapableBrowser() && !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
       const capture = document.getElementById('micCaptureUi');
       const wrong = document.getElementById('micUnsupported');
-      const ok = document.getElementById('micBrowserOk');
       if (capture) capture.hidden = !supported;
       if (wrong) wrong.hidden = supported;
-      if (ok) ok.hidden = !supported;
       if (!supported && liveTextEl) {
         liveTextEl.dataset.placeholder = 'Type here (mic needs Chrome or Edge).';
       }
