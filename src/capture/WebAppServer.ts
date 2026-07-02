@@ -328,7 +328,7 @@ export class WebAppServer {
             }
             const session =
                 action === 'revert' || action === 'dismiss'
-                    ? bridge.revertFix(index, heard, corrected)
+                    ? await bridge.revertFix(index, heard, corrected)
                     : bridge.getSnapshot('Correction already applied.');
             this.json(res, 200, { ok: true, session });
             return;

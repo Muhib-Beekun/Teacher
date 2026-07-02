@@ -101,11 +101,12 @@ export class SessionManager {
     public async compile(
         getContext: () => VoiceSessionContext,
         mode: CompileMode,
-        compileService: CompileService
+        compileService: CompileService,
+        options?: { fresh?: boolean }
     ): Promise<CompiledBrief | null> {
         this.lastCompileError = undefined;
         try {
-            const priorBrief = this.compiledBrief ?? undefined;
+            const priorBrief = options?.fresh ? undefined : (this.compiledBrief ?? undefined);
             this.compiledBrief = await compileService.compile(this.getRawTexts(), getContext(), mode, priorBrief);
             this.briefVersions = [
                 {

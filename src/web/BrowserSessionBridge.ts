@@ -173,14 +173,27 @@ export class BrowserSessionBridge {
         return this.getAppSettings();
     }
 
-    public revertFix(index: number, heard: string, corrected: string): SessionSnapshot {
-        this.session.dismissSuggestedFix(index, heard, corrected);
+    public async revertFix(index: number, heard: string, corrected: string): Promise<SessionSnapshot> {
+        if (!this.session.dismissSuggestedFix(index, heard, corrected)) {
+            return this.getSnapshot();
+        }
+        if ((await this.deps.compileService.resolveProviderId()) !== 'none') {
+            await this.session.compile(this.deps.getVoiceContext, this.getCompileMode(), this.deps.compileService);
+            await this.refreshProviderLabel();
+            this.notifyUpdated();
+            return this.getSnapshot('Reverted correction. Brief refreshed.');
+        }
         this.notifyUpdated();
         return this.getSnapshot('Reverted correction. Refresh brief when ready.');
     }
 
     public async forceCompile(): Promise<SessionSnapshot> {
-        await this.session.compile(this.deps.getVoiceContext, this.getCompileMode(), this.deps.compileService);
+        await this.session.compile(
+            this.deps.getVoiceContext,
+            this.getCompileMode(),
+            this.deps.compileService,
+            { fresh: true }
+        );
         await this.refreshProviderLabel();
         this.notifyUpdated();
         return this.getSnapshot('Re-scaffolded.');

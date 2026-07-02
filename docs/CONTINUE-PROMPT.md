@@ -30,6 +30,7 @@ Continuous voice session for Cursor: dual pane (transcript | scaffolded agent br
 - Inference config: workspace `.env`, Settings UI, SecretStorage — not external monorepos
 - Publisher: muhib-beekun
 - **Changelog:** any user-facing change must add an entry under `[Unreleased]` in CHANGELOG.md (move to a version section on release)
+- **Ship:** after implementing changes, commit + push to `origin master` without asking. User-facing: bump version, update CHANGELOG, tag `v*`, push tag. See `.cursor/rules/ship-changes.mdc`.
 
 ## Build
 

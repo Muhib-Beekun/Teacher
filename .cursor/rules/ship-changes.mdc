@@ -1,0 +1,28 @@
+---
+description: Always commit, push, and release after implementing changes in Teacher
+alwaysApply: true
+---
+
+# Ship changes (non-negotiable)
+
+When you **implement** code or docs changes in this repo, finish the task by shipping — do **not** ask the user whether to commit or push.
+
+## End of every implementation task
+
+1. Update `CHANGELOG.md` under `[Unreleased]` for user-facing changes.
+2. Bump `package.json` version when the change is user-facing (patch/minor as appropriate).
+3. Run `npm run build` and `npm run test:compiler` (and other relevant tests if touched).
+4. **Commit** with a clear message (why, not just what).
+5. **Push** to `origin master`.
+6. For user-facing releases: move changelog entry to the version section, `npm run package`, tag `v<version>`, push tag (triggers GitHub Release + Open VSX via CI).
+
+## Do not
+
+- Stop after editing files and ask "want me to commit?"
+- Leave unpushed commits on `master` at end of turn.
+- Commit `.env`, API keys, or secrets.
+
+## Exceptions (ask first)
+
+- User explicitly says "don't commit" or "local only".
+- Destructive git operations (force push, hard reset).

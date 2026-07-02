@@ -7,8 +7,16 @@ Version numbers match `package.json` and `teacher-<version>.vsix` builds.
 
 ## [Unreleased]
 
+## [0.0.47] - 2026-06-30
+
+### Added
+- Chrome/Edge browser detection — mic UI hidden in unsupported browsers.
+- Refresh spinner and brief-pane loading state during recompile.
+
 ### Fixed
-- `npm run publish:ovsx` on Windows (replaces bash `$(...)` with `tools/publish-ovsx.mjs`).
+- Manual **Refresh** runs a fresh compile (no prior-brief anchor).
+- **Revert** on STT yellow highlights triggers recompile when a compile provider is configured.
+- Segment edits show recompile progress in the UI.
 
 ## [0.0.46] - 2026-06-30
 
@@ -119,3 +127,4 @@ Each row is one packaged VSIX build during dogfood. Grouped entries above summar
 | 0.0.44 | Standalone publish prep, GitHub Release |
 | 0.0.45 | Changelog, release workflow, browser docs, STT highlight fix |
 | 0.0.46 | MIT license, public repo, Open VSX install docs |
+| 0.0.47 | Mic browser gate, fresh refresh compile, revert → recompile |
