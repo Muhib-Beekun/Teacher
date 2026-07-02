@@ -1,4 +1,6 @@
 import { VoiceSessionContext } from '../context/VoiceSessionContext';
+import { extractWorkspaceTargets } from '../context/targetMatch';
+import { buildSessionLogFromSegments } from './buildCompilePrompt';
 import { analyzeSegments } from '../session/RetractionDetector';
 import { CompiledBrief, Segment } from '../session/types';
 
@@ -25,6 +27,7 @@ function compileVerbatim(rawSegments: string[]): CompiledBrief {
         target: [],
         constraints: [],
         verification: [],
+        sessionLog: [],
         superseded: []
     };
 }
@@ -38,14 +41,15 @@ function compileTeacher(segments: Segment[], voiceContext: VoiceSessionContext):
     const constraints = extractConstraints(active);
     const verification = extractVerification(active);
     const latestText = intentSegments.length ? intentSegments[intentSegments.length - 1].text : '';
-    const target = extractTarget(latestText, voiceContext);
+    const target = extractWorkspaceTargets(latestText, voiceContext);
     const priorChunks = intentSegments.slice(0, -1).map((s) => s.text).filter(Boolean);
     const supersededQuotes = [
         ...superseded.map((s) => s.text).filter(Boolean),
         ...priorChunks
     ];
+    const sessionLog = buildSessionLogFromSegments(segments);
 
-    const markdown = formatMarkdown(goal, target, constraints, verification, supersededQuotes);
+    const markdown = formatMarkdown(goal, target, constraints, verification, sessionLog, supersededQuotes);
 
     return {
         markdown,
@@ -53,6 +57,7 @@ function compileTeacher(segments: Segment[], voiceContext: VoiceSessionContext):
         target,
         constraints,
         verification,
+        sessionLog,
         superseded: supersededQuotes
     };
 }
@@ -109,42 +114,12 @@ function extractVerification(active: Segment[]): string[] {
     return items;
 }
 
-function extractTarget(latestSpeech: string, voiceContext: VoiceSessionContext): string[] {
-    const targets = new Set<string>();
-    if (!latestSpeech.trim()) {
-        return [];
-    }
-    const speech = latestSpeech;
-    const speechLower = speech.toLowerCase();
-
-    const pathLike = speech.match(/[`'"]?([\w./\\-]+\.(ts|tsx|js|jsx|py|go|rs|md|html|json|mjs))[`'"]?/gi);
-    if (pathLike) {
-        for (const match of pathLike) {
-            targets.add(match.replace(/[`'"]/g, ''));
-        }
-    }
-
-    for (const file of voiceContext.targetFiles) {
-        const base = file.split(/[/\\]/).pop() ?? file;
-        if (speech.includes(file) || speechLower.includes(base.toLowerCase())) {
-            targets.add(file);
-        }
-    }
-
-    for (const term of voiceContext.dictionary_context.slice(0, 50)) {
-        if (term.includes('.') && speechLower.includes(term.toLowerCase())) {
-            targets.add(term);
-        }
-    }
-
-    return [...targets];
-}
-
 function formatMarkdown(
     goal: string,
     target: string[],
     constraints: string[],
     verification: string[],
+    sessionLog: string[],
     superseded: string[]
 ): string {
     const lines: string[] = [
@@ -152,17 +127,31 @@ function formatMarkdown(
         goal,
         '',
         '## Target',
-        ...(target.length ? target.map((t) => `- \`${t}\``) : ['- (no targets inferred — open files or speak file paths)']),
-        '',
-        '## Constraints',
-        ...(constraints.length ? constraints.map((c) => `- ${c}`) : ['- (none detected)']),
-        '',
-        '## Verification',
-        ...(verification.length ? verification.map((v) => `- ${v}`) : ['- (none yet — say how to verify when ready)']),
-        '',
-        '---',
-        '**Reference only (superseded — do not implement unless asked again)**'
+        ...(target.length ? target.map((t) => `- \`${t}\``) : ['- (no targets inferred: speak file paths; browser UI cannot open files)']),
+        ''
     ];
+
+    if (constraints.length) {
+        lines.push('## Constraints', ...constraints.map((c) => `- ${c}`), '');
+    }
+
+    if (verification.length) {
+        lines.push('## Verification', ...verification.map((v) => `- ${v}`), '');
+    }
+
+    if (sessionLog.length) {
+        lines.push(
+            '## Session - your words',
+            '*Audit trail: how the speaker arrived at this brief. Read alongside Goal for corrections and thought process.*',
+            ...sessionLog.map((s) => `- ${s}`),
+            ''
+        );
+    }
+
+    lines.push(
+        '---',
+        '**Reference only (superseded - do not implement unless asked again)**'
+    );
 
     if (superseded.length) {
         lines.push(...superseded.map((s) => `- ${s}`));

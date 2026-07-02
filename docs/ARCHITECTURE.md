@@ -130,15 +130,6 @@ No telemetry SDK in v0.
 
 ---
 
-## Relationship to AmpliJob
+## Standalone product
 
-Shared concepts, separate repos:
-
-| Concept | AmpliJob (`environment`) | Teacher (this repo) |
-|---------|--------------------------|---------------------|
-| `VoiceSessionContext` | Mobile evidence / Tell story | Cursor agent prompts |
-| Layered STT pipeline | evidence-and-atoms §9 | Extension STT adapter |
-| Supersession | Evidence versions | Teacher compile reference block |
-| Langfuse traces | Production AI | Optional later for compile quality |
-
-Contract shapes should stay compatible so a future shared npm package (`@amplijob/voice-context`) is possible.
+Teacher is a self-contained VS Code extension. `VoiceSessionContext`, layered STT, and superseded compile blocks are defined in this repo — no external monorepo dependency for runtime or configuration.

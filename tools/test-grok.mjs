@@ -3,7 +3,7 @@ import { loadGrokKey, loadGrokModel } from './load-grok-key.mjs';
 
 const key = loadGrokKey();
 if (!key) {
-    console.error('FAIL: No Grok API key found (XAI_API_KEY, GROK_API_KEY, or CLOUD_LLM_GENERATE_API_KEY)');
+    console.error('FAIL: No inference API key found (INFERENCE_API_KEY, XAI_API_KEY, or GROK_API_KEY in .env)');
     process.exitCode = 1;
     process.exit();
 }

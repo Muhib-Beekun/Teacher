@@ -1,6 +1,7 @@
 import * as path from 'path';
 import * as vscode from 'vscode';
-import { basenameTerm, parsePackageJsonDeps, readCodewordsFile } from './lexicalScan';
+import { readWorkspaceCodewords } from '../config/CodewordsManager';
+import { basenameTerm, parsePackageJsonDeps } from './lexicalScan';
 import { emptyVoiceSessionContext, VoiceSessionContext } from './VoiceSessionContext';
 
 interface TermCandidate {
@@ -64,6 +65,7 @@ export class WorkspaceContextIndex {
         await this.collectDependencies(candidates);
         await this.collectBasenames(excludePattern, candidates);
         await this.collectCodewords(candidates);
+        this.collectEnvSymbols(candidates);
 
         const utterance = (options.recentUtterance ?? '').toLowerCase();
         if (utterance) {
@@ -187,7 +189,7 @@ export class WorkspaceContextIndex {
             return;
         }
 
-        const files = await vscode.workspace.findFiles('**/*', excludePattern, 300);
+        const files = await vscode.workspace.findFiles('**/*', excludePattern, 120);
         for (const uri of files) {
             const rel = this.relativePath(uri);
             const term = basenameTerm(rel);
@@ -198,17 +200,17 @@ export class WorkspaceContextIndex {
         }
     }
 
+    private collectEnvSymbols(candidates: TermCandidate[]): void {
+        for (const term of ['INFERENCE_API_KEY', 'OPENAI_API_KEY', 'DEEPGRAM_API_KEY']) {
+            candidates.push({ term, score: 55, source: 'codeword' });
+        }
+    }
+
     private async collectCodewords(candidates: TermCandidate[]): Promise<void> {
         for (const folder of vscode.workspace.workspaceFolders ?? []) {
-            const codewordsUri = vscode.Uri.joinPath(folder.uri, '.teacher', 'codewords.txt');
-            try {
-                const raw = await vscode.workspace.fs.readFile(codewordsUri);
-                const lines = readCodewordsFileFromBuffer(raw);
-                for (const word of lines) {
-                    candidates.push({ term: word, score: 60, source: 'codeword' });
-                }
-            } catch {
-                // optional glossary
+            const words = await readWorkspaceCodewords(folder);
+            for (const word of words) {
+                candidates.push({ term: word, score: 60, source: 'codeword' });
             }
         }
     }
@@ -234,8 +236,12 @@ export class WorkspaceContextIndex {
         if (!terms.length) {
             return '';
         }
-        const sample = terms.slice(0, 80).join(', ');
-        return `Technical workspace vocabulary: ${sample}`;
+        const priority = terms.slice(0, 40).join(', ');
+        const more = terms.length > 40 ? `, ${terms.slice(40, 80).join(', ')}` : '';
+        return (
+            `Software development dictation. Terms: ${priority}${more}. ` +
+            'Common corrections: INFERENCE_API_KEY not croc/rock API key, Ollama not Obama, design language not sign language, agent prompt.'
+        );
     }
 
     private relativePath(uri: vscode.Uri): string {
@@ -266,12 +272,4 @@ function isUsefulTerm(term: string): boolean {
         return false;
     }
     return true;
-}
-
-function readCodewordsFileFromBuffer(raw: Uint8Array): string[] {
-    return Buffer.from(raw)
-        .toString('utf8')
-        .split(/\r?\n/)
-        .map((line) => line.trim())
-        .filter((line) => line.length > 0 && !line.startsWith('#'));
 }

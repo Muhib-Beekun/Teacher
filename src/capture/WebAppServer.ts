@@ -16,6 +16,9 @@ export class WebAppServer {
     private healthExtras?: () => Promise<Record<string, unknown>>;
     private onSend?: (source: 'brief' | 'words', briefVersion?: number) => Promise<{ ok: boolean; message: string }>;
 
+    private onAction?: (action: string) => Promise<{ ok: boolean; message: string }>;
+    private onLlmKey?: (key: string) => Promise<void>;
+
     constructor(private readonly extensionPath: string) {
         const htmlPath = path.join(extensionPath, 'media', 'teacher-app.html');
         this.html = fs.readFileSync(htmlPath, 'utf8');
@@ -29,8 +32,16 @@ export class WebAppServer {
         this.healthExtras = fn;
     }
 
+    public setActionHandler(fn: (action: string) => Promise<{ ok: boolean; message: string }>): void {
+        this.onAction = fn;
+    }
+
     public setSendHandler(fn: (source: 'brief' | 'words', briefVersion?: number) => Promise<{ ok: boolean; message: string }>): void {
         this.onSend = fn;
+    }
+
+    public setLlmKeyHandler(fn: (key: string) => Promise<void>): void {
+        this.onLlmKey = fn;
     }
 
     public getPort(): number {
@@ -96,6 +107,10 @@ export class WebAppServer {
     private async route(req: http.IncomingMessage, res: http.ServerResponse, bridge: BrowserSessionBridge): Promise<void> {
         const url = req.url ?? '/';
 
+        if (req.method === 'GET' && this.tryServeMedia(url, res)) {
+            return;
+        }
+
         if (req.method === 'GET' && (url === '/' || url === '/index.html')) {
             res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
             res.end(this.html);
@@ -108,8 +123,97 @@ export class WebAppServer {
             return;
         }
 
+        if (req.method === 'GET' && url === '/api/settings') {
+            const settings = await bridge.getAppSettings();
+            const session = bridge.getSnapshot();
+            const context = bridge.getContextPayload();
+            this.json(res, 200, {
+                ok: true,
+                settings,
+                runtime: {
+                    url: this.getUrl(),
+                    segmentCount: session.segmentCount,
+                    needsRegenerate: !!session.needsRegenerate,
+                    contextTermCount: context.dictionary_context.length,
+                    targetFileCount: context.targetFiles.length,
+                    totalFixCount: bridge.getTotalFixCount()
+                }
+            });
+            return;
+        }
+
+        if (req.method === 'POST' && url === '/api/action') {
+            if (!this.onAction) {
+                this.json(res, 501, { ok: false, error: 'Action not available' });
+                return;
+            }
+            const body = await this.readBody(req, res);
+            if (!body) return;
+            try {
+                const parsed = JSON.parse(body.toString('utf8')) as { action?: string };
+                const result = await this.onAction(parsed.action ?? '');
+                this.json(res, result.ok ? 200 : 400, result);
+            } catch (err) {
+                const msg = err instanceof Error ? err.message : String(err);
+                this.json(res, 500, { ok: false, error: msg });
+            }
+            return;
+        }
+
+        if (req.method === 'PATCH' && url === '/api/settings') {
+            const body = await this.readBody(req, res);
+            if (!body) return;
+            try {
+                const parsed = JSON.parse(body.toString('utf8')) as { key?: string; value?: boolean | string | number };
+                if (!parsed.key) {
+                    this.json(res, 400, { ok: false, error: 'Missing key' });
+                    return;
+                }
+                const settings = await bridge.patchAppSetting(parsed.key, parsed.value as boolean | string | number);
+                this.json(res, 200, { ok: true, settings });
+            } catch (err) {
+                const msg = err instanceof Error ? err.message : String(err);
+                this.json(res, 400, { ok: false, error: msg });
+            }
+            return;
+        }
+
+        if (req.method === 'POST' && url === '/api/settings/llm-key') {
+            const body = await this.readBody(req, res);
+            if (!body) return;
+            try {
+                const parsed = JSON.parse(body.toString('utf8')) as { key?: string };
+                if (!parsed.key?.trim()) {
+                    this.json(res, 400, { ok: false, error: 'Missing API key' });
+                    return;
+                }
+                await bridge.setLlmApiKey(parsed.key.trim());
+                const settings = await bridge.getAppSettings();
+                this.json(res, 200, { ok: true, settings });
+            } catch (err) {
+                const msg = err instanceof Error ? err.message : String(err);
+                this.json(res, 400, { ok: false, error: msg });
+            }
+            return;
+        }
+
+        if (req.method === 'GET' && url === '/api/stt-audit') {
+            this.json(res, 200, { ok: true, audit: bridge.getSttAuditReport() });
+            return;
+        }
+
+        if (req.method === 'GET' && url === '/api/handoff') {
+            this.json(res, 200, { ok: true, handoff: bridge.getAgentHandoff() });
+            return;
+        }
+
         if (req.method === 'GET' && url === '/api/session') {
             this.json(res, 200, { ok: true, session: bridge.getSnapshot() });
+            return;
+        }
+
+        if (req.method === 'GET' && url === '/api/context') {
+            this.json(res, 200, { ok: true, context: bridge.getContextPayload() });
             return;
         }
 
@@ -144,7 +248,7 @@ export class WebAppServer {
         }
 
         if (req.method === 'POST' && (url === '/api/reset' || url === '/api/clear')) {
-            const session = bridge.reset();
+            const session = await bridge.reset();
             this.json(res, 200, { ok: true, session });
             return;
         }
@@ -287,12 +391,39 @@ export class WebAppServer {
     private log(line: string): void {
         this.output?.appendLine(line);
     }
+
+    private tryServeMedia(url: string, res: http.ServerResponse): boolean {
+        const mediaFiles: Record<string, string> = {
+            '/icon.png': 'icon.png',
+            '/icon.svg': 'media/icon.svg',
+            '/icon-mark.svg': 'media/icon-mark.svg',
+            '/favicon.ico': 'icon.png'
+        };
+        const file = mediaFiles[url.split('?')[0]];
+        if (!file) {
+            return false;
+        }
+        const filePath = path.join(this.extensionPath, file);
+        if (!fs.existsSync(filePath)) {
+            res.writeHead(404);
+            res.end('Not found');
+            return true;
+        }
+        const ext = path.extname(file).toLowerCase();
+        const type =
+            ext === '.svg' ? 'image/svg+xml'
+                : ext === '.png' ? 'image/png'
+                    : 'application/octet-stream';
+        res.writeHead(200, { 'Content-Type': type, 'Cache-Control': 'public, max-age=3600' });
+        res.end(fs.readFileSync(filePath));
+        return true;
+    }
 }
 
 function corsHeaders(): Record<string, string> {
     return {
         'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'GET, POST, PUT, OPTIONS',
+        'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, OPTIONS',
         'Access-Control-Allow-Headers': 'Content-Type'
     };
 }

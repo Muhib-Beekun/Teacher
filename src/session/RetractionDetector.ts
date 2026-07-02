@@ -123,18 +123,18 @@ function markPhraseSuperseded(segments: Segment[], phrase: string): void {
     }
 }
 
-export function formatSegmentLabel(seg: Segment): string {
+export function formatSegmentLabel(seg: Segment, index = 0): string {
     if (seg.superseded) {
         return 'superseded';
-    }
-    if (seg.tags.some((t) => t.kind === 'correct')) {
-        return 'correction';
     }
     if (seg.tags.some((t) => t.kind === 'retract')) {
         return 'retraction';
     }
-    if (seg.tags.some((t) => t.kind === 'constraint')) {
-        return 'constraint';
+    if (index === 0) {
+        return 'included';
     }
-    return 'included';
+    if (seg.tags.some((t) => t.kind === 'correct')) {
+        return 'correction';
+    }
+    return 'correction';
 }

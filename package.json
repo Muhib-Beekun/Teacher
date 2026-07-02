@@ -1,15 +1,16 @@
 {
     "name": "teacher",
     "displayName": "Teacher",
-    "description": "Context-aware voice sessions and intent compilation for Cursor and VS Code compatible editors.",
-    "version": "0.0.14",
+    "description": "Lecture your AI: continuous voice sessions that teach the agent what you meant. Workspace-aware STT and structured agent briefs for Cursor and VS Code.",
+    "version": "0.0.44",
     "publisher": "muhib-beekun",
+    "icon": "icon.png",
     "author": "Muhib Beekun",
     "private": true,
     "license": "UNLICENSED",
     "repository": {
         "type": "git",
-        "url": "https://github.com/AmpliJob/Teacher.git"
+        "url": "https://github.com/Muhib-Beekun/Teacher.git"
     },
     "engines": {
         "vscode": "^1.92.0"
@@ -24,12 +25,30 @@
         "teacher"
     ],
     "main": "./out/extension.js",
+    "activationEvents": [
+        "onStartupFinished",
+        "onCommand:teacher.startSession",
+        "onCommand:teacher.appendSegment",
+        "onCommand:teacher.compile",
+        "onCommand:teacher.send",
+        "onCommand:teacher.dictateHere",
+        "onCommand:teacher.endSession",
+        "onCommand:teacher.rebuildIndex",
+        "onCommand:teacher.setInferenceApiKey",
+        "onCommand:teacher.setDeepgramKey",
+        "onCommand:teacher.openWebUi",
+        "onCommand:teacher.openMicSidecar"
+    ],
     "contributes": {
         "commands": [
             {
                 "command": "teacher.startSession",
                 "title": "Teacher: Start Session",
-                "category": "Teacher"
+                "category": "Teacher",
+                "icon": {
+                    "light": "icon.png",
+                    "dark": "icon.png"
+                }
             },
             {
                 "command": "teacher.appendSegment",
@@ -62,8 +81,8 @@
                 "category": "Teacher"
             },
             {
-                "command": "teacher.setGrokApiKey",
-                "title": "Teacher: Set Grok API Key",
+                "command": "teacher.setInferenceApiKey",
+                "title": "Teacher: Set Inference API Key",
                 "category": "Teacher"
             },
             {
@@ -74,12 +93,20 @@
             {
                 "command": "teacher.openWebUi",
                 "title": "Teacher: Open Web UI",
-                "category": "Teacher"
+                "category": "Teacher",
+                "icon": {
+                    "light": "icon.png",
+                    "dark": "icon.png"
+                }
             },
             {
                 "command": "teacher.openMicSidecar",
                 "title": "Teacher: Open Web UI (Browser)",
-                "category": "Teacher"
+                "category": "Teacher",
+                "icon": {
+                    "light": "icon.png",
+                    "dark": "icon.png"
+                }
             }
         ],
         "configuration": {
@@ -116,6 +143,16 @@
                     "minimum": 10,
                     "description": "Maximum ranked context terms to keep in VoiceSessionContext."
                 },
+                "teacher.context.rebuildMode": {
+                    "type": "string",
+                    "enum": [
+                        "clearSession",
+                        "onFileChange",
+                        "eachSegment"
+                    ],
+                    "default": "clearSession",
+                    "description": "When to rebuild the workspace STT index. clearSession = on Clear session only (conservative). onFileChange = debounced async rebuild when files change. eachSegment = after every mic pause."
+                },
                 "teacher.context.excludeGlobs": {
                     "type": "array",
                     "items": {
@@ -129,6 +166,19 @@
                         "**/.env*"
                     ],
                     "description": "Glob patterns excluded from basename indexing."
+                },
+                "teacher.context.codewordsPath": {
+                    "type": "string",
+                    "default": ".teacher/codewords.txt",
+                    "description": "Workspace-relative path to your STT glossary (one term per line). Gitignored; created from template on first run."
+                },
+                "teacher.context.codewords": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "default": [],
+                    "description": "Extra STT glossary terms merged with the codewords file (no file needed)."
                 },
                 "teacher.compile.mode": {
                     "type": "string",
@@ -162,8 +212,8 @@
                 },
                 "teacher.stt.homonymPass": {
                     "type": "boolean",
-                    "default": false,
-                    "description": "Suggest workspace term corrections for STT (off = verbatim what you said)."
+                    "default": true,
+                    "description": "Apply vectorless dictionary corrections to STT (workspace symbols, codewords). Always on in browser path; this setting affects whisper/deepgram-only fallback."
                 },
                 "teacher.stt.provider": {
                     "type": "string",
@@ -188,35 +238,30 @@
                 },
                 "teacher.compile.provider": {
                     "type": "string",
-                    "enum": ["grok"],
-                    "default": "grok",
-                    "description": "Compile provider — Grok only. Requires API key; no fallback."
+                    "enum": ["auto", "cloud", "ollama"],
+                    "default": "auto",
+                    "description": "Compile provider. auto = Ollama if running locally, else cloud inference API. verbatim mode skips LLM."
                 },
                 "teacher.compile.polishStt": {
                     "type": "boolean",
                     "default": true,
-                    "description": "Fix speech-to-text errors via Grok before compiling (requires Grok API key)."
+                    "description": "Fix speech-to-text errors via LLM before compiling (requires API key or Ollama)."
                 },
-                "teacher.inference.grok.apiKey": {
+                "teacher.inference.llm.baseUrl": {
                     "type": "string",
-                    "default": "",
-                    "description": "Optional Grok key (prefer Teacher: Set Grok API Key or XAI_API_KEY in workspace .env — do not commit)."
+                    "default": "https://api.openai.com/v1",
+                    "description": "OpenAI-compatible API base URL for compile and STT polish."
                 },
-                "teacher.inference.grok.url": {
+                "teacher.inference.llm.model": {
                     "type": "string",
-                    "default": "https://api.x.ai/v1",
-                    "description": "xAI Grok API base URL."
+                    "default": "gpt-4o-mini",
+                    "description": "Model id for compile and STT polish (OpenAI-compatible hosts)."
                 },
-                "teacher.inference.grok.model": {
-                    "type": "string",
-                    "default": "grok-4-fast-reasoning",
-                    "description": "Grok model for compile and STT polish (e.g. grok-4.3)."
-                },
-                "teacher.inference.grok.timeoutMs": {
+                "teacher.inference.llm.timeoutMs": {
                     "type": "number",
                     "default": 45000,
                     "minimum": 5000,
-                    "description": "Grok API timeout in milliseconds."
+                    "description": "Inference API timeout in milliseconds."
                 },
                 "teacher.inference.ollama.url": {
                     "type": "string",
@@ -227,6 +272,12 @@
                     "type": "string",
                     "default": "qwen2.5-coder:14b",
                     "description": "Ollama model for STT polish and compile (e.g. qwen2.5-coder:14b). Auto-fallback if tag differs."
+                },
+                "teacher.inference.ollama.timeoutMs": {
+                    "type": "number",
+                    "default": 120000,
+                    "minimum": 10000,
+                    "description": "Ollama API timeout in milliseconds."
                 },
                 "teacher.capture.sidecarPort": {
                     "type": "number",
@@ -241,14 +292,16 @@
         "build": "tsc -p ./",
         "watch": "tsc -watch -p ./",
         "package": "npm run build && npx @vscode/vsce package --allow-missing-repository --allow-star-activation",
-        "dump-context": "node tools/dump-context-spike.mjs",
-        "analyze-transcripts": "node tools/analyze-transcripts.mjs",
         "mic-sidecar": "node tools/mic-sidecar-server.mjs",
         "test:mic-sidecar": "node tools/test-mic-sidecar.mjs",
         "test:grok": "node tools/test-grok.mjs",
         "test:web-app": "npm run build && node tools/test-web-app.mjs",
         "test:compiler": "npm run build && node tools/test-compiler.mjs",
-        "vscode:prepublish": "npm run build"
+        "test:stt-context": "npm run build && node tools/test-stt-context.mjs",
+        "test:compile-eval": "node tools/eval-compile.mjs --provider grok",
+        "eval:compile": "node tools/eval-compile.mjs --compare",
+        "render:icon": "node tools/render-icon.mjs",
+        "vscode:prepublish": "npm run render:icon && npm run build"
     },
     "devDependencies": {
         "@types/node": "^20.14.10",

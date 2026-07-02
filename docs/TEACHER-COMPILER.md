@@ -138,7 +138,7 @@ When using an LLM compile provider, system instructions must include:
 1. **Do not invent requirements** not spoken or implied by workspace Target.
 2. **Prefer user's phrasing** in Goal and Constraints; fix STT errors only when dictionary match >0.9.
 3. **Superseded block is mandatory** if any retraction tag exists.
-4. **No em-dashes** (AmpliJob prose rule — optional but consistent).
+4. **No em-dashes** in agent-facing prose (optional but consistent).
 5. **Shorter is not always better** — don't summarize away nuance the user repeated twice.
 
 Rules-only compile (no LLM) still produces template with retracted bullets verbatim.
@@ -158,7 +158,9 @@ Teacher session opens a **dedicated panel** (webview or sidebar) — not the Cur
 
 Why two panes: you see **what you actually said** (trust + audit) alongside **what the agent should get** (clarity). Fixes the Cursor problem where imperfect raw text is the only artifact.
 
-**AmpliJob reference (literal UX):** `environment/docs/product/mockups/evidence-intake-journey-mockup.html` — **Shared tail · Facts frames 2 & 2b**. Mobile stacks transcript (collapsible “What you said”) above scaffolded fact rows (Included / Off-topic, STT fix highlights, tap word → heard vs corrected). Teacher uses the same **two-layer contract** side-by-side on desktop. See [PLAN.md](./PLAN.md).
+### Dual pane UX
+
+Mobile-style stacks transcript above scaffold; Teacher uses **side-by-side** on desktop: left audit trail, right agent brief, STT fix highlights, superseded reference block. See [PLAN.md](./PLAN.md).
 
 **Single pane mode** (`teacher.preview.layout: single`): compiled prompt only, transcript collapsible — for minimalists; dual pane remains default.
 
@@ -230,4 +232,4 @@ Track locally (opt-in):
 - Retraction tags fired vs user manual delete in preview
 - STT critical token error count before/after index
 
-Feeds [TRAINING-DATA.md](./TRAINING-DATA.md) export pipeline.
+Optional: workspace `.teacher/sessions/` JSONL (gitignored) for local debugging.

@@ -1,6 +1,10 @@
 # Teacher
 
-**Author:** [Muhib Beekun](https://github.com/AmpliJob/Teacher) — personal project, not an AmpliJob product.
+*Lecture your AI.*
+
+**Author:** [Muhib Beekun](https://github.com/Muhib-Beekun/Teacher)
+
+The name **Teacher** stuck because this is how I work: I don't drop one-liners into the agent — I **lecture**. I talk through what I want, correct myself mid-stream, retract half-baked ideas, and keep going until the model understands. Teacher holds the session open, hears you with workspace vocabulary, and **teaches the agent what you meant** before anything hits Composer.
 
 Context-aware voice input and **intent compilation** for VS Code, Cursor, and other VS Code–compatible editors.
 
@@ -10,7 +14,12 @@ Context-aware voice input and **intent compilation** for VS Code, Cursor, and ot
 
 ## Use it
 
-**Teacher is not in the Extension Marketplace yet.** Install locally — full steps: **[docs/INSTALL-CURSOR.md](./docs/INSTALL-CURSOR.md)**
+**Teacher is not in the Extension Marketplace yet.** Install locally:
+
+- **[docs/SETUP.md](./docs/SETUP.md)** — first-time setup (humans and AI agents)
+- **[docs/INSTALL-CURSOR.md](./docs/INSTALL-CURSOR.md)** — VSIX install steps
+- **[docs/CONFIGURATION.md](./docs/CONFIGURATION.md)** — settings reference
+- **[docs/RELEASES.md](./docs/RELEASES.md)** — build VSIX and publish GitHub Releases
 
 Quick version:
 
@@ -20,7 +29,7 @@ npm install
 npm run package
 ```
 
-Then in Cursor: **`Ctrl+Shift+P`** → **`Extensions: Install from VSIX...`** → pick **`teacher-0.0.2.vsix`** → Reload.
+Then in Cursor: **`Ctrl+Shift+P`** → **`Extensions: Install from VSIX...`** → pick the latest **`teacher-*.vsix`** in the repo root → Reload.
 
 Then in any project: **`Teacher: Start Session`**
 
@@ -48,18 +57,18 @@ Open **Run and Debug** → **Run Teacher Extension** in Cursor. Commands under *
 
 | Doc | Contents |
 |-----|----------|
+| [docs/SETUP.md](./docs/SETUP.md) | **First-time setup** (humans and AI agents) |
+| [docs/RELEASES.md](./docs/RELEASES.md) | **VSIX build and GitHub Releases** |
 | [docs/PLAN.md](./docs/PLAN.md) | **Canonical product plan and roadmap** |
 | [docs/CONTEXT.md](./docs/CONTEXT.md) | Origin story, product wedge |
 | [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md) | Extension shape, pipeline, Open VSX / Cursor |
 | [docs/TEACHER-COMPILER.md](./docs/TEACHER-COMPILER.md) | Session model, re-drive, output templates |
 | [docs/CONTEXT-INDEX.md](./docs/CONTEXT-INDEX.md) | Codebase indexing without vector RAG |
-| [docs/INFERENCE.md](./docs/INFERENCE.md) | Self-hosted, BYOK, Hugging Face options |
-| [docs/TRAINING-DATA.md](./docs/TRAINING-DATA.md) | Cursor conversation exports as supervision (later) |
 | [docs/CONTINUE-PROMPT.md](./docs/CONTINUE-PROMPT.md) | Agent session handoff prompt |
 
-## Related work (not ownership)
+## Related work
 
-Teacher is **by Muhib Beekun**. The UX borrows patterns from evidence-intake mockups in the separate AmpliJob `environment` repo (Shared tail · Facts frames 2/2b). Shared ideas only — not an AmpliJob shipping product.
+Teacher is **by Muhib Beekun**. Dual-pane voice UX patterns were inspired by earlier evidence-intake mockups; this extension is a standalone product.
 
 ## License
 

@@ -1,4 +1,5 @@
 import { CompiledBrief } from '../session/types';
+import { diffWordFixes } from '../stt/wordDiffFixes';
 
 const PLACEHOLDER_PATTERNS = [
     /^\(none/i,
@@ -16,6 +17,7 @@ export function parseCompiledMarkdown(markdown: string): CompiledBrief {
     const target = sanitizeBullets(extractBulletList(markdown, 'Target'));
     const constraints = sanitizeBullets(extractBulletList(markdown, 'Constraints'));
     const verification = sanitizeBullets(extractBulletList(markdown, 'Verification'));
+    const sessionLog = sanitizeSessionBullets(sanitizeBullets(extractSessionLog(markdown)));
     const superseded = sanitizeSuperseded(extractSuperseded(markdown));
 
     const brief: CompiledBrief = {
@@ -24,6 +26,7 @@ export function parseCompiledMarkdown(markdown: string): CompiledBrief {
         target,
         constraints,
         verification,
+        sessionLog,
         superseded
     };
     brief.markdown = formatBriefMarkdown(brief);
@@ -38,7 +41,7 @@ export function formatBriefMarkdown(brief: CompiledBrief): string {
     if (brief.target.length) {
         lines.push(...brief.target.map((t) => `- ${t}`));
     } else {
-        lines.push('- (no targets inferred — open files or speak file paths)');
+        lines.push('- (no targets inferred: speak file paths; browser UI cannot open files)');
     }
     lines.push('');
 
@@ -54,8 +57,15 @@ export function formatBriefMarkdown(brief: CompiledBrief): string {
         lines.push('');
     }
 
+    if (brief.sessionLog.length) {
+        lines.push('## Session - your words');
+        lines.push('*Audit trail: how the speaker arrived at this brief. Read alongside Goal for corrections and thought process.*');
+        lines.push(...brief.sessionLog.map((s) => `- ${s}`));
+        lines.push('');
+    }
+
     lines.push('---');
-    lines.push('**Reference only (superseded — do not implement unless asked again)**');
+    lines.push('**Reference only (superseded - do not implement unless asked again)**');
     if (brief.superseded.length) {
         lines.push(...brief.superseded.map((s) => `- ${s}`));
     } else {
@@ -97,6 +107,30 @@ function sanitizeBullets(items: string[]): string[] {
     });
 }
 
+function sanitizeSessionBullets(items: string[]): string[] {
+    return items.filter((line) => {
+        const stripped = line.replace(/^\*+|\*+$/g, '').trim();
+        if (/^audit trail:/i.test(stripped)) {
+            return false;
+        }
+        return stripped.length > 0;
+    });
+}
+
+function extractSessionLog(md: string): string[] {
+    const body =
+        extractSection(md, 'Session - your words') ||
+        extractSection(md, 'Session — your words') ||
+        extractSection(md, 'Session');
+    if (!body) {
+        return [];
+    }
+    return body
+        .split('\n')
+        .map((line) => line.replace(/^[-*]\s+/, '').trim())
+        .filter((line) => line.length > 0);
+}
+
 function extractSuperseded(md: string): string[] {
     const marker = '**Reference only (superseded';
     const idx = md.indexOf(marker);
@@ -126,48 +160,7 @@ function stripSegmentWeightPrefix(line: string): string {
         .trim();
 }
 
-/** Detect phrase-level STT fixes for UI chips. */
-export function detectPhraseFixes(raw: string, polished: string): { heard: string; corrected: string }[] {
-    if (raw === polished) {
-        return [];
-    }
-    const fixes: { heard: string; corrected: string }[] = [];
-    const pairs: [RegExp, string][] = [
-        [/\bobama\b/gi, 'Ollama'],
-        [/\bolama\b/gi, 'Ollama'],
-        [/\brock\b/gi, 'Grok'],
-        [/\bsign language\b/gi, 'design language'],
-        [/\bancient prompt\b/gi, 'agent prompt'],
-        [/\bagents prompt\b/gi, 'agent prompt']
-    ];
-    for (const [pattern, corrected] of pairs) {
-        const match = raw.match(pattern);
-        if (match && polished.toLowerCase().includes(corrected.toLowerCase())) {
-            fixes.push({ heard: match[0], corrected });
-        }
-    }
-
-    const rawWords = raw.split(/\s+/);
-    const polWords = polished.split(/\s+/);
-    if (rawWords.length === polWords.length) {
-        for (let i = 0; i < rawWords.length; i++) {
-            if (rawWords[i].toLowerCase() !== polWords[i].toLowerCase() && rawWords[i] !== polWords[i]) {
-                fixes.push({ heard: rawWords[i], corrected: polWords[i] });
-            }
-        }
-    }
-
-    return dedupeFixes(fixes);
-}
-
-function dedupeFixes(fixes: { heard: string; corrected: string }[]): { heard: string; corrected: string }[] {
-    const seen = new Set<string>();
-    return fixes.filter((f) => {
-        const key = `${f.heard.toLowerCase()}→${f.corrected.toLowerCase()}`;
-        if (seen.has(key)) {
-            return false;
-        }
-        seen.add(key);
-        return true;
-    });
+/** Detect phrase-level STT fixes between adjacent pipeline stages (not full-utterance word diff). */
+export function detectPhraseFixes(before: string, after: string): { heard: string; corrected: string }[] {
+    return diffWordFixes(before, after);
 }

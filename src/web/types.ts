@@ -12,4 +12,5 @@ export interface SessionSnapshot {
     status?: string;
 }
 
-export const EMPTY_COMPILED_PLACEHOLDER = 'Speak — Grok will scaffold an agent brief here after each pause.';
+export const EMPTY_COMPILED_PLACEHOLDER =
+    'Speak. Your agent brief appears here after each pause.';

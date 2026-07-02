@@ -1,41 +1,44 @@
 import * as vscode from 'vscode';
+import { readInferenceApiKeyFromEnv } from '../config/inferenceEnv';
 
-const GROK_KEY = 'teacher.grok.apiKey';
+const INFERENCE_KEY = 'teacher.inference.apiKey';
 const DEEPGRAM_KEY = 'teacher.deepgram.apiKey';
 
-export async function getGrokApiKey(secrets: vscode.SecretStorage): Promise<string | undefined> {
-    const fromSecret = await secrets.get(GROK_KEY);
+/** Legacy secret ids — same key, read for upgrades only. */
+const LEGACY_LLM_KEYS = ['teacher.llm.apiKey', 'teacher.grok.apiKey'] as const;
+
+export async function getLlmApiKey(secrets: vscode.SecretStorage): Promise<string | undefined> {
+    const fromSecret = await secrets.get(INFERENCE_KEY);
     if (fromSecret?.trim()) {
         return fromSecret.trim();
     }
-    const fromEnv =
-        process.env.XAI_API_KEY?.trim() ||
-        process.env.GROK_API_KEY?.trim() ||
-        process.env.CLOUD_LLM_GENERATE_API_KEY?.trim();
-    if (fromEnv) {
-        return fromEnv;
+    for (const legacy of LEGACY_LLM_KEYS) {
+        const val = await secrets.get(legacy);
+        if (val?.trim()) {
+            return val.trim();
+        }
     }
-    const fromSetting = vscode.workspace
-        .getConfiguration('teacher.inference.grok')
-        .get<string>('apiKey', '')
-        .trim();
-    return fromSetting || undefined;
+    const fromEnv = readInferenceApiKeyFromEnv();
+    return fromEnv || undefined;
 }
 
-export async function setGrokApiKey(secrets: vscode.SecretStorage, key: string): Promise<void> {
-    await secrets.store(GROK_KEY, key);
+export async function setLlmApiKey(secrets: vscode.SecretStorage, key: string): Promise<void> {
+    await secrets.store(INFERENCE_KEY, key);
+    for (const legacy of LEGACY_LLM_KEYS) {
+        await secrets.store(legacy, key);
+    }
 }
 
-export async function promptGrokApiKey(secrets: vscode.SecretStorage): Promise<void> {
+export async function promptLlmApiKey(secrets: vscode.SecretStorage): Promise<void> {
     const key = await vscode.window.showInputBox({
-        title: 'Teacher: Grok (xAI) API Key',
-        prompt: 'Stored in VS Code SecretStorage. Or set XAI_API_KEY in your environment.',
+        title: 'Teacher: Set inference API key',
+        prompt: 'OpenAI-compatible key. Stored in VS Code SecretStorage (not settings.json).',
         password: true,
-        placeHolder: 'xAI API key from console.x.ai'
+        placeHolder: 'sk-…'
     });
     if (key?.trim()) {
-        await setGrokApiKey(secrets, key.trim());
-        vscode.window.showInformationMessage('Teacher saved your Grok API key.');
+        await setLlmApiKey(secrets, key.trim());
+        vscode.window.showInformationMessage('Teacher saved your inference API key.');
     }
 }
 
@@ -53,7 +56,7 @@ export async function setDeepgramApiKey(secrets: vscode.SecretStorage, key: stri
 
 export async function promptDeepgramApiKey(secrets: vscode.SecretStorage): Promise<void> {
     const key = await vscode.window.showInputBox({
-        title: 'Teacher: Deepgram API Key',
+        title: 'Teacher: Set Deepgram API Key',
         prompt: 'Stored in VS Code SecretStorage. Or set DEEPGRAM_API_KEY in your environment.',
         password: true,
         placeHolder: 'Deepgram API key'

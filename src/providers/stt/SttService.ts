@@ -57,6 +57,18 @@ export class SttService {
         return this.withOptionalHomonymPass(text.trim(), ctx);
     }
 
+    /** Vectorless dictionary corrections — runs even when homonymPass setting is off if force=true. */
+    applyDictionaryCorrections(textRaw: string, ctx: VoiceSessionContext, force = true): TranscriptResult {
+        if (!textRaw) {
+            return { text: '', textRaw: '', fixes: [] };
+        }
+        if (!force && !this.isHomonymPassEnabled()) {
+            return { text: textRaw, textRaw, fixes: [] };
+        }
+        const { text, fixes } = applyHomonymPass(textRaw, ctx.dictionary_context);
+        return { text, textRaw, fixes };
+    }
+
     private withOptionalHomonymPass(textRaw: string, ctx: VoiceSessionContext): TranscriptResult {
         if (!textRaw) {
             return { text: '', textRaw: '', fixes: [] };

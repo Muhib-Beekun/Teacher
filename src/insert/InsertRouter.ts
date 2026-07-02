@@ -36,7 +36,7 @@ async function sendToEditor(text: string): Promise<SendResult> {
     const editor = vscode.window.activeTextEditor;
     if (!editor) {
         await vscode.env.clipboard.writeText(text);
-        vscode.window.showWarningMessage('No active editor — compiled brief copied to clipboard.');
+        vscode.window.showWarningMessage('No active editor. Compiled brief copied to clipboard.');
         return { target: 'clipboard', pasted: false, submitted: false };
     }
 
@@ -65,7 +65,7 @@ async function sendToComposer(
 
     if (!opened) {
         vscode.window.showWarningMessage(
-            'Could not open Composer — compiled brief is on your clipboard. Paste manually.'
+            'Could not open Composer. Compiled brief is on your clipboard. Paste manually.'
         );
         return { target: 'composer', pasted: false, submitted: false };
     }

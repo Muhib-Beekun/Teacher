@@ -56,7 +56,29 @@ function createHandler() {
         }
 
         if (req.method === 'GET' && url === '/health') {
-            json(res, 200, { ok: true, mode: 'harness', stt: 'webspeech', compile: 'none', grokKeySet: false, url: `http://127.0.0.1:${serverPort}/` });
+            json(res, 200, { ok: true, mode: 'harness', stt: 'webspeech', compile: 'none', llmKeySet: false, url: `http://127.0.0.1:${serverPort}/` });
+            return;
+        }
+
+        if (req.method === 'GET' && url === '/api/settings') {
+            json(res, 200, {
+                ok: true,
+                settings: {
+                    compileLive: true,
+                    polishStt: true,
+                    homonymPass: true,
+                    sendAutoPaste: true,
+                    sendAutoSubmit: true,
+                    compileMode: 'teacher',
+                    sttProvider: 'auto',
+                    compilerKeySet: false,
+                    compilerReady: false,
+                    sttLabel: 'Browser speech (Chrome/Edge live preview)',
+                    compileLabel: 'Harness — Grok compile not wired here',
+                    contextHint: '0 workspace terms indexed',
+                    vscodeSettingsPrefix: 'teacher'
+                }
+            });
             return;
         }
 
@@ -133,7 +155,7 @@ function json(res, code, obj) {
 function cors() {
     return {
         'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'GET, POST, PUT, OPTIONS',
+        'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, OPTIONS',
         'Access-Control-Allow-Headers': 'Content-Type'
     };
 }

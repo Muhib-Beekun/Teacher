@@ -3,11 +3,12 @@ import * as path from 'path';
 import * as vscode from 'vscode';
 
 const ENV_ALIASES: Record<string, string> = {
-    CLOUD_LLM_GENERATE_API_KEY: 'XAI_API_KEY',
-    GROK_API_KEY: 'XAI_API_KEY'
+    OPENAI_API_KEY: 'INFERENCE_API_KEY',
+    XAI_API_KEY: 'INFERENCE_API_KEY',
+    GROK_API_KEY: 'INFERENCE_API_KEY'
 };
 
-/** Load workspace `.env` files into process.env (extension host does not inherit shell env reliably). */
+/** Load workspace `.env` into process.env (extension host does not inherit shell env reliably). */
 export function loadWorkspaceEnv(): void {
     const folders = vscode.workspace.workspaceFolders;
     if (!folders?.length) {
@@ -15,14 +16,7 @@ export function loadWorkspaceEnv(): void {
     }
 
     for (const folder of folders) {
-        const root = folder.uri.fsPath;
-        const candidates = [
-            path.join(root, '.env'),
-            path.join(root, '..', 'environment', 'apps', 'backend', 'infra', 'compose', '.env')
-        ];
-        for (const envPath of candidates) {
-            parseEnvFile(envPath);
-        }
+        parseEnvFile(path.join(folder.uri.fsPath, '.env'));
     }
 
     applyEnvAliases();
@@ -49,6 +43,9 @@ function parseEnvFile(envPath: string): void {
             (value.startsWith("'") && value.endsWith("'"))
         ) {
             value = value.slice(1, -1);
+        }
+        if (!value) {
+            continue;
         }
         if (!process.env[key]) {
             process.env[key] = value;

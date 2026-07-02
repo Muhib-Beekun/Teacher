@@ -27,7 +27,7 @@ Before transcription, build a **`VoiceSessionContext`** from the active workspac
 - Open files, workspace symbols, `package.json` dependencies, path basenames, user glossary (`.codewords`).
 - Pass to STT provider as `dictionary_context` / keywords / prompt (provider-specific).
 
-Reduces homonym and proper-noun errors **upstream**. Aligns with AmpliJob backlog items **39–42** in `environment/docs/product/backlog.md`.
+Reduces homonym and proper-noun errors **upstream** via workspace symbols, dependencies, and `.teacher/codewords.txt`.
 
 ### Layer 2 — Teacher (intent compiler)
 
@@ -80,11 +80,11 @@ Optional finalize cue: say *"Teacher"* or run command **Teacher: Compile Session
 
 This repo was forked from a chat thread that covered:
 
-1. AmpliJob evidence STT backlog (Wispr, `VoiceSessionContext`, layered pipeline).
+1. Layered STT pipeline ideas (`VoiceSessionContext`, homonym pass, codewords).
 2. VS Code extension outline (mic capture constraints, Open VSX, provider abstraction).
 3. **Teacher mode** — re-drive dictation after *ignore that* / *I meant this*; structured agent prompt; preview UX.
 4. **Inference strategy** — self-hosted, Hugging Face, BYOK; vectorless codebase context.
-5. **Training signal** — founder’s Cursor agent transcripts as supervision for correction patterns (see [TRAINING-DATA.md](./TRAINING-DATA.md)).
+5. **Inference strategy** — self-hosted Ollama, BYOK cloud APIs; see [SETUP.md](./SETUP.md).
 
 Prior art in founder transcripts (correction patterns observed):
 
@@ -111,4 +111,4 @@ Prior art in founder transcripts (correction patterns observed):
 2. **Extension shell:** Open VSX manifest, webview mic, insert-at-cursor.
 3. **Teacher v1:** rule-based supersession + brief template + preview panel.
 4. **Inference adapter:** local Ollama + HF Inference API + BYOK OpenAI/Deepgram.
-5. **Optional:** export anonymized (session, brief) pairs from confirmed compiles for fine-tune eval.
+5. **Dogfood:** export anonymized (session, brief) pairs only with explicit opt-in (local, gitignored).

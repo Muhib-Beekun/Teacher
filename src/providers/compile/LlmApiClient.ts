@@ -1,6 +1,9 @@
 import * as vscode from 'vscode';
+import { DEFAULT_INFERENCE_BASE_URL, DEFAULT_INFERENCE_MODEL } from '../../config/inferenceModels';
+import { readInferenceBaseUrlFromEnv, readInferenceModelFromEnv } from '../../config/inferenceEnv';
 
-export class GrokApiClient {
+/** OpenAI-compatible /chat/completions client (Teacher › Inference › Llm). */
+export class LlmApiClient {
     constructor(
         private readonly getApiKey: () => Promise<string | undefined>,
         private readonly output: vscode.OutputChannel
@@ -12,31 +15,44 @@ export class GrokApiClient {
     }
 
     public getConfiguredModel(): string {
-        const fromEnv = process.env.CLOUD_LLM_GENERATE_MODEL?.trim();
+        const fromEnv = readInferenceModelFromEnv();
         if (fromEnv) {
             return fromEnv;
         }
-        return vscode.workspace
-            .getConfiguration('teacher.inference.grok')
-            .get<string>('model', 'grok-4-fast-reasoning');
+        const configured = vscode.workspace
+            .getConfiguration('teacher.inference.llm')
+            .get<string>('model', '')
+            .trim();
+        return configured || DEFAULT_INFERENCE_MODEL;
+    }
+
+    public getBaseUrl(): string {
+        const fromEnv = readInferenceBaseUrlFromEnv();
+        if (fromEnv) {
+            return fromEnv;
+        }
+        const configured = vscode.workspace
+            .getConfiguration('teacher.inference.llm')
+            .get<string>('baseUrl', '')
+            .trim();
+        return (configured || DEFAULT_INFERENCE_BASE_URL).replace(/\/$/, '');
     }
 
     public async chat(system: string, user: string, temperature = 0.15): Promise<string> {
         const key = await this.getApiKey();
         if (!key) {
-            throw new Error('Grok API key not set — run Teacher: Set Grok API Key or set XAI_API_KEY');
+            throw new Error(
+                'Inference API key not set. Use Teacher Configuration or set INFERENCE_API_KEY / OPENAI_API_KEY in .env.'
+            );
         }
 
-        const baseUrl = vscode.workspace
-            .getConfiguration('teacher.inference.grok')
-            .get<string>('url', 'https://api.x.ai/v1')
-            .replace(/\/$/, '');
+        const baseUrl = this.getBaseUrl();
         const model = this.getConfiguredModel();
         const timeoutMs = vscode.workspace
-            .getConfiguration('teacher.inference.grok')
+            .getConfiguration('teacher.inference.llm')
             .get<number>('timeoutMs', 45_000);
 
-        this.output.appendLine(`[grok] ${model} request…`);
+        this.output.appendLine(`[inference] ${model} @ ${baseUrl}`);
 
         const response = await fetch(`${baseUrl}/chat/completions`, {
             method: 'POST',
@@ -57,7 +73,7 @@ export class GrokApiClient {
 
         if (!response.ok) {
             const body = await response.text().catch(() => '');
-            throw new Error(`Grok API failed (${response.status})${body ? `: ${body.slice(0, 200)}` : ''}`);
+            throw new Error(`Inference API failed (${response.status})${body ? `: ${body.slice(0, 200)}` : ''}`);
         }
 
         const json = (await response.json()) as {
@@ -65,7 +81,7 @@ export class GrokApiClient {
         };
         const text = json.choices?.[0]?.message?.content?.trim();
         if (!text) {
-            throw new Error('Grok returned empty response');
+            throw new Error('Inference API returned empty response');
         }
         return text;
     }

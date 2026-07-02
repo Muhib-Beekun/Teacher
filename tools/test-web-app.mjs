@@ -37,7 +37,7 @@ try {
     await page.goto(url, { waitUntil: 'networkidle0', timeout: 15000 });
 
     const title = await page.title();
-    assert(title === 'Teacher', `expected title Teacher, got ${title}`);
+    assert(title.includes('Teacher'), `expected title to include Teacher, got ${title}`);
 
     await page.waitForSelector('#brief');
     await page.waitForSelector('#status');

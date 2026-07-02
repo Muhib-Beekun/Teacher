@@ -33,6 +33,7 @@ export class TeacherSessionPanel {
                 vscode.ViewColumn.Beside,
                 { enableScripts: true, retainContextWhenHidden: true }
             );
+            this.panel.iconPath = vscode.Uri.joinPath(this.context.extensionUri, 'icon.png');
 
             this.panel.onDidDispose(() => {
                 this.panel = undefined;
@@ -75,15 +76,15 @@ export class TeacherSessionPanel {
         return this.deps.bridge.getCompiledMarkdown();
     }
 
-    public async sendToAgent(source: 'brief' | 'words' = 'brief', briefVersion?: number): Promise<SendResult | undefined> {
-        const brief =
-            source === 'words'
-                ? this.deps.bridge.getTranscriptPlainText().trim()
-                : this.deps.bridge.getCompiledMarkdown(briefVersion);
-        if (!brief) {
+    public async sendToAgent(_source: 'brief' | 'words' = 'brief', _briefVersion?: number): Promise<SendResult | undefined> {
+        if (this.deps.bridge.isEmpty()) {
             return undefined;
         }
-        return this.deps.sendBrief(brief);
+        const handoff = this.deps.bridge.getAgentHandoff();
+        if (!handoff.trim()) {
+            return undefined;
+        }
+        return this.deps.sendBrief(handoff);
     }
 
     public endSession(): void {
@@ -93,12 +94,16 @@ export class TeacherSessionPanel {
         this.htmlInitialized = false;
     }
 
+    public isOpen(): boolean {
+        return this.panel !== undefined;
+    }
+
     public async refreshFromBridge(status?: string): Promise<void> {
         await this.pushContentUpdate(status);
     }
 
     public async notifyWebUiOpened(url: string): Promise<void> {
-        await this.pushContentUpdate(`Web UI open at ${url} — speak there, copy brief into Cursor.`);
+        await this.pushContentUpdate(`Web UI open at ${url}. Speak there, copy brief into Cursor.`);
     }
 
     private async handleMessage(message: {

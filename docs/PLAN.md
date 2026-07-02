@@ -1,10 +1,10 @@
 # Teacher — product plan (canonical)
 
 **Author:** Muhib Beekun  
-**Repo:** [AmpliJob/Teacher](https://github.com/AmpliJob/Teacher) (private — personal project; org name is legacy hosting only)  
+**Repo:** [Muhib-Beekun/Teacher](https://github.com/Muhib-Beekun/Teacher)  
 **Status:** Full v1 stack — mic session, whisper/Deepgram STT, homonym pass, Ollama/rules compile, Composer Send.
 
-This document consolidates founder intent, Cursor pain points, AmpliJob UI reference, inference/training posture, and the implementation roadmap. When other docs disagree, **this plan wins** until explicitly revised.
+This document consolidates founder intent, Cursor pain points, dual-pane UX, inference/training posture, and the implementation roadmap. When other docs disagree, **this plan wins** until explicitly revised.
 
 ---
 
@@ -62,26 +62,24 @@ After each segment (debounced while streaming): **re-scaffold** the agent brief 
 2. **Dual pane default** — left: your words (audit); right: agent prompt (scaffold).
 3. **Hold chat box** — Cursor chat stays empty until explicit Send (`teacher.session.holdChatBox`, default on).
 4. **Live re-scaffold** — right pane updates after each segment (`teacher.compile.live`, default on).
-5. **Explicit Send gate** — like AmpliJob “Continue to Card”; compiled brief only, not raw transcript (unless verbatim mode).
+5. **Explicit Send gate** — compiled brief only, not raw transcript (unless verbatim mode).
 
 ---
 
-## Dual pane — literal behavior (AmpliJob reference)
+## Dual pane — literal behavior
 
-Reference mockup: `environment/docs/product/mockups/evidence-intake-journey-mockup.html`
+**Two-layer contract** (audit transcript + scaffolded brief; side-by-side on desktop):
 
-**Shared tail · Facts frames 2 & 2b** (mobile stacks vertically; Teacher uses side-by-side on desktop):
+| Layer | Role | Teacher pane |
+|-------|------|----------------|
+| **Audit** | Full spoken transcript | **Left** — segmented transcript, STT fix highlights |
+| **Inspect fix** | Tap yellow word → heard vs corrected | Click term → heard / wrote |
+| **Scaffold** | Structured agent task | **Right** — Goal, Target, Constraints, Verification |
+| **Superseded** | Retracted ideas | Reference-only block — do not implement |
+| **Send** | Deliver to agent | Send → clipboard / paste into chat |
+| **Clarify loop** | Add speech without restart | Append segment in same session |
 
-| Layer | AmpliJob (Facts frame 2) | Teacher (left / right pane) |
-|-------|----------------------------|-----------------------------|
-| **Audit** | Collapsible “What you said · full transcript” | **Left** — segmented transcript, STT fix highlights |
-| **Inspect fix** | Frame 2b — tap yellow word → heard vs corrected | Click term → heard / wrote / override |
-| **Scaffold** | Included / Off-topic fact rows, toggles, coach hints | **Right** — Goal, Target, Constraints, Verification |
-| **Superseded** | Off-topic saved to evidence, not this card | Reference-only block — do not implement |
-| **Send** | Continue to Card | Send → clipboard / paste into chat |
-| **Clarify loop** | Fact drill-in → voice or type clarification | Append segment without restarting session |
-
-**Default:** scaffolding **on** in Teacher mode (matches AmpliJob Facts pattern). Opt out via `teacher.compile.mode: verbatim` for users who only want joined text with retractions.
+**Default:** scaffolding **on** in Teacher mode. Opt out via `teacher.compile.mode: verbatim` for joined text with retractions only.
 
 ---
 
@@ -114,28 +112,15 @@ Two separate jobs:
 2. BYOK cloud compile (structure only)
 3. **Rules-only Teacher** — still works: template + retraction regex + Target from index
 
-**Not required for v0:** custom fine-tuned model, hosted Teacher endpoint, Hugging Face training jobs.
-
-See [INFERENCE.md](./INFERENCE.md) for tier matrix and adapter interfaces.
+**Not required for v0:** custom fine-tuned model or hosted Teacher endpoint. Cloud and local Ollama paths are documented in [SETUP.md](./SETUP.md).
 
 ---
 
-## Training and remote dependencies
+## Remote dependencies
 
-**Training is not a launch blocker.**
+**Local-first by default.** Index builds locally. Cloud STT/compile only if the user configures an API key or runs Ollama locally.
 
-| Use case | When | Approach |
-|----------|------|----------|
-| Retraction detection | v0 | Regex rules (*ignore that*, *I meant*) |
-| Brief structure | v0 | Template + optional Ollama |
-| Pattern tuning | Post-ship | `tools/analyze-transcripts.ts` on Cursor `agent-transcripts/*.jsonl` |
-| Fine-tune compile model | Later | LoRA on 3B instruct; private HF dataset; manual redaction gate |
-
-Transcript export: **never automatic**; output gitignored; opt-in only. See [TRAINING-DATA.md](./TRAINING-DATA.md).
-
-**What phones home in local-first mode:** nothing. Index builds locally. Cloud STT/compile only if user configures BYOK.
-
-**Paid hosted inference (later):** optional Tier E — explicit opt-in; not AmpliJob unless Muhib chooses to offer it separately.
+**Paid hosted inference (later):** optional Tier E — explicit opt-in only.
 
 ---
 
@@ -143,7 +128,7 @@ Transcript export: **never automatic**; output gitignored; opt-in only. See [TRA
 
 | Choice | Decision |
 |--------|----------|
-| GitHub | **Private** — personal repo (Muhib Beekun); `AmpliJob/Teacher` is hosting namespace only |
+| GitHub | [Muhib-Beekun/Teacher](https://github.com/Muhib-Beekun/Teacher) |
 | Marketplace | Open VSX primary; VS Code Marketplace optional |
 | Editor targets | Cursor-first; standard VS Code extension APIs only |
 | Secrets | VS Code `SecretStorage` only |
@@ -159,26 +144,20 @@ Transcript export: **never automatic**; output gitignored; opt-in only. See [TRA
 - [x] Design docs
 - [x] Extension shell + dual-pane session panel (mic toggle, Type fallback)
 - [x] Rules compiler + retraction detector
-- [x] Homonym pass + AmpliJob-style fix markers (tap yellow word → heard)
+- [x] Homonym pass + fix markers (tap yellow word → heard)
 - [x] STT: Web Speech, whisper.cpp, Deepgram BYOK (`teacher.stt.provider`)
 - [x] Compile: rules + Ollama auto (`teacher.compile.provider`)
 - [x] Composer handoff (Option A: autoPaste + autoSubmit)
 - [x] Workspace context index
-- [x] `tools/analyze-transcripts.mjs`
 
 ### Later
 
-- Open VSX publish
-- OpenAI Whisper STT adapter
-- Hosted Teacher inference tier
-- Fine-tune pipeline
+- Open VSX publish (see [RELEASES.md](./RELEASES.md))
 
 ### Deferred
 
 - Vector RAG plugin
 - Hosted Teacher inference tier
-- Fine-tune pipeline and HF dataset
-- Open VSX publish (after dogfoodable v0)
 - Bundled whisper binaries per platform (document user install first)
 
 ---
@@ -228,23 +207,13 @@ Cursor → **Run and Debug** → **Run Teacher Extension** → in Extension Deve
 3. **Teacher: Append Segment** (text stub until STT wired)
 4. **Teacher: Send**
 
-Lexical spike (no VS Code):
-
-```powershell
-npm run dump-context
-```
+Lexical spike (no VS Code): use workspace index via **Teacher: Rebuild Context Index**.
 
 ---
 
-## Related AmpliJob work
+## Related prior work
 
-Shared concepts with `environment` repo:
-
-- Voice STT context seeding — backlog items **39–42**
-- Evidence-and-atoms §9 — layered STT pipeline
-- Tell story / Facts UI — `evidence-intake-journey-mockup.html` Shared tail frames 2–2b
-
-Future: possible shared npm package `@amplijob/voice-context` for compatible `VoiceSessionContext` shapes.
+Dual-pane voice UX patterns (audit + scaffold + superseded) informed early Teacher design. This repo is a standalone extension with its own roadmap.
 
 ---
 
@@ -268,6 +237,7 @@ Future: possible shared npm package `@amplijob/voice-context` for compatible `Vo
 | [TEACHER-COMPILER.md](./TEACHER-COMPILER.md) | Session model, retraction rules, output templates |
 | [CONTEXT-INDEX.md](./CONTEXT-INDEX.md) | Vectorless indexing spec |
 | [ARCHITECTURE.md](./ARCHITECTURE.md) | Extension layout, commands, package structure |
-| [INFERENCE.md](./INFERENCE.md) | Local / BYOK / HF tiers |
-| [TRAINING-DATA.md](./TRAINING-DATA.md) | Transcript export (later) |
+| [SETUP.md](./SETUP.md) | First-time setup |
+| [RELEASES.md](./RELEASES.md) | VSIX build and GitHub Releases |
+| [CONFIGURATION.md](./CONFIGURATION.md) | Settings reference |
 | [CONTINUE-PROMPT.md](./CONTINUE-PROMPT.md) | Agent session handoff prompt |

@@ -132,7 +132,7 @@ If added:
 
 ```text
 .teacher/
-  codewords.txt       # user additions: AmpliJob, Langfuse, n8n
+  codewords.txt       # user additions: project names, symbols, env vars
   sessions/           # optional debug JSONL
   index/              # future vector index if enabled
 ```

@@ -1,48 +1,32 @@
 import * as vscode from 'vscode';
 
 import { compileSession, CompileMode } from '../../compiler/TeacherCompiler';
-
-import { detectPhraseFixes, formatBriefMarkdown, parseCompiledMarkdown } from '../../compiler/parseCompiledMarkdown';
-
+import { detectPhraseFixes, parseCompiledMarkdown } from '../../compiler/parseCompiledMarkdown';
 import { VoiceSessionContext } from '../../context/VoiceSessionContext';
-
 import { CompiledBrief } from '../../session/types';
-
 import { SttFix } from '../../session/types';
-
 import { analyzeSegments } from '../../session/RetractionDetector';
+import { buildCompilePrompt, ensureSessionInBrief } from '../../compiler/buildCompilePrompt';
+import { LlmApiClient } from './LlmApiClient';
+import { OllamaApiClient } from './OllamaApiClient';
 
-import { GrokApiClient } from './GrokApiClient';
+export type CompileProviderId = 'cloud' | 'ollama' | 'none';
 
-
-
-export type CompileProviderId = 'grok';
-
-
+type ActiveProvider = 'cloud' | 'ollama' | 'none';
 
 export class CompileService {
-
     private activeModel = '';
-
-    private activeProvider: 'grok' | 'none' = 'none';
-
-    private readonly grok: GrokApiClient;
-
-
+    private activeProvider: ActiveProvider = 'none';
+    private readonly llm: LlmApiClient;
+    private readonly ollama: OllamaApiClient;
 
     constructor(
-
         private readonly output: vscode.OutputChannel,
-
-        getGrokApiKey: () => Promise<string | undefined>
-
+        getLlmApiKey: () => Promise<string | undefined>
     ) {
-
-        this.grok = new GrokApiClient(getGrokApiKey, output);
-
+        this.llm = new LlmApiClient(getLlmApiKey, output);
+        this.ollama = new OllamaApiClient(output);
     }
-
-
 
     async compile(
         rawSegments: string[],
@@ -54,231 +38,176 @@ export class CompileService {
             return compileSession(rawSegments, ctx, mode);
         }
 
-        await this.requireGrok();
+        const provider = await this.resolveProviderId();
+        if (provider === 'none') {
+            throw new Error(
+                'No compile provider available. Set an inference API key, start Ollama, or use verbatim mode.'
+            );
+        }
+
         const started = Date.now();
-        const brief = await this.compileWithGrok(rawSegments, ctx, priorBrief);
+        const brief = await this.compileWithLlm(rawSegments, ctx, priorBrief, provider);
         const ms = Date.now() - started;
-        this.output.appendLine(`[compile:grok] done in ${ms}ms`);
+        this.output.appendLine(`[compile:${provider}] done in ${ms}ms`);
         return brief;
     }
 
+    async resolveProviderId(): Promise<CompileProviderId> {
+        const raw = vscode.workspace.getConfiguration('teacher.compile').get<string>('provider', 'auto');
+        const setting = raw === 'grok' ? 'cloud' : raw;
 
-
-    async resolveProviderId(): Promise<'grok' | 'none'> {
-
-        if (await this.grok.isAvailable()) {
-
-            this.setActive('grok', this.grok.getConfiguredModel());
-
-            return 'grok';
-
+        if (setting === 'cloud') {
+            if (await this.llm.isAvailable()) {
+                this.setActive('cloud', this.llm.getConfiguredModel());
+                return 'cloud';
+            }
+            this.setActive('none', '');
+            return 'none';
         }
 
+        if (setting === 'ollama') {
+            if (await this.ollama.isAvailable()) {
+                this.setActive('ollama', this.ollama.getConfiguredModel());
+                return 'ollama';
+            }
+            this.setActive('none', '');
+            return 'none';
+        }
+
+        if (await this.ollama.isAvailable()) {
+            this.setActive('ollama', this.ollama.getConfiguredModel());
+            return 'ollama';
+        }
+        if (await this.llm.isAvailable()) {
+            this.setActive('cloud', this.llm.getConfiguredModel());
+            return 'cloud';
+        }
         this.setActive('none', '');
-
         return 'none';
-
     }
-
-
 
     getActiveModelLabel(): string {
-
         return this.activeModel;
-
     }
 
-
-
-    getActiveProvider(): 'grok' | 'none' {
-
+    getActiveProvider(): ActiveProvider {
         return this.activeProvider;
-
     }
 
-
-
-    async isGrokConfigured(): Promise<boolean> {
-
-        return this.grok.isAvailable();
-
+    async isLlmConfigured(): Promise<boolean> {
+        return this.llm.isAvailable();
     }
 
-
+    async isOllamaAvailable(): Promise<boolean> {
+        return this.ollama.isAvailable();
+    }
 
     async isPolishEnabled(): Promise<boolean> {
-
         const enabled = vscode.workspace.getConfiguration('teacher.compile').get<boolean>('polishStt', true);
-
         if (!enabled) {
-
             return false;
-
         }
-
-        return await this.grok.isAvailable();
-
+        const provider = await this.resolveProviderId();
+        return provider !== 'none';
     }
 
-
-
     async polishTranscript(raw: string, ctx: VoiceSessionContext): Promise<string> {
-
         if (!(await this.isPolishEnabled())) {
-
             return raw;
-
         }
 
+        const provider = await this.resolveProviderId();
+        if (provider === 'none') {
+            return raw;
+        }
 
-
-        await this.requireGrok();
-
-
-
-        const system = `Fix speech-to-text errors in developer voice notes. Return ONLY the corrected transcript — no quotes, no markdown, no explanation.
-
-
+        const system = `Fix speech-to-text errors in developer voice notes. Return ONLY the corrected transcript. No quotes, no markdown, no explanation.
 
 Common fixes (apply when context fits):
-
 - "Obama" / "olama" → Ollama (local LLM runtime)
-
-- "Rock" → Grok (xAI model) when discussing compile/inference/API
-
+- "grock" / "garage" / "croc" discussing xAI → Grok (not Groq — groq.com is a different vendor)
+- "croc/rock/crock API key" → INFERENCE_API_KEY when discussing settings or env vars
 - "sign language" → "design language" (UI/theming)
-
 - "ancient prompt" / "agents prompt" → "agent prompt"
-
-- Fix odd capitalization mid-sentence (e.g. "Coated" → "coated" when not a proper noun)
-
-
+- "link fuse" / "lang fuse" → Langfuse when observability is meant
+- "open api" → OpenAI API when discussing API keys
+- Fix odd capitalization mid-sentence when not a proper noun
 
 Keep the speaker's casual tone. Do not add or remove ideas.`;
 
-
-
         const user = `Workspace files (context only): ${ctx.targetFiles.slice(0, 8).join(', ') || 'none'}
 
-
-
 Transcript:
-
 ${raw}`;
 
-
-
         const started = Date.now();
-
-        const polished = await this.grok.chat(system, user, 0.1);
-
-        this.output.appendLine(`[stt:grok] polished segment (${Date.now() - started}ms)`);
-
-
+        const polished = await this.chat(provider, 'stt-polish', system, user, 0.1);
+        this.output.appendLine(`[stt:${provider}] polished segment (${Date.now() - started}ms)`);
 
         const trimmed = polished.trim();
-
         if (!trimmed || trimmed.length < raw.length * 0.5) {
-
             return raw;
-
         }
-
         return trimmed;
-
     }
-
-
 
     detectFixes(raw: string, polished: string): SttFix[] {
-
         return detectPhraseFixes(raw, polished);
-
     }
 
+    private async chat(
+        provider: ActiveProvider,
+        name: string,
+        system: string,
+        user: string,
+        temperature: number
+    ): Promise<string> {
+        const started = Date.now();
+        let text: string;
+        let model: string;
 
-
-    private async requireGrok(): Promise<void> {
-
-        if (!(await this.grok.isAvailable())) {
-
-            throw new Error(
-
-                'Grok API key required. Run Teacher: Set Grok API Key, set XAI_API_KEY in workspace .env, or use CLOUD_LLM_GENERATE_API_KEY from AmpliJob compose .env.'
-
-            );
-
+        if (provider === 'ollama') {
+            model = this.ollama.getConfiguredModel();
+            text = await this.ollama.chat(system, user, temperature);
+        } else if (provider === 'cloud') {
+            model = this.llm.getConfiguredModel();
+            text = await this.llm.chat(system, user, temperature);
+        } else {
+            throw new Error('No inference provider configured');
         }
 
-        this.setActive('grok', this.grok.getConfiguredModel());
-
+        const latencyMs = Date.now() - started;
+        this.output.appendLine(`[${name}] ${provider} ${model} ${latencyMs}ms`);
+        return text;
     }
 
-
-
-    private async compileWithGrok(
+    private async compileWithLlm(
         rawSegments: string[],
         ctx: VoiceSessionContext,
-        priorBrief?: CompiledBrief
+        priorBrief: CompiledBrief | undefined,
+        provider: Exclude<CompileProviderId, 'none'>
     ): Promise<CompiledBrief> {
         const segments = analyzeSegments(rawSegments);
-        const { system, user } = this.buildCompilePrompt(segments, ctx, priorBrief);
-        const markdown = await this.grok.chat(system, user, 0.2);
+        const { system, user } = buildCompilePrompt(segments, ctx, priorBrief);
+        const markdown = await this.chat(provider, 'compile', system, user, 0.2);
         if (!markdown.includes('## Goal')) {
-            throw new Error('Grok output missing ## Goal section');
+            throw new Error('Compile output missing ## Goal section');
         }
         const latest = segments[segments.length - 1]?.text.trim() ?? '';
-        const brief = parseCompiledMarkdown(markdown);
-        if (latest.length > 50 && brief.goal.trim().toLowerCase() === latest.toLowerCase()) {
-            throw new Error('Grok returned a verbatim transcript instead of a synthesized agent brief');
+        let brief = parseCompiledMarkdown(markdown);
+        brief = ensureSessionInBrief(brief, segments);
+        if (
+            segments.length === 1 &&
+            latest.length > 50 &&
+            brief.goal.trim().toLowerCase() === latest.toLowerCase()
+        ) {
+            throw new Error('Compiler returned a verbatim transcript instead of a synthesized agent brief');
         }
         return brief;
     }
 
-    private buildCompilePrompt(
-        segments: ReturnType<typeof analyzeSegments>,
-        ctx: VoiceSessionContext,
-        priorBrief?: CompiledBrief
-    ): { system: string; user: string } {
-        const system = `You are Teacher — transform voice dictation into a structured Cursor agent brief.
-
-CRITICAL rules:
-1. Do NOT invent implementation tasks when the speaker is only testing, observing, or saying things "work for me". If no explicit task was requested, ## Goal must say so clearly (e.g. "No implementation requested — user is evaluating the UI.").
-2. When the speaker corrects or questions a PRIOR agent brief ("why did you give goals", "wasn't telling you to do anything"), treat that as feedback — adjust Goal/Constraints; do not repeat the mistake.
-3. ## Goal = imperative tasks from the LATEST segment only. Synthesize — never paste transcript verbatim.
-4. ## Target = file paths explicitly mentioned. If none, use exactly: - (no targets inferred — open files or speak file paths)
-5. Include ## Constraints ONLY when the speaker stated must/should-not rules. Omit the section entirely if none.
-6. Include ## Verification ONLY when the speaker said how to verify. Omit the section entirely if none — never put "---" or horizontal rules inside Verification.
-7. Prior voice segments (not latest) → superseded reference bullets using the speaker's words ONLY — no metadata like [PRIOR] or segment numbers.
-8. Output ends with a single line "---" then the reference header — no blank lines before "---".
-
-Output markdown ONLY with sections you need (Goal and Target always; Constraints/Verification only when content exists), then:
----
-**Reference only (superseded — do not implement unless asked again)**`;
-
-        const priorBlock = priorBrief
-            ? `\nPrevious agent brief (speaker may be correcting this — use it for continuity):\n${formatBriefMarkdown(priorBrief)}\n`
-            : '';
-
-        const user = `Workspace context: ${ctx.targetFiles.slice(0, 10).join(', ') || 'none'}
-${priorBlock}
-All voice segments below — latest segment drives Goal; earlier segments inform corrections and superseded reference:
-
-${segments.map((s, i) => `${i + 1}${i === segments.length - 1 ? ' (LATEST)' : ''}. ${s.text}`).join('\n')}`;
-
-        return { system, user };
-    }
-
-
-
-    private setActive(provider: 'grok' | 'none', model: string): void {
-
+    private setActive(provider: ActiveProvider, model: string): void {
         this.activeProvider = provider;
-
         this.activeModel = model;
-
     }
-
 }
-
-

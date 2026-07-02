@@ -3,7 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Teacher</title>
+  <title>Teacher: lecture your AI</title>
+  <link rel="icon" href="/icon.png" type="image/png" sizes="128x128" />
+  <link rel="apple-touch-icon" href="/icon.png" />
   <style>
     :root {
       --bg: #14151d; --panel: #1e212b; --surface: #262a37; --ink: #e8eaef;
@@ -18,7 +20,11 @@
       padding: 8px 14px; border-bottom: 1px solid var(--line); background: var(--panel);
       display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
     }
+    .topbar .brand { display: flex; align-items: center; gap: 10px; }
+    .topbar .brand-icon { width: 28px; height: 28px; flex-shrink: 0; display: block; }
+    .topbar .brand-text { display: flex; flex-direction: column; gap: 1px; }
     .topbar h1 { margin: 0; font-size: 14px; font-weight: 700; }
+    .topbar .tagline { margin: 0; font-size: 10px; font-weight: 400; color: var(--muted); font-style: italic; }
     .topbar .meta { font-size: 11px; color: var(--muted); display: flex; gap: 12px; }
     .topbar .status { margin-left: auto; font-size: 11px; color: var(--muted); max-width: 36%; text-align: right; }
     .topbar .status.ok { color: var(--ok); }
@@ -27,6 +33,77 @@
       border: 1px solid var(--line); background: transparent; color: var(--muted);
       padding: 5px 10px; border-radius: 8px; font-size: 11px; cursor: pointer;
     }
+    .topbar button.ghost:hover { color: var(--accent); border-color: var(--accent); }
+    .settings-backdrop {
+      position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 200;
+      display: none; align-items: stretch; justify-content: flex-end;
+    }
+    .settings-backdrop.open { display: flex; }
+    .settings-panel {
+      width: min(360px, 92vw); background: var(--panel); border-left: 1px solid var(--line);
+      padding: 16px; overflow: auto; box-shadow: -8px 0 32px rgba(0,0,0,.35);
+    }
+    .settings-panel h2 { margin: 0 0 4px; font-size: 14px; }
+    .settings-panel .settings-lead { margin: 0 0 16px; font-size: 12px; color: var(--muted); line-height: 1.5; }
+    .settings-group { margin-bottom: 18px; }
+    .settings-group h3 {
+      margin: 0 0 8px; font-size: 10px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted);
+    }
+    .setting-row {
+      display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
+      padding: 8px 0; border-bottom: 1px solid var(--line); font-size: 12px;
+    }
+    .setting-row:last-child { border-bottom: none; }
+    .setting-row label { flex: 1; line-height: 1.45; cursor: pointer; }
+    .setting-row .hint { display: block; font-size: 11px; color: var(--muted); margin-top: 3px; line-height: 1.4; font-style: italic; }
+    .setting-row input[type="checkbox"] { margin-top: 2px; accent-color: var(--accent); }
+    .setting-row select {
+      background: var(--surface); color: var(--ink); border: 1px solid var(--line);
+      border-radius: 8px; padding: 4px 8px; font-size: 11px; max-width: 140px;
+    }
+    .settings-meta { font-size: 11px; color: var(--muted); line-height: 1.55; }
+    .settings-meta span { display: block; margin-bottom: 4px; }
+    .settings-advanced {
+      margin: 0 0 16px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px;
+      background: var(--surface); font-size: 11px; color: var(--muted); line-height: 1.55;
+    }
+    .settings-advanced p { margin: 0 0 8px; }
+    .settings-advanced ol { margin: 0 0 8px; padding-left: 18px; }
+    .settings-advanced a { color: var(--accent); }
+    .copy-row {
+      display: flex; align-items: center; gap: 6px; margin-top: 6px;
+    }
+    .copy-row code {
+      flex: 1; font-size: 10px; padding: 5px 8px; border-radius: 6px;
+      background: var(--bg); border: 1px solid var(--line); color: var(--ink);
+      white-space: normal; word-break: break-all; line-height: 1.4;
+    }
+    .setting-row input[type="text"],
+    .setting-row input[type="password"],
+    .setting-row input[type="number"] {
+      background: var(--surface); color: var(--ink); border: 1px solid var(--line);
+      border-radius: 8px; padding: 5px 8px; font-size: 11px; min-width: 0; width: 140px;
+    }
+    .setting-row button.inline-save {
+      border: 1px solid var(--line); background: var(--panel); color: var(--ink);
+      border-radius: 8px; padding: 5px 10px; font-size: 11px; cursor: pointer; flex-shrink: 0;
+    }
+    .setting-row button.inline-save:hover { border-color: var(--accent); color: var(--accent); }
+    .copy-row button {
+      flex-shrink: 0; border: 1px solid var(--line); background: var(--panel); color: var(--ink);
+      border-radius: 6px; padding: 4px 8px; font-size: 10px; cursor: pointer;
+    }
+    .copy-row button:hover { border-color: var(--accent); color: var(--accent); }
+    .settings-footer {
+      margin-top: auto; padding-top: 12px; border-top: 1px solid var(--line);
+    }
+    .settings-footer button {
+      width: 100%; border: 1px solid var(--line); background: var(--surface); color: var(--ink);
+      border-radius: 10px; padding: 10px 12px; font-size: 12px; font-weight: 600; cursor: pointer;
+    }
+    .settings-footer button:hover { border-color: var(--accent); color: var(--accent); }
+    .settings-panel { display: flex; flex-direction: column; }
+    .brief-current { border: 1px solid var(--line); border-radius: 12px; padding: 12px; background: var(--panel); }
     .layout {
       display: grid; grid-template-columns: 260px minmax(0, 1fr) minmax(0, 1fr);
       gap: 10px; padding: 10px; min-height: 0; height: calc(100vh - 41px);
@@ -36,7 +113,18 @@
       border: 1px solid var(--line); border-radius: 12px; background: var(--panel);
       display: flex; flex-direction: column; align-items: center; padding: 20px 14px 14px; min-height: 0;
     }
-    .mic-wrap { position: relative; width: 72px; height: 72px; margin-bottom: 14px; }
+    .mic-wrap { position: relative; width: 72px; height: 72px; margin-bottom: 8px; }
+    .mic-actions button, .mic-cancel {
+      border: 1px solid var(--line); background: transparent; color: var(--muted);
+      border-radius: 8px; padding: 4px 10px; font-size: 11px; cursor: pointer; margin-bottom: 14px;
+    }
+    .mic-actions button:hover, .mic-cancel:hover:not(:disabled) { color: var(--warn); border-color: var(--warn); }
+    .mic-cancel:disabled,
+    .mic-cancel:disabled:hover,
+    .mic-cancel:disabled:focus,
+    .mic-cancel:disabled:focus-visible {
+      color: var(--muted); border-color: var(--line); opacity: 0.35; outline: none; box-shadow: none; cursor: default;
+    }
     .mic-btn {
       width: 72px; height: 72px; border-radius: 50%; border: 2px solid var(--line);
       background: var(--surface); cursor: pointer; display: flex; align-items: center; justify-content: center;
@@ -65,10 +153,14 @@
       width: 100%; flex: 1; min-height: 72px; font-size: 13px; line-height: 1.55;
       color: var(--ink); background: var(--bg); border: 1px solid var(--line);
       border-radius: 10px; padding: 10px; overflow: auto; white-space: pre-wrap;
+      outline: none;
     }
-    .live-text:empty::before {
-      content: 'Speak — pause the mic to add to session and update the brief.';
-      color: var(--muted); font-style: italic;
+    .live-text:focus { border-color: var(--accent); background: rgba(107,138,255,.04); }
+    .live-text.empty::before {
+      content: attr(data-placeholder);
+      color: var(--muted);
+      font-style: italic;
+      pointer-events: none;
     }
     .pane {
       display: grid; grid-template-rows: auto 1fr; min-height: 0;
@@ -130,6 +222,11 @@
     }
     .fix-log { margin-top: 8px; font-size: 11px; color: var(--muted); }
     .fix-log-label { font-weight: 700; color: var(--warn); margin-right: 4px; }
+    .fix-src { color: var(--muted); font-size: 10px; font-style: italic; }
+    .seg-heard {
+      font-size: 11px; color: var(--muted); margin-bottom: 8px; line-height: 1.45;
+      padding: 6px 8px; border-radius: 8px; background: var(--bg); border: 1px solid var(--line);
+    }
     .brief-section { margin-bottom: 10px; }
     .brief-heading {
       font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em;
@@ -168,23 +265,172 @@
       0%, 100% { box-shadow: 0 0 0 0 rgba(107,138,255,0); }
       50% { box-shadow: 0 0 0 4px rgba(107,138,255,.25); }
     }
+    @media (max-width: 1400px) {
+      .layout { grid-template-columns: 200px minmax(0, 1fr) minmax(0, 1fr); gap: 8px; padding: 8px; }
+    }
+    @media (max-width: 1100px) {
+      .layout {
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        grid-template-rows: auto minmax(200px, 1fr) minmax(200px, 1fr);
+        height: auto; min-height: calc(100vh - 41px);
+      }
+      .capture-col { grid-column: 1 / -1; max-height: 240px; flex-shrink: 0; }
+      .live-text { min-height: 56px; max-height: 100px; }
+    }
     @media (max-width: 960px) {
       .layout { grid-template-columns: 1fr; grid-template-rows: auto auto auto; height: auto; padding: 8px; gap: 8px; }
-      .capture-col, .pane { min-height: 260px; }
+      .capture-col, .pane { min-height: 220px; max-height: none; }
+      .capture-col { grid-column: auto; }
+    }
+    @media (max-width: 560px) {
+      .topbar { padding: 6px 10px; gap: 8px; }
+      .topbar .tagline { display: none; }
+      .topbar .status { max-width: 100%; flex: 1 1 100%; text-align: left; order: 5; font-size: 10px; }
+      .topbar button.ghost { padding: 4px 8px; font-size: 10px; }
+      .pane-head { padding: 0 10px; height: 42px; min-height: 42px; }
+      .pane-body { padding: 8px; }
+      .setting-row { flex-direction: column; gap: 6px; }
+      .setting-row select { max-width: 100%; width: 100%; }
     }
   </style>
 </head>
 <body>
   <header class="topbar">
-    <h1>Teacher</h1>
-    <div class="meta">
-      <span id="speechLabel" title="How your voice is transcribed in the browser">Speech: …</span>
-      <span id="compileLabel" title="How the agent prompt is built">Brief: …</span>
-      <span id="contextLabel" title="Workspace filenames used only when STT term hints are enabled">Context: …</span>
+    <div class="brand">
+      <img class="brand-icon" src="/icon.png" width="28" height="28" alt="" />
+      <div class="brand-text">
+        <h1>Teacher</h1>
+        <p class="tagline">Lecture your AI</p>
+      </div>
     </div>
     <div class="status" id="status">Connecting…</div>
+    <button type="button" class="ghost" id="openSettings" title="Configuration">Settings</button>
     <button type="button" class="ghost" id="clear">Clear session</button>
   </header>
+
+  <div class="settings-backdrop" id="settingsBackdrop" hidden>
+    <aside class="settings-panel" role="dialog" aria-labelledby="settingsTitle">
+      <h2 id="settingsTitle">Configuration</h2>
+      <p class="settings-lead">Install → open Settings → pick a cloud preset or run Ollama locally. <strong>Compiler</strong> shows what is active right now.</p>
+      <div class="settings-group">
+        <h3>Connection</h3>
+        <div class="settings-meta">
+          <span id="settingsServer">Server: …</span>
+          <span id="settingsCompilerKey">Compiler: …</span>
+        </div>
+        <div class="setting-row">
+          <label for="setSidecarPort">Web UI port<span class="hint">Restart extension if you change this. Falls forward if busy.</span></label>
+          <input type="number" id="setSidecarPort" data-key="teacher.capture.sidecarPort" min="1024" max="65535" />
+        </div>
+        <div class="setting-row">
+          <label for="setLlmKey">Inference API key<span class="hint">OpenAI-compatible (<code>INFERENCE_API_KEY</code> in .env). Stored in VS Code secrets.</span></label>
+          <div style="display:flex;gap:6px;align-items:center">
+            <input type="password" id="setLlmKey" placeholder="sk-…" autocomplete="off" />
+            <button type="button" class="inline-save" id="saveLlmKey">Save</button>
+          </div>
+        </div>
+        <div class="setting-row">
+          <label for="setInferencePreset">Inference provider<span class="hint">OpenAI is the packaged default. Pick a preset or use Custom fields below.</span></label>
+          <select id="setInferencePreset">
+            <option value="openai">OpenAI (default)</option>
+            <option value="xai">xAI Grok</option>
+            <option value="groq">Groq</option>
+            <option value="deepseek">DeepSeek</option>
+            <option value="custom">Custom</option>
+          </select>
+        </div>
+        <div class="setting-row">
+          <label for="setLlmBaseUrl">API base URL<span class="hint">OpenAI default: <code>https://api.openai.com/v1</code> · Grok: <code>https://api.x.ai/v1</code></span></label>
+          <input type="text" id="setLlmBaseUrl" data-key="teacher.inference.llm.baseUrl" placeholder="https://api.openai.com/v1" />
+        </div>
+        <div class="setting-row">
+          <label for="setLlmModel">Inference model<span class="hint">Pick a preset or type any model id your host supports.</span></label>
+          <input type="text" id="setLlmModel" list="inferenceModelList" data-key="teacher.inference.llm.model" placeholder="gpt-4o-mini" />
+          <datalist id="inferenceModelList"></datalist>
+        </div>
+        <p class="hint" style="margin:0;padding:4px 0 0" id="inferenceConfigHint">Endpoint values may come from workspace <code>.env</code> (overrides settings).</p>
+      </div>
+      <div class="settings-group">
+        <h3>Session</h3>
+        <div class="settings-meta">
+          <span id="settingsMic">Mic: idle</span>
+          <span id="settingsSegments">Session segments: 0</span>
+          <span id="settingsFixes">STT auto-corrections: 0</span>
+          <span id="settingsBriefState">Brief: …</span>
+        </div>
+      </div>
+      <div class="settings-group">
+        <h3>Speech</h3>
+        <div class="setting-row">
+          <label for="setSttProvider">STT provider</label>
+          <select id="setSttProvider" data-key="teacher.stt.provider">
+            <option value="auto">Auto</option>
+            <option value="webspeech">Browser speech</option>
+            <option value="whisper">Local whisper</option>
+            <option value="deepgram">Deepgram</option>
+          </select>
+        </div>
+        <div class="setting-row">
+          <label for="setHomonymPass">Dictionary homonym pass<span class="hint">Workspace symbols and codewords become STT corrections.</span></label>
+          <input type="checkbox" id="setHomonymPass" data-key="teacher.stt.homonymPass" />
+        </div>
+        <div class="setting-row">
+          <label for="setPolishStt">Polish STT via LLM<span class="hint">Fix transcription before compiling (needs API key or Ollama).</span></label>
+          <input type="checkbox" id="setPolishStt" data-key="teacher.compile.polishStt" />
+        </div>
+        <div class="setting-row">
+          <label for="setRebuildMode">Index rebuild<span class="hint">Codewords: <code>.teacher/codewords.txt</code> or <code>teacher.context.codewords</code></span></label>
+          <select id="setRebuildMode" data-key="teacher.context.rebuildMode">
+            <option value="clearSession">Clear session only</option>
+            <option value="onFileChange">On file change</option>
+            <option value="eachSegment">Each mic pause</option>
+          </select>
+        </div>
+      </div>
+      <div class="settings-group">
+        <h3>Compile and send</h3>
+        <div class="setting-row">
+          <label for="setCompileProvider">Compile provider<span class="hint"><strong>Auto</strong> uses local Ollama when running, else cloud API above. Pick <strong>Cloud API</strong> to force OpenAI/Grok/Groq even if Ollama is up.</span></label>
+          <select id="setCompileProvider" data-key="teacher.compile.provider">
+            <option value="auto">Auto (Ollama first, else cloud)</option>
+            <option value="cloud">Cloud API only</option>
+            <option value="ollama">Local Ollama only</option>
+          </select>
+        </div>
+        <div class="setting-row">
+          <label for="setLiveCompile">Live compile after each pause</label>
+          <input type="checkbox" id="setLiveCompile" data-key="teacher.compile.live" />
+        </div>
+        <div class="setting-row">
+          <label for="setCompileMode">Compile mode</label>
+          <select id="setCompileMode" data-key="teacher.compile.mode">
+            <option value="teacher">Structured brief</option>
+            <option value="verbatim">Verbatim join</option>
+            <option value="polish">Polish (deferred)</option>
+          </select>
+        </div>
+        <div class="setting-row">
+          <label for="setAutoPaste">Auto-paste into Composer</label>
+          <input type="checkbox" id="setAutoPaste" data-key="teacher.send.autoPaste" />
+        </div>
+        <div class="setting-row">
+          <label for="setAutoSubmit">Auto-submit prompt</label>
+          <input type="checkbox" id="setAutoSubmit" data-key="teacher.send.autoSubmit" />
+        </div>
+      </div>
+      <details class="settings-advanced" style="margin-bottom:16px">
+        <summary style="cursor:pointer;font-size:11px;color:var(--muted)">More in VS Code Settings</summary>
+        <p style="margin:10px 0 8px">Whisper paths, Deepgram, Ollama model. Filter:</p>
+        <div class="copy-row">
+          <code id="settingsFilterText">@ext:muhib-beekun.teacher</code>
+          <button type="button" id="copySettingsFilter" title="Copy settings filter">Copy</button>
+        </div>
+      </details>
+      <div class="settings-footer">
+        <button type="button" id="closeSettings">Done</button>
+      </div>
+    </aside>
+  </div>
 
   <main class="layout">
     <section class="capture-col" aria-label="Voice capture">
@@ -197,14 +443,18 @@
           <span class="mic-spinner" aria-hidden="true"></span>
         </button>
       </div>
+      <button type="button" class="mic-cancel" id="cancelMic" title="Cancel recording without adding to session">Cancel</button>
       <canvas id="waveform" class="waveform" width="232" height="44" aria-hidden="true"></canvas>
-      <div id="liveText" class="live-text" aria-live="polite"></div>
+      <div id="liveText" class="live-text empty" contenteditable="true" spellcheck="true" aria-live="polite" data-placeholder="Speak or type here. Pause the mic to add to session."></div>
     </section>
 
     <section class="pane">
       <div class="pane-head">
         <h2>Your Words</h2>
         <div class="pane-actions">
+          <button type="button" class="icon-btn" id="copySttAudit" title="Copy STT audit (heard vs corrected pipeline)">
+            <svg viewBox="0 0 24 24"><path d="M9 5H5a2 2 0 0 0-2 2v12"/><path d="M9 3h10v18H9"/><path d="M14 8H7"/><path d="M14 12H7"/></svg>
+          </button>
           <button type="button" class="icon-btn" id="copyWords" title="Copy your words">
             <svg viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="1"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>
           </button>
@@ -234,7 +484,7 @@
         </div>
       </div>
       <div class="pane-body">
-        <div class="panel-inner" id="brief"><p class="empty">Speak — Grok will scaffold an agent brief here after each pause.</p></div>
+        <div class="panel-inner" id="brief"><p class="empty">Speak. Your agent brief appears here after each pause.</p></div>
       </div>
     </section>
   </main>
@@ -253,9 +503,13 @@
     const fixPopover = document.getElementById('fixPopover');
     const fixPopoverHeard = document.getElementById('fixPopoverHeard');
     const fixPopoverRevert = document.getElementById('fixPopoverRevert');
-    const speechLabelEl = document.getElementById('speechLabel');
-    const compileLabelEl = document.getElementById('compileLabel');
-    const contextLabelEl = document.getElementById('contextLabel');
+    const settingsBackdrop = document.getElementById('settingsBackdrop');
+    const settingsCompilerKey = document.getElementById('settingsCompilerKey');
+    const settingsMic = document.getElementById('settingsMic');
+    const settingsServer = document.getElementById('settingsServer');
+    const settingsSegments = document.getElementById('settingsSegments');
+    const settingsFixes = document.getElementById('settingsFixes');
+    const settingsBriefState = document.getElementById('settingsBriefState');
     const waveformCanvas = document.getElementById('waveform');
     const wfCtx = waveformCanvas.getContext('2d');
 
@@ -264,7 +518,73 @@
     let recognition = null, briefMarkdown = '', briefByVersion = {}, health = { stt: 'webspeech' };
     let activeFixTarget = null, editSnapshot = null;
     const refreshBtn = document.getElementById('refresh');
+    const cancelMicBtn = document.getElementById('cancelMic');
     let audioContext = null, analyser = null, waveAnim = null;
+    let recordingArmed = false, micRuntime = 'idle';
+    let liveEditLock = false;
+
+    function updateCancelButton() {
+      if (!cancelMicBtn) return;
+      const cancellable = recordingArmed || listening
+        || micRuntime === 'requesting access' || micRuntime === 'warming up' || micRuntime === 'listening';
+      cancelMicBtn.disabled = !cancellable;
+    }
+
+    function syncLiveTextEmptyClass() {
+      const empty = !liveTextEl.innerText.trim();
+      liveTextEl.classList.toggle('empty', empty);
+    }
+
+    function normalizeSpaces(text) {
+      return (text || '').replace(/\s+/g, ' ').trim();
+    }
+
+    function appendSpeechChunk(base, addition) {
+      const next = normalizeSpaces(addition);
+      if (!next) return normalizeSpaces(base);
+      const prev = (base || '').trimEnd();
+      return prev ? prev + ' ' + next : next;
+    }
+
+    function getLiveText() {
+      return normalizeSpaces(liveTextEl.innerText.replace(/\u00a0/g, ' '));
+    }
+
+    function setLiveText(text) {
+      liveTextEl.innerText = text;
+      syncLiveTextEmptyClass();
+    }
+
+    function setLiveTextFromSpeech(text) {
+      if (liveEditLock && !listening) return;
+      setLiveText(text);
+    }
+
+    function clearLiveText() {
+      chunkTranscript = '';
+      setLiveText('');
+    }
+
+    function updateMicRuntimeLabel(state) {
+      micRuntime = state;
+      if (settingsMic) settingsMic.textContent = 'Mic: ' + state;
+      updateCancelButton();
+    }
+
+    function applyRuntime(runtime) {
+      if (!runtime) return;
+      if (settingsServer) settingsServer.textContent = 'Server: ' + (runtime.url || '…');
+      if (settingsSegments) settingsSegments.textContent = 'Session segments: ' + (runtime.segmentCount ?? 0);
+      if (settingsFixes) settingsFixes.textContent = 'STT auto-corrections: ' + (runtime.totalFixCount ?? 0);
+      if (settingsContextDetail) {
+        settingsContextDetail.textContent = 'Workspace: ' + (runtime.contextTermCount ?? 0) + ' terms';
+      }
+      if (settingsBriefState) {
+        settingsBriefState.textContent = runtime.needsRegenerate
+          ? 'Brief: stale (edit or refresh to recompile)'
+          : 'Brief: current';
+      }
+    }
 
     function setStatus(text, kind) {
       statusEl.textContent = text;
@@ -282,11 +602,121 @@
       if (session.briefHtml) briefEl.innerHTML = session.briefHtml;
       if (session.compiled !== undefined) briefMarkdown = session.compiled;
       if (session.briefMarkdownByVersion) briefByVersion = session.briefMarkdownByVersion;
-      if (session.sttLabel) speechLabelEl.textContent = 'Speech: ' + session.sttLabel;
-      if (session.compileLabel) compileLabelEl.textContent = 'Brief: ' + session.compileLabel;
-      if (session.contextHint) contextLabelEl.textContent = session.contextHint;
       if (session.compileError) setStatus('Compile: ' + session.compileError, 'warn');
       refreshBtn.classList.toggle('pulse-hint', !!session.needsRegenerate);
+    }
+
+    let inferencePresets = [];
+
+    function applySettingsView(settings) {
+      if (!settings) return;
+      if (settingsServer) settingsServer.textContent = 'Server: ' + (settings.serverUrl || '…');
+      settingsCompilerKey.textContent = settings.compilerReady
+        ? ('Compiler: ' + (settings.compileLabel || 'ready'))
+        : 'Compiler: not configured (API key or Ollama)';
+      document.getElementById('setLiveCompile').checked = !!settings.compileLive;
+      document.getElementById('setPolishStt').checked = !!settings.polishStt;
+      document.getElementById('setHomonymPass').checked = !!settings.homonymPass;
+      document.getElementById('setAutoPaste').checked = !!settings.sendAutoPaste;
+      document.getElementById('setAutoSubmit').checked = !!settings.sendAutoSubmit;
+      document.getElementById('setCompileMode').value = settings.compileMode || 'teacher';
+      document.getElementById('setSttProvider').value = settings.sttProvider || 'auto';
+      document.getElementById('setRebuildMode').value = settings.contextRebuildMode || 'clearSession';
+      const portEl = document.getElementById('setSidecarPort');
+      if (portEl) portEl.value = settings.sidecarPort || 3721;
+      const baseUrlEl = document.getElementById('setLlmBaseUrl');
+      if (baseUrlEl) baseUrlEl.value = settings.llmBaseUrl || '';
+      const modelEl = document.getElementById('setLlmModel');
+      if (modelEl) modelEl.value = settings.llmModel || '';
+      const presetEl = document.getElementById('setInferencePreset');
+      if (presetEl) presetEl.value = settings.inferencePresetId || 'custom';
+      const compileProviderEl = document.getElementById('setCompileProvider');
+      if (compileProviderEl) compileProviderEl.value = settings.compileProvider || 'auto';
+      const configHint = document.getElementById('inferenceConfigHint');
+      if (configHint && settings.llmConfigSource) {
+        configHint.textContent = 'Endpoint: ' + (settings.llmBaseUrl || '') + ' · ' + (settings.llmModel || '') + ' (' + settings.llmConfigSource + ')';
+      }
+      const keyEl = document.getElementById('setLlmKey');
+      if (keyEl) {
+        const preset = settings.inferencePresets?.find(p => p.id === settings.inferencePresetId);
+        keyEl.placeholder = settings.llmKeySet ? '•••••••• (saved)' : (preset?.keyHint || 'sk-… or xai-…');
+      }
+      const filterEl = document.getElementById('settingsFilterText');
+      if (filterEl) filterEl.textContent = settings.vscodeSettingsFilter || '@ext:muhib-beekun.teacher';
+      const modelList = document.getElementById('inferenceModelList');
+      if (modelList && settings.inferenceModels?.length) {
+        modelList.innerHTML = settings.inferenceModels.map(m => `<option value="${m.id}">${m.label}</option>`).join('');
+      }
+      inferencePresets = settings.inferencePresets || [];
+    }
+
+    async function applyInferencePreset(presetId) {
+      if (presetId === 'custom') return;
+      const preset = inferencePresets.find(p => p.id === presetId);
+      if (!preset) return;
+      await patchSetting('teacher.inference.llm.baseUrl', preset.baseUrl);
+      await patchSetting('teacher.inference.llm.model', preset.model);
+      const baseUrlEl = document.getElementById('setLlmBaseUrl');
+      const modelEl = document.getElementById('setLlmModel');
+      if (baseUrlEl) baseUrlEl.value = preset.baseUrl;
+      if (modelEl) modelEl.value = preset.model;
+      const keyEl = document.getElementById('setLlmKey');
+      if (keyEl && !String(keyEl.placeholder).includes('saved')) {
+        keyEl.placeholder = preset.keyHint;
+      }
+      setStatus('Inference preset: ' + preset.label, 'ok');
+      refreshHealth().catch(() => {});
+    }
+
+    async function saveLlmKey() {
+      const keyEl = document.getElementById('setLlmKey');
+      const key = keyEl?.value?.trim();
+      if (!key) {
+        setStatus('Enter an API key first.', 'warn');
+        return;
+      }
+      const json = await fetch('/api/settings/llm-key', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ key })
+      }).then(r => r.json());
+      if (json.settings) applySettingsView(json.settings);
+      if (json.ok) {
+        keyEl.value = '';
+        setStatus('API key saved.', 'ok');
+        refreshHealth().catch(() => {});
+      } else {
+        setStatus(json.error || 'Could not save API key.', 'warn');
+      }
+    }
+
+    async function loadSettings() {
+      const json = await fetch('/api/settings').then(r => r.json()).catch(() => ({}));
+      if (json.settings) applySettingsView(json.settings);
+      if (json.runtime) applyRuntime(json.runtime);
+      updateMicRuntimeLabel(micRuntime);
+    }
+
+    async function patchSetting(key, value) {
+      const json = await fetch('/api/settings', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ key, value })
+      }).then(r => r.json());
+      if (json.settings) applySettingsView(json.settings);
+      if (!json.ok) setStatus(json.error || 'Setting update failed.', 'warn');
+    }
+
+    function openSettings() {
+      settingsBackdrop.hidden = false;
+      settingsBackdrop.classList.add('open');
+      loadSettings().catch(() => {});
+      loadSession().then(() => fetch('/api/settings').then(r => r.json()).then(j => applyRuntime(j.runtime))).catch(() => {});
+    }
+
+    function closeSettings() {
+      settingsBackdrop.classList.remove('open');
+      settingsBackdrop.hidden = true;
     }
 
     async function loadSession() {
@@ -295,14 +725,12 @@
 
     async function refreshHealth() {
       health = await fetch('/health').then(r => r.json());
-      let msg = 'Ready — tap mic to speak';
-      if (health.compile === 'grok') msg += ' · Grok compile + polish';
-      else if (!health.grokKeySet) msg += ' · NO GROK KEY';
-      else msg += ' · Grok unavailable';
-      setStatus(msg, health.compile === 'grok' ? 'ok' : 'warn');
+      let msg = 'Ready. Tap mic to speak';
+      if (health.compileReady) msg += ' · brief compiler ready';
+      else if (!health.compileReady) msg += ' · compiler not ready (API key or Ollama)';
+      setStatus(msg, health.compileReady ? 'ok' : 'warn');
+      loadSettings().catch(() => {});
     }
-
-    function setLiveText(text) { liveTextEl.textContent = text; }
 
     function startWaveform(stream) {
       stopWaveform();
@@ -336,8 +764,20 @@
     }
 
     async function startRecording() {
-      chunkTranscript = ''; pendingBlob = null; setLiveText('');
+      recordingArmed = true;
+      liveEditLock = false;
+      if (document.activeElement === liveTextEl) liveTextEl.blur();
+      chunkTranscript = getLiveText();
+      pendingBlob = null;
+      if (!chunkTranscript) setLiveText('');
+      updateMicRuntimeLabel('requesting access');
       mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      if (!recordingArmed) {
+        mediaStream.getTracks().forEach(t => t.stop());
+        mediaStream = null;
+        updateMicRuntimeLabel('idle');
+        return;
+      }
       startWaveform(mediaStream);
       audioChunks = [];
       activeMime = MediaRecorder.isTypeSupported('audio/webm;codecs=opus') ? 'audio/webm;codecs=opus' : 'audio/webm';
@@ -345,6 +785,14 @@
       mediaRecorder = recorder;
       recorder.ondataavailable = (e) => { if (e.data?.size) audioChunks.push(e.data); };
       recorder.onstop = () => {
+        if (!recordingArmed) {
+          audioChunks = [];
+          pendingBlob = null;
+          if (mediaStream) { mediaStream.getTracks().forEach(t => t.stop()); mediaStream = null; }
+          mediaRecorder = null;
+          stopWaveform();
+          return;
+        }
         if (audioChunks.length) pendingBlob = new Blob(audioChunks, { type: activeMime });
         audioChunks = [];
         if (mediaStream) { mediaStream.getTracks().forEach(t => t.stop()); mediaStream = null; }
@@ -352,18 +800,48 @@
         stopWaveform();
         void commitChunk();
       };
+      updateMicRuntimeLabel('warming up');
+      setStatus('Warming up mic…');
+      await new Promise(r => setTimeout(r, 450));
+      if (!recordingArmed) {
+        if (recorder.state !== 'inactive') try { recorder.stop(); } catch (_) {}
+        return;
+      }
       recorder.start(250);
       listening = true;
       micBtn.classList.add('active');
-      setStatus('Listening… tap mic to pause.');
+      updateMicRuntimeLabel('listening');
+      setStatus('Listening. Tap mic to pause.');
       startWebSpeech();
+    }
+
+    function abortRecording() {
+      recordingArmed = false;
+      stopWebSpeech();
+      listening = false;
+      micBtn.classList.remove('active');
+      chunkTranscript = '';
+      pendingBlob = null;
+      clearLiveText();
+      const recorder = mediaRecorder;
+      if (recorder?.state === 'recording' || recorder?.state === 'paused') {
+        try { recorder.stop(); } catch (_) {}
+      } else if (mediaStream) {
+        mediaStream.getTracks().forEach(t => t.stop());
+        mediaStream = null;
+        stopWaveform();
+      }
+      setProcessing(false);
+      updateMicRuntimeLabel('idle');
+      setStatus('Recording cancelled.', 'ok');
     }
 
     function stopRecording() {
       listening = false;
       micBtn.classList.remove('active');
       stopWebSpeech();
-      chunkTranscript = liveTextEl.textContent.trim();
+      updateMicRuntimeLabel('processing');
+      chunkTranscript = getLiveText();
       const recorder = mediaRecorder;
       if (recorder?.state === 'recording') {
         setProcessing(true);
@@ -390,10 +868,10 @@
             else interim += res[0].transcript;
           }
           if (finalText) {
-            chunkTranscript = (chunkTranscript + ' ' + finalText).trim();
-            setLiveText(chunkTranscript);
+            chunkTranscript = appendSpeechChunk(chunkTranscript, finalText);
+            setLiveTextFromSpeech(chunkTranscript);
           } else if (interim) {
-            setLiveText((chunkTranscript + ' ' + interim).trim());
+            setLiveTextFromSpeech(appendSpeechChunk(chunkTranscript, interim));
           }
         };
         recognition.onerror = (e) => {
@@ -408,14 +886,15 @@
 
     async function commitChunk() {
       if (flushing) return;
-      const text = (liveTextEl.textContent || chunkTranscript || '').trim();
+      const text = getLiveText() || normalizeSpaces(chunkTranscript);
       if (!text && !(pendingBlob?.size > 0)) {
         setProcessing(false);
-        setStatus('Ready — tap mic to speak', 'ok');
+        setStatus('Ready. Tap mic to speak', 'ok');
         return;
       }
       flushing = true;
       setProcessing(true);
+      updateMicRuntimeLabel('processing');
       setStatus('Processing…');
 
       try {
@@ -431,27 +910,34 @@
           if (!res.ok) throw new Error(json.error || 'HTTP ' + res.status);
         }
         if (json?.session) applySession(json.session);
-        setLiveText(''); chunkTranscript = ''; pendingBlob = null;
-        const err = json?.session?.compileError;
-        setStatus(err ? 'Added — compile failed: ' + err : 'Added — brief updated.', err ? 'warn' : 'ok');
+        clearLiveText();
+        pendingBlob = null;
+        if (json?.session?.status) setStatus(json.session.status, json.session.compileError ? 'warn' : 'ok');
+        else {
+          const err = json?.session?.compileError;
+          const statusMsg = err ? 'Added. Compile failed: ' + err : 'Added. Brief updated.';
+          setStatus(statusMsg, err ? 'warn' : 'ok');
+        }
+        loadSettings().catch(() => {});
       } catch (e) {
         setStatus('Failed: ' + (e.message || e), 'warn');
       } finally {
         flushing = false;
         setProcessing(false);
+        updateMicRuntimeLabel('idle');
       }
     }
 
     async function toggleMic() {
       if (listening) stopRecording();
-      else try { await startRecording(); } catch { setStatus('Mic blocked — allow microphone.', 'warn'); }
+      else try { await startRecording(); } catch { setStatus('Mic blocked. Allow microphone access.', 'warn'); }
     }
 
     async function saveSegmentEdit(index, text) {
       const json = await fetch('/api/segment/' + index, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text, recompile: false })
+        body: JSON.stringify({ text, recompile: true })
       }).then(r => r.json());
       if (json.session) applySession(json.session);
     }
@@ -526,22 +1012,49 @@
       return parts.join('\n\n');
     }
 
+    async function fetchHandoff() {
+      const json = await fetch('/api/handoff').then(r => r.json()).catch(() => ({}));
+      return (json.handoff || '').trim();
+    }
+
     async function copyBriefVersion(version) {
+      const handoff = await fetchHandoff();
+      if (handoff) {
+        await navigator.clipboard.writeText(handoff);
+        setStatus('Agent handoff copied (with header).', 'ok');
+        return;
+      }
       const text = (briefByVersion[version] || briefMarkdown || '').trim();
       if (!text || text.startsWith('Speak')) { setStatus('Nothing to copy yet.', 'warn'); return; }
       await navigator.clipboard.writeText(text);
-      setStatus('Prompt ' + version + ' copied.', 'ok');
+      setStatus('Agent prompt copied.', 'ok');
     }
 
     async function copyBrief() {
+      const handoff = await fetchHandoff();
+      if (handoff) {
+        await navigator.clipboard.writeText(handoff);
+        setStatus('Agent handoff copied (with header).', 'ok');
+        return;
+      }
       const versions = Object.keys(briefByVersion).map(Number).sort((a, b) => b - a);
-      const latest = versions[0];
-      if (latest) return copyBriefVersion(latest);
+      if (versions[0]) return copyBriefVersion(versions[0]);
       const json = await fetch('/api/session').then(r => r.json()).catch(() => ({}));
       const text = ((json.session && json.session.compiled) || briefMarkdown || '').trim();
       if (!text || text.startsWith('Speak')) { setStatus('Nothing to copy yet.', 'warn'); return; }
       await navigator.clipboard.writeText(text);
       setStatus('Agent prompt copied.', 'ok');
+    }
+
+    async function copySttAudit() {
+      const json = await fetch('/api/stt-audit').then(r => r.json()).catch(() => ({}));
+      const text = (json.audit || '').trim();
+      if (!text || text.startsWith('No segments')) {
+        setStatus('No STT audit yet. Speak first.', 'warn');
+        return;
+      }
+      await navigator.clipboard.writeText(text);
+      setStatus('STT audit copied. Paste to report correction deltas.', 'ok');
     }
 
     async function copyWords() {
@@ -562,7 +1075,7 @@
     }
 
     async function recompileBrief() {
-      setStatus('Recompiling via Grok…');
+      setStatus('Recompiling brief…');
       refreshBtn.classList.remove('pulse-hint');
       try {
         const json = await fetch('/api/compile', { method: 'POST' }).then(r => r.json());
@@ -588,21 +1101,69 @@
     });
 
     async function clearSession() {
-      if (!confirm('Clear this session?')) return;
       applySession((await fetch('/api/reset', { method: 'POST' }).then(r => r.json())).session);
       briefMarkdown = '';
-      setLiveText('');
+      clearLiveText();
     }
 
+    liveTextEl.addEventListener('focus', () => { liveEditLock = true; });
+    liveTextEl.addEventListener('blur', () => {
+      liveEditLock = false;
+      chunkTranscript = getLiveText();
+      syncLiveTextEmptyClass();
+      if (listening && recognition) {
+        try { recognition.start(); } catch (_) {}
+      }
+    });
+    liveTextEl.addEventListener('input', () => {
+      chunkTranscript = getLiveText();
+      syncLiveTextEmptyClass();
+    });
+
     micBtn.addEventListener('click', () => toggleMic().catch(() => {}));
+    document.getElementById('cancelMic').addEventListener('click', () => abortRecording());
     document.getElementById('refresh').addEventListener('click', () => recompileBrief().catch(() => {}));
     document.getElementById('copy').addEventListener('click', () => copyBrief().catch(() => {}));
+    document.getElementById('copySttAudit').addEventListener('click', () => copySttAudit().catch(() => {}));
     document.getElementById('copyWords').addEventListener('click', () => copyWords().catch(() => {}));
     document.getElementById('send').addEventListener('click', () => sendToAgent('brief').catch(() => {}));
     document.getElementById('sendWords').addEventListener('click', () => sendToAgent('words').catch(() => {}));
     document.getElementById('clear').addEventListener('click', () => clearSession().catch(() => {}));
 
+    document.getElementById('openSettings').addEventListener('click', openSettings);
+    document.getElementById('closeSettings').addEventListener('click', closeSettings);
+    settingsBackdrop.addEventListener('click', (e) => {
+      if (e.target === settingsBackdrop) closeSettings();
+    });
+    async function copyText(text, okMsg) {
+      try {
+        await navigator.clipboard.writeText(text);
+        setStatus(okMsg, 'ok');
+      } catch {
+        setStatus('Could not copy to clipboard.', 'warn');
+      }
+    }
+    document.getElementById('copySettingsFilter').addEventListener('click', () => {
+      const filter = document.getElementById('settingsFilterText')?.textContent?.trim() || '@ext:muhib-beekun.teacher';
+      copyText(filter, 'Copied settings filter. Press Ctrl+, and paste.');
+    });
+    document.getElementById('saveLlmKey').addEventListener('click', () => saveLlmKey().catch(() => {}));
+    document.getElementById('setInferencePreset').addEventListener('change', (e) => {
+      applyInferencePreset(e.target.value).catch(() => setStatus('Could not apply preset.', 'warn'));
+    });
+
+    for (const el of document.querySelectorAll('[data-key]')) {
+      el.addEventListener('change', () => {
+        const key = el.dataset.key;
+        let value = el.type === 'checkbox' ? el.checked : el.value;
+        if (el.type === 'number') value = Number(value);
+        patchSetting(key, value).catch(() => setStatus('Could not save setting.', 'warn'));
+      });
+    }
+
     refreshHealth().then(() => loadSession()).catch(() => setStatus('Cannot reach Teacher server', 'warn'));
+    updateCancelButton();
+    syncLiveTextEmptyClass();
   </script>
 </body>
 </html>

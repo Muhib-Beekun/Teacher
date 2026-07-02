@@ -1,33 +1,34 @@
 export function formatSttLabel(providerId: string): string {
     switch (providerId) {
         case 'webspeech':
-            return 'Chrome/Edge live preview (browser)';
+            return 'Browser speech (Chrome/Edge)';
         case 'whisper':
             return 'Local whisper.cpp';
         case 'deepgram':
-            return 'Deepgram cloud API';
+            return 'Cloud speech API';
         default:
             return providerId;
     }
 }
 
 export function formatCompileLabel(providerId: string, model = ''): string {
-    if (providerId === 'grok' && model) {
-        return `Grok · ${model}`;
-    }
     switch (providerId) {
         case 'none':
-            return 'Grok required — no API key';
+            return 'Compiler key needed';
+        case 'cloud':
         case 'grok':
-            return 'Grok (xAI remote)';
+            return model ? `Inference API (${model})` : 'Inference API compile';
+        case 'ollama':
+            return model ? `Local Ollama (${model})` : 'Local Ollama compile';
         default:
-            return providerId;
+            return 'Brief compiler';
     }
 }
 
-export function formatContextHint(termCount: number): string {
+export function formatContextHint(termCount: number, targetCount = 0): string {
     if (termCount === 0) {
-        return 'Workspace index empty';
+        return 'Vectorless index empty. Open repo files.';
     }
-    return `${termCount} workspace terms (STT hints when homonym pass enabled)`;
+    const files = targetCount > 0 ? ` · ${targetCount} open files for Target` : '';
+    return `${termCount} workspace terms → STT + Target${files}`;
 }
