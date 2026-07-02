@@ -7,9 +7,11 @@ Version numbers match `package.json` and `teacher-<version>.vsix` builds.
 
 ## [Unreleased]
 
+## [0.0.54] - 2026-07-02
+
 ### Changed
 - Maintainer-only docs (`PLAN.md`, `CONTEXT.md`, `CONTINUE-PROMPT.md`, `ship-changes.mdc`) kept local via `.gitignore`; README docs table is user-facing only.
-- `.cursor/` excluded from VSIX package.
+- `.cursor/` and `.vscode/` gitignored; no longer bundled in VSIX.
 
 ## [0.0.53] - 2026-06-30
 

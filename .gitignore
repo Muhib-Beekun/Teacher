@@ -15,7 +15,9 @@ out/
 # OS / IDE
 .DS_Store
 Thumbs.db
+.vscode/
 .vscode-test/
+.cursor/
 *.log
 
 # Local inference / models (large)
