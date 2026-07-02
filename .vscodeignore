@@ -8,6 +8,7 @@ data/raw-transcripts/**
 data/exports/**
 outputs/**
 docs/**
+.cursor/**
 .git/**
 **/*.ts
 !out/**

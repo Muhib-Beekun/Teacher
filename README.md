@@ -14,7 +14,7 @@ Context-aware voice input and **intent compilation** for VS Code, Cursor, and ot
 
 **Teacher** (the mode) keeps a **continuous** dictation session. I keep speaking after the first pass and fix mistakes with my voice. The extension **re-scaffolds** an agent-ready brief from everything I said (including *ignore that* / *I meant…*).
 
-**Status:** Full v1 stack implemented. See [docs/PLAN.md](./docs/PLAN.md).
+**Status:** Full v1 stack implemented. See [docs/SETUP.md](./docs/SETUP.md).
 
 ## Use it
 
@@ -67,15 +67,14 @@ Open **Run and Debug** → **Run Teacher Extension** in Cursor. Commands under *
 
 | Doc | Contents |
 |-----|----------|
-| [docs/SETUP.md](./docs/SETUP.md) | **First-time setup** (humans and AI agents) |
-| [docs/RELEASES.md](./docs/RELEASES.md) | **VSIX, GitHub Releases, Open VSX** |
-| [CHANGELOG.md](./CHANGELOG.md) | **Version history** |
-| [docs/PLAN.md](./docs/PLAN.md) | **Canonical product plan and roadmap** |
-| [docs/CONTEXT.md](./docs/CONTEXT.md) | Origin story, product wedge |
-| [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md) | Extension shape, pipeline, Open VSX / Cursor |
-| [docs/TEACHER-COMPILER.md](./docs/TEACHER-COMPILER.md) | Session model, re-drive, output templates |
-| [docs/CONTEXT-INDEX.md](./docs/CONTEXT-INDEX.md) | Codebase indexing without vector RAG |
-| [docs/CONTINUE-PROMPT.md](./docs/CONTINUE-PROMPT.md) | Agent session handoff prompt |
+| [docs/SETUP.md](./docs/SETUP.md) | **First-time setup** |
+| [docs/INSTALL-CURSOR.md](./docs/INSTALL-CURSOR.md) | VSIX install + mic browser |
+| [docs/CONFIGURATION.md](./docs/CONFIGURATION.md) | Settings reference |
+| [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md) | Extension shape and pipeline |
+| [docs/TEACHER-COMPILER.md](./docs/TEACHER-COMPILER.md) | Session model and compile contract |
+| [docs/CONTEXT-INDEX.md](./docs/CONTEXT-INDEX.md) | Workspace indexing |
+| [docs/RELEASES.md](./docs/RELEASES.md) | VSIX, GitHub Releases, Open VSX |
+| [CHANGELOG.md](./CHANGELOG.md) | Version history |
 
 ## Related work
 

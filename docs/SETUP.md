@@ -145,4 +145,4 @@ Do not commit .env or API keys.
 | [INSTALL-CURSOR.md](./INSTALL-CURSOR.md) | VSIX install |
 | [RELEASES.md](./RELEASES.md) | Build VSIX, GitHub Releases, Open VSX |
 | [CHANGELOG.md](../CHANGELOG.md) | Version history |
-| [PLAN.md](./PLAN.md) | Product scope |
+| [ARCHITECTURE.md](./ARCHITECTURE.md) | Extension shape |

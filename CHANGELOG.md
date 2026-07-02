@@ -7,8 +7,9 @@ Version numbers match `package.json` and `teacher-<version>.vsix` builds.
 
 ## [Unreleased]
 
-### Added
-- README banner image (`media/banner.jpg`).
+### Changed
+- Maintainer-only docs (`PLAN.md`, `CONTEXT.md`, `CONTINUE-PROMPT.md`, `ship-changes.mdc`) kept local via `.gitignore`; README docs table is user-facing only.
+- `.cursor/` excluded from VSIX package.
 
 ## [0.0.53] - 2026-06-30
 

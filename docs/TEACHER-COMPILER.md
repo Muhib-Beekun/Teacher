@@ -161,7 +161,7 @@ Why two panes: you see **what you actually said** (trust + audit) alongside **wh
 
 ### Dual pane UX
 
-Mobile-style stacks transcript above scaffold; Teacher uses **side-by-side** on desktop: left audit trail, right agent brief, STT fix highlights, superseded reference block. See [PLAN.md](./PLAN.md).
+Mobile-style stacks transcript above scaffold; Teacher uses **side-by-side** on desktop: left audit trail, right agent brief, STT fix highlights, superseded reference block. See [ARCHITECTURE.md](./ARCHITECTURE.md).
 
 **Single pane mode** (`teacher.preview.layout: single`): compiled prompt only, transcript collapsible — for minimalists; dual pane remains default.
 

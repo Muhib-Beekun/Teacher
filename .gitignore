@@ -38,6 +38,10 @@ docs/INFERENCE.md
 docs/fine-tune-eval-compile.md
 docs/OVERNIGHT-INFERENCE-PROMPT.md
 docs/fine-tune-eval-lora-compile.md
+docs/PLAN.md
+docs/CONTEXT.md
+docs/CONTINUE-PROMPT.md
+.cursor/rules/ship-changes.mdc
 tools/analyze-transcripts.mjs
 tools/benchmark-inference.mjs
 tools/score-stt-improvement.mjs
