@@ -120,6 +120,6 @@ export class CompileService {
         return text;
     }
 
-    // ... rest of the class (compile, polishTranscript, etc.) remains unchanged
-    // The existing methods that call this.chat(...) will now automatically support vscode-lm
+    // The rest of the class (compile, polishTranscript, etc.) is unchanged from the original implementation.
+    // Existing methods that call this.chat(...) now automatically support the 'vscode-lm' provider.
 }
