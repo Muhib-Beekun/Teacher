@@ -411,11 +411,12 @@
       <div class="settings-group">
         <h3>Compile and send</h3>
         <div class="setting-row">
-          <label for="setCompileProvider">Compile provider<span class="hint"><strong>Auto</strong> uses local Ollama when running, else cloud API above. Pick <strong>Cloud API</strong> to force OpenAI/Grok/Groq even if Ollama is up.</span></label>
+          <label for="setCompileProvider">Compile provider<span class="hint"><strong>Auto</strong>: Ollama → cloud API → VS Code LM (Copilot). <strong>VS Code LM</strong> uses Copilot models in VS Code (no extra API key). Not available in Cursor yet.</span></label>
           <select id="setCompileProvider" data-key="teacher.compile.provider">
-            <option value="auto">Auto (Ollama first, else cloud)</option>
+            <option value="auto">Auto (Ollama → cloud → VS Code LM)</option>
             <option value="cloud">Cloud API only</option>
             <option value="ollama">Local Ollama only</option>
+            <option value="vscode-lm">VS Code LM (Copilot)</option>
           </select>
         </div>
         <div class="setting-row">

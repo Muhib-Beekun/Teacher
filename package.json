@@ -2,7 +2,7 @@
     "name": "teacher",
     "displayName": "Teacher",
     "description": "Lecture your AI: continuous voice sessions that teach the agent what you meant. Workspace-aware STT and structured agent briefs for Cursor and VS Code.",
-    "version": "0.0.54",
+    "version": "0.0.55",
     "publisher": "muhib-beekun",
     "icon": "icon.png",
     "author": "Muhib Beekun",
@@ -241,9 +241,9 @@
                 },
                 "teacher.compile.provider": {
                     "type": "string",
-                    "enum": ["auto", "cloud", "ollama"],
+                    "enum": ["auto", "cloud", "ollama", "vscode-lm"],
                     "default": "auto",
-                    "description": "Compile provider. auto = Ollama if running locally, else cloud inference API. verbatim mode skips LLM."
+                    "description": "Compile provider. auto = Ollama if running, else cloud API key, else VS Code LM (GitHub Copilot). vscode-lm uses the host editor models (VS Code only; not Cursor today). verbatim mode skips LLM."
                 },
                 "teacher.compile.polishStt": {
                     "type": "boolean",

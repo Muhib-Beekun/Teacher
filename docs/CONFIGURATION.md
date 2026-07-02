@@ -28,7 +28,7 @@ Use **Inference provider** preset in the web UI Settings, or set URL + model man
 
 | Setting | Default | Notes |
 |---------|---------|-------|
-| `teacher.compile.provider` | `auto` | `auto` \| `cloud` \| `ollama` |
+| `teacher.compile.provider` | `auto` | `auto` \| `cloud` \| `ollama` \| `vscode-lm` |
 | `teacher.inference.ollama.model` | `qwen2.5-coder:14b` | Used when Ollama is the active compiler |
 | `teacher.inference.ollama.url` | `http://127.0.0.1:11434` | Ollama API base |
 

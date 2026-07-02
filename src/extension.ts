@@ -49,13 +49,15 @@ export function activate(context: vscode.ExtensionContext): void {
         const compile = await compileService.resolveProviderId();
         const llmKeySet = await compileService.isLlmConfigured();
         const ollamaUp = await compileService.isOllamaAvailable();
+        const vscodeLmUp = await compileService.isVscodeLmAvailable();
         return {
             stt: await sttService.resolveProviderId(),
             compile,
-            compilerKeySet: llmKeySet || ollamaUp,
+            compilerKeySet: llmKeySet || ollamaUp || vscodeLmUp,
             compileReady: compile !== 'none',
             llmKeySet,
-            ollamaUp
+            ollamaUp,
+            vscodeLmUp
         };
     });
 

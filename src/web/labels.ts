@@ -20,6 +20,8 @@ export function formatCompileLabel(providerId: string, model = ''): string {
             return model ? `Inference API (${model})` : 'Inference API compile';
         case 'ollama':
             return model ? `Local Ollama (${model})` : 'Local Ollama compile';
+        case 'vscode-lm':
+            return model ? `VS Code LM (${model})` : 'VS Code LM (Copilot)';
         default:
             return 'Brief compiler';
     }

@@ -75,9 +75,10 @@ Presets in Settings:
 
 | Setting | Behavior |
 |---------|----------|
-| **Auto** (default) | Local Ollama if running → else cloud API if key set |
+| **Auto** (default) | Local Ollama if running → else cloud API if key set → else VS Code LM (Copilot in VS Code) |
 | **Cloud API only** | Always cloud (uses Connection preset above) |
 | **Local Ollama only** | Always Ollama (`teacher.inference.ollama.model`, default `qwen2.5-coder:14b`) |
+| **VS Code LM** | Host models via `vscode.lm` (GitHub Copilot; VS Code only, not Cursor today) |
 
 The **Compiler:** status line shows the active backend, not just the preset.
 

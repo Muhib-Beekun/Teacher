@@ -7,6 +7,11 @@ Version numbers match `package.json` and `teacher-<version>.vsix` builds.
 
 ## [Unreleased]
 
+## [0.0.55] - 2026-07-02
+
+### Added
+- **VS Code LM** compile provider (`teacher.compile.provider: vscode-lm`) uses GitHub Copilot models via `vscode.lm` (no separate API key). Auto falls back to VS Code LM when Ollama and cloud are unavailable.
+
 ## [0.0.54] - 2026-07-02
 
 ### Changed

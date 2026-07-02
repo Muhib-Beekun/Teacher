@@ -9,16 +9,18 @@ import { analyzeSegments } from '../../session/RetractionDetector';
 import { buildCompilePrompt, ensureSessionInBrief } from '../../compiler/buildCompilePrompt';
 import { LlmApiClient } from './LlmApiClient';
 import { OllamaApiClient } from './OllamaApiClient';
+import { VscodeLanguageModelClient } from './VscodeLanguageModelClient';
 
-export type CompileProviderId = 'cloud' | 'ollama' | 'none';
+export type CompileProviderId = 'cloud' | 'ollama' | 'vscode-lm' | 'none';
 
-type ActiveProvider = 'cloud' | 'ollama' | 'none';
+type ActiveProvider = 'cloud' | 'ollama' | 'vscode-lm' | 'none';
 
 export class CompileService {
     private activeModel = '';
     private activeProvider: ActiveProvider = 'none';
     private readonly llm: LlmApiClient;
     private readonly ollama: OllamaApiClient;
+    private readonly vscodeLm: VscodeLanguageModelClient;
 
     constructor(
         private readonly output: vscode.OutputChannel,
@@ -26,6 +28,7 @@ export class CompileService {
     ) {
         this.llm = new LlmApiClient(getLlmApiKey, output);
         this.ollama = new OllamaApiClient(output);
+        this.vscodeLm = new VscodeLanguageModelClient(output);
     }
 
     async compile(
@@ -41,7 +44,7 @@ export class CompileService {
         const provider = await this.resolveProviderId();
         if (provider === 'none') {
             throw new Error(
-                'No compile provider available. Set an inference API key, start Ollama, or use verbatim mode.'
+                'No compile provider available. Set an inference API key, start Ollama, choose VS Code LM (Copilot), or use verbatim mode.'
             );
         }
 
@@ -74,6 +77,16 @@ export class CompileService {
             return 'none';
         }
 
+        if (setting === 'vscode-lm') {
+            if (await this.vscodeLm.isAvailable()) {
+                this.setActive('vscode-lm', this.vscodeLm.getConfiguredModel());
+                return 'vscode-lm';
+            }
+            this.setActive('none', '');
+            return 'none';
+        }
+
+        // auto: Ollama → cloud API → host LM (Copilot in VS Code)
         if (await this.ollama.isAvailable()) {
             this.setActive('ollama', this.ollama.getConfiguredModel());
             return 'ollama';
@@ -81,6 +94,10 @@ export class CompileService {
         if (await this.llm.isAvailable()) {
             this.setActive('cloud', this.llm.getConfiguredModel());
             return 'cloud';
+        }
+        if (await this.vscodeLm.isAvailable()) {
+            this.setActive('vscode-lm', this.vscodeLm.getConfiguredModel());
+            return 'vscode-lm';
         }
         this.setActive('none', '');
         return 'none';
@@ -100,6 +117,10 @@ export class CompileService {
 
     async isOllamaAvailable(): Promise<boolean> {
         return this.ollama.isAvailable();
+    }
+
+    async isVscodeLmAvailable(): Promise<boolean> {
+        return this.vscodeLm.isAvailable();
     }
 
     async isPolishEnabled(): Promise<boolean> {
@@ -156,7 +177,7 @@ ${raw}`;
     }
 
     private async chat(
-        provider: ActiveProvider,
+        provider: Exclude<CompileProviderId, 'none'>,
         name: string,
         system: string,
         user: string,
@@ -172,6 +193,9 @@ ${raw}`;
         } else if (provider === 'cloud') {
             model = this.llm.getConfiguredModel();
             text = await this.llm.chat(system, user, temperature);
+        } else if (provider === 'vscode-lm') {
+            model = this.vscodeLm.getConfiguredModel();
+            text = await this.vscodeLm.chat(system, user, temperature);
         } else {
             throw new Error('No inference provider configured');
         }
