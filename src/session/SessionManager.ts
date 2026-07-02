@@ -105,15 +105,16 @@ export class SessionManager {
         getContext: () => VoiceSessionContext,
         mode: CompileMode,
         compileService: CompileService,
-        _options?: { fresh?: boolean }
+        options?: { fresh?: boolean }
     ): Promise<CompiledBrief | null> {
         this.lastCompileError = undefined;
         try {
+            const priorBrief = options?.fresh ? undefined : (this.compiledBrief ?? undefined);
             this.compiledBrief = await compileService.compile(
                 this.getRawTexts(),
                 getContext(),
                 mode,
-                undefined
+                priorBrief
             );
             this.briefVersionCounter += 1;
             const version = this.briefVersionCounter;

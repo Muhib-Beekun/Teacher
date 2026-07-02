@@ -7,6 +7,14 @@ Version numbers match `package.json` and `teacher-<version>.vsix` builds.
 
 ## [Unreleased]
 
+## [0.0.50] - 2026-07-02
+
+### Fixed
+- Restore prior-brief context in compile (live compile and segment updates). Manual **Refresh** still uses a fresh compile without the prior brief anchor. Version numbers unchanged.
+
+### Changed
+- Reverts the 0.0.49 compile behavior that dropped prior brief from the LLM prompt.
+
 ## [0.0.49] - 2026-07-02
 
 ### Added
@@ -15,6 +23,8 @@ Version numbers match `package.json` and `teacher-<version>.vsix` builds.
 
 ### Changed
 - Compile no longer merges the previous agent brief into the LLM prompt (each version is synthesized from session segments only).
+
+*(Superseded in 0.0.50 — prior brief restored for live compile; versioning kept.)*
 
 ## [0.0.48] - 2026-07-02
 
@@ -145,3 +155,4 @@ Each row is one packaged VSIX build during dogfood. Grouped entries above summar
 | 0.0.47 | Mic browser gate, fresh refresh compile, revert → recompile |
 | 0.0.48 | Mic/cancel centering; remove green ready banner |
 | 0.0.49 | Speech network → browser warning; agent prompt versioning |
+| 0.0.50 | Restore prior-brief in compile; keep prompt versioning |
