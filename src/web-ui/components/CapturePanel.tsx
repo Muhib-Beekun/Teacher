@@ -1,4 +1,5 @@
-import { useRef, useEffect, useCallback } from 'preact/hooks';
+import { useRef, useEffect, useCallback, useState } from 'preact/hooks';
+import { signal } from '@preact/signals';
 import {
     listening, flushing, micRuntime, recordingArmed, liveEditLock,
     micSpeechBlocked, health, setStatus, applySession
@@ -8,6 +9,8 @@ import { MicButton } from './MicButton';
 import { Waveform } from './Waveform';
 
 const UNSUPPORTED_SPEECH_ERRORS = new Set(['network', 'service-not-allowed', 'audio-capture']);
+
+const processing = signal(false);
 
 function isMicCapableBrowser(): boolean {
     const ua = navigator.userAgent;
@@ -27,9 +30,7 @@ export function CapturePanel() {
     const chunkTranscriptRef = useRef('');
     const activeMimeRef = useRef('audio/webm');
     const liveTextRef = useRef<HTMLDivElement>(null);
-    const processingRef = useRef(false);
-    const analyserForRender = useRef<AnalyserNode | null>(null);
-    const forceRenderRef = useRef(0);
+    const [activeAnalyser, setActiveAnalyser] = useState<AnalyserNode | null>(null);
 
     const normalizeSpaces = (text: string) => (text || '').replace(/\s+/g, ' ').trim();
 
@@ -63,8 +64,7 @@ export function CapturePanel() {
     };
 
     const setProcessing = (on: boolean) => {
-        processingRef.current = on;
-        forceRenderRef.current++;
+        processing.value = on;
     };
 
     const stopWaveform = useCallback(() => {
@@ -73,8 +73,7 @@ export function CapturePanel() {
             audioContextRef.current = null;
         }
         analyserRef.current = null;
-        analyserForRender.current = null;
-        forceRenderRef.current++;
+        setActiveAnalyser(null);
     }, []);
 
     const startWaveform = useCallback((stream: MediaStream) => {
@@ -86,8 +85,7 @@ export function CapturePanel() {
         an.fftSize = 64;
         source.connect(an);
         analyserRef.current = an;
-        analyserForRender.current = an;
-        forceRenderRef.current++;
+        setActiveAnalyser(an);
     }, [stopWaveform]);
 
     const showMicUnsupported = useCallback(() => {
@@ -349,7 +347,7 @@ export function CapturePanel() {
                 <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', flexShrink: 0 }}>
                     <MicButton
                         active={listening.value}
-                        processing={processingRef.current}
+                        processing={processing.value}
                         onClick={() => { toggleMic().catch(() => {}); }}
                     />
                     <button
@@ -361,7 +359,7 @@ export function CapturePanel() {
                     >
                         Cancel
                     </button>
-                    <Waveform analyser={analyserForRender.current} />
+                    <Waveform analyser={activeAnalyser} />
                 </div>
             )}
             <div
