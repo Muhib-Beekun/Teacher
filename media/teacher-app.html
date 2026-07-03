@@ -46,7 +46,28 @@
       padding: 16px; overflow: auto; box-shadow: -8px 0 32px rgba(0,0,0,.35);
     }
     .settings-panel h2 { margin: 0 0 4px; font-size: 14px; }
-    .settings-panel .settings-lead { margin: 0 0 16px; font-size: 12px; color: var(--muted); line-height: 1.5; }
+    .settings-panel .settings-lead { margin: 0 0 12px; font-size: 11px; color: var(--muted); line-height: 1.45; }
+    .settings-status {
+      margin: 0 0 12px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px;
+      background: var(--surface); font-size: 11px; color: var(--muted); line-height: 1.5;
+    }
+    .settings-status span { display: block; }
+    .settings-section {
+      margin: 0 0 8px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface);
+    }
+    .settings-section > summary {
+      list-style: none; cursor: pointer; padding: 10px 12px; font-size: 12px; font-weight: 600;
+      display: flex; align-items: center; justify-content: space-between; gap: 8px; user-select: none;
+    }
+    .settings-section > summary::-webkit-details-marker { display: none; }
+    .settings-section > summary::after {
+      content: '+'; color: var(--muted); font-weight: 500; font-size: 14px; line-height: 1;
+    }
+    .settings-section[open] > summary::after { content: '−'; }
+    .settings-section > summary .section-hint {
+      display: block; font-size: 10px; font-weight: 400; color: var(--muted); margin-top: 2px;
+    }
+    .settings-section-body { padding: 0 12px 10px; border-top: 1px solid var(--line); }
     .settings-group { margin-bottom: 18px; }
     .settings-group h3 {
       margin: 0 0 8px; font-size: 10px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted);
@@ -96,24 +117,23 @@
       border-radius: 6px; padding: 4px 8px; font-size: 10px; cursor: pointer;
     }
     .copy-row button:hover { border-color: var(--accent); color: var(--accent); }
-    .whisper-setup { margin-top: 8px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; background: rgba(0,0,0,0.15); }
-    .whisper-setup ol { margin: 8px 0 10px 18px; padding: 0; font-size: 12px; line-height: 1.5; color: var(--muted); }
-    .whisper-setup ol a { color: var(--accent); }
-    .whisper-status { display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 999px; margin-bottom: 8px; border: 1px solid var(--border); }
+    .whisper-steps { margin: 8px 0 10px 18px; padding: 0; font-size: 11px; line-height: 1.5; color: var(--muted); }
+    .whisper-steps a { color: var(--accent); }
+    .whisper-status { display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 999px; margin: 4px 0 8px; border: 1px solid var(--line); }
     .whisper-status.ready { border-color: #3d8; color: #3d8; }
     .whisper-status.warn { border-color: #c90; color: #c90; }
     .whisper-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
     .whisper-actions button {
-      font-size: 11px; padding: 5px 10px; border-radius: 6px; border: 1px solid var(--border);
-      background: var(--panel); color: var(--text); cursor: pointer;
+      font-size: 11px; padding: 5px 10px; border-radius: 6px; border: 1px solid var(--line);
+      background: var(--panel); color: var(--ink); cursor: pointer;
     }
     .whisper-actions button:hover { border-color: var(--accent); color: var(--accent); }
     .stt-callout {
-      margin: 10px 0; padding: 10px 12px; border-radius: 8px; font-size: 11px; line-height: 1.5;
-      border: 1px solid var(--border); background: rgba(100, 140, 255, 0.08); color: var(--muted);
+      margin: 8px 0; padding: 8px 10px; border-radius: 8px; font-size: 11px; line-height: 1.45;
+      border: 1px solid var(--line); background: rgba(100, 140, 255, 0.08); color: var(--muted);
     }
-    .stt-callout strong { color: var(--text); }
-    .codewords-editor { margin-top: 8px; }
+    .stt-callout strong { color: var(--ink); }
+    .codewords-editor { margin-top: 4px; }
     .codewords-editor .hint { display: block; font-size: 11px; color: var(--muted); margin: 4px 0 8px; line-height: 1.4; }
     .codewords-list { list-style: none; margin: 0 0 8px; padding: 0; max-height: 140px; overflow-y: auto; }
     .codewords-list li {
@@ -404,110 +424,123 @@
   <div class="settings-backdrop" id="settingsBackdrop" hidden>
     <aside class="settings-panel" role="dialog" aria-labelledby="settingsTitle">
       <h2 id="settingsTitle">Configuration</h2>
-      <p class="settings-lead">Install → open Settings → pick a cloud preset or run Ollama locally. <strong>Compiler</strong> shows what is active right now.</p>
-      <div class="settings-group">
-        <h3>Connection</h3>
-        <div class="settings-meta">
-          <span id="settingsServer">Server: …</span>
-          <span id="settingsCompilerKey">Compiler: …</span>
+      <p class="settings-lead">Open one section at a time. Status is always visible.</p>
+
+      <div class="settings-status" id="settingsStatus">
+        <span id="settingsServer">Server: …</span>
+        <span id="settingsCompilerKey">Compiler: …</span>
+        <span id="settingsMic">Mic: idle</span>
+        <span id="settingsSegments">Session segments: 0</span>
+        <span id="settingsFixes">STT auto-corrections: 0</span>
+        <span id="settingsBriefState">Brief: …</span>
+        <span id="settingsContextDetail">Workspace: …</span>
+      </div>
+
+      <details class="settings-section" open>
+        <summary>
+          <span>Inference<span class="section-hint">API key, provider, model</span></span>
+        </summary>
+        <div class="settings-section-body">
+          <div class="setting-row">
+            <label for="setLlmKey">API key<span class="hint">OpenAI-compatible. Stored in VS Code secrets (<code>INFERENCE_API_KEY</code> in .env also works).</span></label>
+            <div style="display:flex;gap:6px;align-items:center">
+              <input type="password" id="setLlmKey" placeholder="sk-…" autocomplete="off" />
+              <button type="button" class="inline-save" id="saveLlmKey">Save</button>
+            </div>
+          </div>
+          <div class="setting-row">
+            <label for="setInferencePreset">Provider</label>
+            <select id="setInferencePreset">
+              <option value="openai">OpenAI (default)</option>
+              <option value="xai">xAI Grok</option>
+              <option value="groq">Groq</option>
+              <option value="deepseek">DeepSeek</option>
+              <option value="custom">Custom</option>
+            </select>
+          </div>
+          <div class="setting-row">
+            <label for="setLlmBaseUrl">API base URL</label>
+            <input type="text" id="setLlmBaseUrl" data-key="teacher.inference.llm.baseUrl" placeholder="https://api.openai.com/v1" />
+          </div>
+          <div class="setting-row">
+            <label for="setLlmModel">Model</label>
+            <input type="text" id="setLlmModel" list="inferenceModelList" data-key="teacher.inference.llm.model" placeholder="gpt-4o-mini" />
+            <datalist id="inferenceModelList"></datalist>
+          </div>
+          <p class="hint" style="margin:0;padding:4px 0 0" id="inferenceConfigHint">Endpoint may come from workspace <code>.env</code>.</p>
         </div>
-        <div class="setting-row">
-          <label for="setSidecarPort">Web UI port<span class="hint">Restart extension if you change this. Falls forward if busy.</span></label>
-          <input type="number" id="setSidecarPort" data-key="teacher.capture.sidecarPort" min="1024" max="65535" />
-        </div>
-        <div class="setting-row">
-          <label for="setLlmKey">Inference API key<span class="hint">OpenAI-compatible (<code>INFERENCE_API_KEY</code> in .env). Stored in VS Code secrets.</span></label>
-          <div style="display:flex;gap:6px;align-items:center">
-            <input type="password" id="setLlmKey" placeholder="sk-…" autocomplete="off" />
-            <button type="button" class="inline-save" id="saveLlmKey">Save</button>
+      </details>
+
+      <details class="settings-section">
+        <summary>
+          <span>Speech<span class="section-hint">STT provider and post-corrections</span></span>
+        </summary>
+        <div class="settings-section-body">
+          <div class="setting-row">
+            <label for="setSttProvider">STT provider<span class="hint">Browser speech is default. Hear-time bias needs Whisper or Deepgram.</span></label>
+            <select id="setSttProvider" data-key="teacher.stt.provider">
+              <option value="auto">Auto</option>
+              <option value="webspeech">Browser speech</option>
+              <option value="whisper">Local whisper</option>
+              <option value="deepgram">Deepgram</option>
+            </select>
+          </div>
+          <div class="stt-callout" id="sttBiasCallout">
+            Post-hoc lexicon + homonym pass run on every provider. Recognition-time glossary bias requires Whisper or Deepgram.
+          </div>
+          <div class="setting-row">
+            <label for="setHomonymPass">Dictionary homonym pass<span class="hint">Post-hoc: match mishears to workspace terms.</span></label>
+            <input type="checkbox" id="setHomonymPass" data-key="teacher.stt.homonymPass" />
+          </div>
+          <div class="setting-row">
+            <label for="setPolishStt">Polish STT via LLM<span class="hint">Needs API key or Ollama.</span></label>
+            <input type="checkbox" id="setPolishStt" data-key="teacher.compile.polishStt" />
+          </div>
+          <div class="setting-row">
+            <label for="setRebuildMode">Index rebuild<span class="hint">When to refresh workspace symbols.</span></label>
+            <select id="setRebuildMode" data-key="teacher.context.rebuildMode">
+              <option value="clearSession">Clear session only</option>
+              <option value="onFileChange">On file change</option>
+              <option value="eachSegment">Each mic pause</option>
+            </select>
           </div>
         </div>
-        <div class="setting-row">
-          <label for="setInferencePreset">Inference provider<span class="hint">OpenAI is the packaged default. Pick a preset or use Custom fields below.</span></label>
-          <select id="setInferencePreset">
-            <option value="openai">OpenAI (default)</option>
-            <option value="xai">xAI Grok</option>
-            <option value="groq">Groq</option>
-            <option value="deepseek">DeepSeek</option>
-            <option value="custom">Custom</option>
-          </select>
-        </div>
-        <div class="setting-row">
-          <label for="setLlmBaseUrl">API base URL<span class="hint">OpenAI default: <code>https://api.openai.com/v1</code> · Grok: <code>https://api.x.ai/v1</code></span></label>
-          <input type="text" id="setLlmBaseUrl" data-key="teacher.inference.llm.baseUrl" placeholder="https://api.openai.com/v1" />
-        </div>
-        <div class="setting-row">
-          <label for="setLlmModel">Inference model<span class="hint">Pick a preset or type any model id your host supports.</span></label>
-          <input type="text" id="setLlmModel" list="inferenceModelList" data-key="teacher.inference.llm.model" placeholder="gpt-4o-mini" />
-          <datalist id="inferenceModelList"></datalist>
-        </div>
-        <p class="hint" style="margin:0;padding:4px 0 0" id="inferenceConfigHint">Endpoint values may come from workspace <code>.env</code> (overrides settings).</p>
-      </div>
-      <div class="settings-group">
-        <h3>Session</h3>
-        <div class="settings-meta">
-          <span id="settingsMic">Mic: idle</span>
-          <span id="settingsSegments">Session segments: 0</span>
-          <span id="settingsFixes">STT auto-corrections: 0</span>
-          <span id="settingsBriefState">Brief: …</span>
-        </div>
-      </div>
-      <div class="settings-group">
-        <h3>Speech</h3>
-        <div class="setting-row">
-          <label for="setSttProvider">STT provider<span class="hint">Browser speech is default (low latency). <strong>Hear-time vocabulary bias</strong> (workspace codewords while you speak) only applies with <strong>Whisper</strong> or <strong>Deepgram</strong> — not browser speech.</span></label>
-          <select id="setSttProvider" data-key="teacher.stt.provider">
-            <option value="auto">Auto</option>
-            <option value="webspeech">Browser speech</option>
-            <option value="whisper">Local whisper</option>
-            <option value="deepgram">Deepgram</option>
-          </select>
-        </div>
-        <div class="stt-callout" id="sttBiasCallout">
-          <strong>Biasing:</strong> Lexicon + dictionary homonym pass run on <em>every</em> provider (after text arrives).
-          <strong>Recognition-time bias</strong> — nudging the model with your workspace glossary <em>while</em> it listens — requires Whisper or Deepgram. Browser speech cannot receive codewords at hear time.
-        </div>
-        <div class="setting-row">
-          <label for="setHomonymPass">Dictionary homonym pass<span class="hint">Post-hoc correction: swap heard tokens to workspace symbols after STT (all providers).</span></label>
-          <input type="checkbox" id="setHomonymPass" data-key="teacher.stt.homonymPass" />
-        </div>
-        <div class="codewords-editor" id="codewordsEditor">
-          <label>Your glossary</label>
-          <span class="hint">Canonical terms saved to <code id="codewordsPath">.teacher/codewords.txt</code> — homonym pass matches mishears to these.</span>
-          <p class="codewords-empty" id="codewordsEmpty" hidden>No terms yet.</p>
-          <ul class="codewords-list" id="codewordsList"></ul>
-          <div class="codewords-add">
-            <input type="text" id="codewordAddInput" placeholder="Add term (e.g. Groq)" spellcheck="false" autocomplete="off" />
-            <button type="button" id="codewordAddBtn" title="Add term">+</button>
+      </details>
+
+      <details class="settings-section">
+        <summary>
+          <span>Glossary<span class="section-hint">Your codewords for STT correction</span></span>
+        </summary>
+        <div class="settings-section-body">
+          <div class="codewords-editor" id="codewordsEditor">
+            <span class="hint">Saved to <code id="codewordsPath">.teacher/codewords.txt</code>. Homonym pass matches mishears to these terms.</span>
+            <p class="codewords-empty" id="codewordsEmpty" hidden>No terms yet.</p>
+            <ul class="codewords-list" id="codewordsList"></ul>
+            <div class="codewords-add">
+              <input type="text" id="codewordAddInput" placeholder="Add term (e.g. Groq)" spellcheck="false" autocomplete="off" />
+              <button type="button" id="codewordAddBtn" title="Add term">+</button>
+            </div>
           </div>
         </div>
-        <div class="setting-row">
-          <label for="setPolishStt">Polish STT via LLM<span class="hint">Fix transcription before compiling (needs API key or Ollama).</span></label>
-          <input type="checkbox" id="setPolishStt" data-key="teacher.compile.polishStt" />
-        </div>
-        <div class="setting-row">
-          <label for="setRebuildMode">Index rebuild<span class="hint">When to refresh workspace symbol index (glossary edits save immediately).</span></label>
-          <select id="setRebuildMode" data-key="teacher.context.rebuildMode">
-            <option value="clearSession">Clear session only</option>
-            <option value="onFileChange">On file change</option>
-            <option value="eachSegment">Each mic pause</option>
-          </select>
-        </div>
-        <div class="whisper-setup" id="whisperSetup">
-          <strong>Local Whisper (optional)</strong>
-          <span class="hint" style="display:block;margin:4px 0 0">Offline hear-time bias via <code>--prompt</code>. Extra setup; may not beat Chrome + post-correction for everyone.</span>
-          <div class="stt-callout" style="margin:8px 0">
-            <strong>Overhead:</strong> On mic pause, audio is sent to your PC and transcribed locally — typically <strong>1–5+ seconds</strong> per chunk on CPU (model-dependent). Uses CPU/GPU while running; mic shows processing until text returns. Browser speech is near-instant with no local compute cost.
+      </details>
+
+      <details class="settings-section" id="whisperSetup">
+        <summary>
+          <span>Local Whisper<span class="section-hint">Optional · offline hear-time bias</span></span>
+        </summary>
+        <div class="settings-section-body">
+          <div class="stt-callout">
+            <strong>Overhead:</strong> typically <strong>1–5+ s</strong> per pause on CPU. Browser speech is near-instant with no local compute.
           </div>
           <span class="whisper-status warn" id="whisperStatus">Status: not configured</span>
-          <ol>
-            <li>Download a <strong>whisper.cpp</strong> build for your OS from <a id="whisperReleasesLink" href="https://github.com/ggml-org/whisper.cpp/releases" target="_blank" rel="noopener">GitHub releases</a> (use <code>whisper-cli</code> or <code>main.exe</code>).</li>
+          <ol class="whisper-steps">
+            <li>Download <strong>whisper.cpp</strong> from <a id="whisperReleasesLink" href="https://github.com/ggml-org/whisper.cpp/releases" target="_blank" rel="noopener">releases</a> (<code>whisper-cli</code> / <code>main.exe</code>).</li>
             <li>Download a model such as <code>ggml-small.en.bin</code> from <a id="whisperModelsLink" href="https://huggingface.co/ggerganov/whisper.cpp/tree/main" target="_blank" rel="noopener">Hugging Face</a>.</li>
-            <li>Browse to both paths below, or tap <strong>Find on disk</strong> if you already built whisper.cpp locally.</li>
-            <li>Tap <strong>Test setup</strong>, then set STT provider to <strong>Auto</strong> or <strong>Local whisper</strong>.</li>
+            <li>Browse paths below, or <strong>Find on disk</strong>, then <strong>Test setup</strong>.</li>
+            <li>Set STT provider to <strong>Auto</strong> or <strong>Local whisper</strong>.</li>
           </ol>
           <div class="setting-row">
-            <label for="setWhisperBinary">CLI binary<span class="hint">whisper-cli or main.exe</span></label>
+            <label for="setWhisperBinary">CLI binary</label>
             <input type="text" id="setWhisperBinary" data-key="teacher.stt.whisper.binaryPath" placeholder="C:\tools\whisper-cli.exe" spellcheck="false" />
           </div>
           <div class="copy-row" style="margin:-4px 0 8px">
@@ -515,7 +548,7 @@
             <button type="button" id="pickWhisperModel">Browse model…</button>
           </div>
           <div class="setting-row">
-            <label for="setWhisperModel">Model file<span class="hint">.bin or .gguf (small.en recommended for English)</span></label>
+            <label for="setWhisperModel">Model file</label>
             <input type="text" id="setWhisperModel" data-key="teacher.stt.whisper.modelPath" placeholder="C:\models\ggml-small.en.bin" spellcheck="false" />
           </div>
           <div class="whisper-actions">
@@ -523,47 +556,78 @@
             <button type="button" id="testWhisper">Test setup</button>
           </div>
         </div>
-      </div>
-      <div class="settings-group">
-        <h3>Compile and send</h3>
-        <div class="setting-row">
-          <label for="setCompileProvider">Compile provider<span class="hint"><strong>Auto</strong>: Ollama → cloud API → VS Code LM (Copilot). <strong>VS Code LM</strong> uses Copilot models in VS Code (no extra API key). Not available in Cursor yet.</span></label>
-          <select id="setCompileProvider" data-key="teacher.compile.provider">
-            <option value="auto">Auto (Ollama → cloud → VS Code LM)</option>
-            <option value="cloud">Cloud API only</option>
-            <option value="ollama">Local Ollama only</option>
-            <option value="vscode-lm">VS Code LM (Copilot)</option>
-          </select>
-        </div>
-        <div class="setting-row">
-          <label for="setLiveCompile">Auto-compile after each pause (legacy)<span class="hint">Off by default — use Refresh to recompile from all Your Words segments.</span></label>
-          <input type="checkbox" id="setLiveCompile" data-key="teacher.compile.live" />
-        </div>
-        <div class="setting-row">
-          <label for="setCompileMode">Compile mode</label>
-          <select id="setCompileMode" data-key="teacher.compile.mode">
-            <option value="teacher">Structured brief</option>
-            <option value="verbatim">Verbatim join</option>
-            <option value="polish">Polish (deferred)</option>
-          </select>
-        </div>
-        <div class="setting-row">
-          <label for="setAutoPaste">Auto-paste into Composer</label>
-          <input type="checkbox" id="setAutoPaste" data-key="teacher.send.autoPaste" />
-        </div>
-        <div class="setting-row">
-          <label for="setAutoSubmit">Auto-submit prompt</label>
-          <input type="checkbox" id="setAutoSubmit" data-key="teacher.send.autoSubmit" />
-        </div>
-      </div>
-      <details class="settings-advanced" style="margin-bottom:16px">
-        <summary style="cursor:pointer;font-size:11px;color:var(--muted)">More in VS Code Settings</summary>
-        <p style="margin:10px 0 8px">Deepgram key, Ollama model, advanced flags. Filter:</p>
-        <div class="copy-row">
-          <code id="settingsFilterText">@ext:muhib-beekun.teacher</code>
-          <button type="button" id="copySettingsFilter" title="Copy settings filter">Copy</button>
+      </details>
+
+      <details class="settings-section">
+        <summary>
+          <span>Compile<span class="section-hint">How Agent Prompt is built</span></span>
+        </summary>
+        <div class="settings-section-body">
+          <div class="setting-row">
+            <label for="setCompileProvider">Provider<span class="hint">Auto: Ollama → cloud → VS Code LM. VS Code LM needs Copilot (not Cursor).</span></label>
+            <select id="setCompileProvider" data-key="teacher.compile.provider">
+              <option value="auto">Auto (Ollama → cloud → VS Code LM)</option>
+              <option value="cloud">Cloud API only</option>
+              <option value="ollama">Local Ollama only</option>
+              <option value="vscode-lm">VS Code LM (Copilot)</option>
+            </select>
+          </div>
+          <div class="setting-row">
+            <label for="setCompileMode">Mode</label>
+            <select id="setCompileMode" data-key="teacher.compile.mode">
+              <option value="teacher">Structured brief</option>
+              <option value="verbatim">Verbatim join</option>
+              <option value="polish">Polish (deferred)</option>
+            </select>
+          </div>
+          <div class="setting-row">
+            <label for="setLiveCompile">Auto-compile after each pause<span class="hint">Legacy. Prefer Refresh on Agent Prompt.</span></label>
+            <input type="checkbox" id="setLiveCompile" data-key="teacher.compile.live" />
+          </div>
         </div>
       </details>
+
+      <details class="settings-section">
+        <summary>
+          <span>Send<span class="section-hint">Paste into Composer / chat</span></span>
+        </summary>
+        <div class="settings-section-body">
+          <div class="setting-row">
+            <label for="setAutoPaste">Auto-paste into Composer</label>
+            <input type="checkbox" id="setAutoPaste" data-key="teacher.send.autoPaste" />
+          </div>
+          <div class="setting-row">
+            <label for="setAutoSubmit">Auto-submit prompt<span class="hint">Best-effort; may need Enter on some Cursor builds.</span></label>
+            <input type="checkbox" id="setAutoSubmit" data-key="teacher.send.autoSubmit" />
+          </div>
+        </div>
+      </details>
+
+      <details class="settings-section">
+        <summary>
+          <span>Connection<span class="section-hint">Web UI port</span></span>
+        </summary>
+        <div class="settings-section-body">
+          <div class="setting-row">
+            <label for="setSidecarPort">Web UI port<span class="hint">Restart extension after change. Falls forward if busy.</span></label>
+            <input type="number" id="setSidecarPort" data-key="teacher.capture.sidecarPort" min="1024" max="65535" />
+          </div>
+        </div>
+      </details>
+
+      <details class="settings-section">
+        <summary>
+          <span>Advanced<span class="section-hint">VS Code Settings filter</span></span>
+        </summary>
+        <div class="settings-section-body">
+          <p class="hint" style="margin:8px 0">Deepgram key, Ollama model, and other flags live in VS Code Settings. Filter:</p>
+          <div class="copy-row">
+            <code id="settingsFilterText">@ext:muhib-beekun.teacher</code>
+            <button type="button" id="copySettingsFilter" title="Copy settings filter">Copy</button>
+          </div>
+        </div>
+      </details>
+
       <div class="settings-footer">
         <button type="button" id="closeSettings">Done</button>
       </div>
@@ -658,6 +722,7 @@
     const settingsSegments = document.getElementById('settingsSegments');
     const settingsFixes = document.getElementById('settingsFixes');
     const settingsBriefState = document.getElementById('settingsBriefState');
+    const settingsContextDetail = document.getElementById('settingsContextDetail');
     const waveformCanvas = document.getElementById('waveform');
     const wfCtx = waveformCanvas.getContext('2d');
 

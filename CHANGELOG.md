@@ -9,7 +9,8 @@ Version numbers match `package.json` and `teacher-<version>.vsix` builds.
 
 ### Changed
 - Speech settings clarify hear-time biasing (Whisper/Deepgram only) vs post-hoc correction (all providers), and Whisper CPU/latency overhead.
-- **Your glossary** editor in Teacher Settings: add/remove codewords (`/.teacher/codewords.txt`) with +/−; index rebuilds on save.
+- **Your glossary** editor in Teacher Settings: add/remove codewords (`.teacher/codewords.txt`) with +/−; index rebuilds on save.
+- Settings sidebar split by concern (collapsible sections: Inference, Speech, Glossary, Whisper, Compile, Send, Connection).
 
 ## [0.0.60] - 2026-07-03
 
