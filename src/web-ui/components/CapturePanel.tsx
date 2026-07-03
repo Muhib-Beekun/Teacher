@@ -1,16 +1,13 @@
 import { useRef, useEffect, useCallback, useState } from 'preact/hooks';
-import { signal } from '@preact/signals';
 import {
     listening, flushing, micRuntime, recordingArmed, liveEditLock,
-    micSpeechBlocked, health, setStatus, applySession
+    micSpeechBlocked, micProcessing, health, setStatus, applySession
 } from '../state';
 import { addSegment, addAudio, loadSettings, copyText } from '../api';
 import { MicButton } from './MicButton';
 import { Waveform } from './Waveform';
 
 const UNSUPPORTED_SPEECH_ERRORS = new Set(['network', 'service-not-allowed', 'audio-capture']);
-
-const processing = signal(false);
 
 function isMicCapableBrowser(): boolean {
     const ua = navigator.userAgent;
@@ -61,10 +58,6 @@ export function CapturePanel() {
     const clearLiveText = () => {
         chunkTranscriptRef.current = '';
         setLiveText('');
-    };
-
-    const setProcessing = (on: boolean) => {
-        processing.value = on;
     };
 
     const stopWaveform = useCallback(() => {
@@ -147,12 +140,12 @@ export function CapturePanel() {
         const text = getLiveText() || normalizeSpaces(chunkTranscriptRef.current);
         const blob = pendingBlobRef.current;
         if (!text && !(blob && blob.size > 0)) {
-            setProcessing(false);
+            micProcessing.value = false;
             setStatus('Ready. Tap mic to speak', 'ok');
             return;
         }
         flushing.value = true;
-        setProcessing(true);
+        micProcessing.value = true;
         micRuntime.value = 'processing';
         setStatus('Processing…');
 
@@ -181,7 +174,7 @@ export function CapturePanel() {
             setStatus('Failed: ' + msg, 'warn');
         } finally {
             flushing.value = false;
-            setProcessing(false);
+            micProcessing.value = false;
             micRuntime.value = 'idle';
         }
     }, []);
@@ -201,7 +194,7 @@ export function CapturePanel() {
             mediaStreamRef.current = null;
             stopWaveform();
         }
-        setProcessing(false);
+        micProcessing.value = false;
         micRuntime.value = 'idle';
         setStatus('Recording cancelled.', 'ok');
     }, [stopWebSpeech, stopWaveform]);
@@ -213,7 +206,7 @@ export function CapturePanel() {
         chunkTranscriptRef.current = getLiveText();
         const recorder = mediaRecorderRef.current;
         if (recorder?.state === 'recording') {
-            setProcessing(true);
+            micProcessing.value = true;
             try { recorder.requestData(); } catch {}
             recorder.stop();
         } else {
@@ -312,10 +305,11 @@ export function CapturePanel() {
         }
     }, [isMicCapable]);
 
-    const cancellable = recordingArmed.value || listening.value
+    const cancellable = recordingArmed.value || listening.value || micProcessing.value
         || micRuntime.value === 'requesting access'
         || micRuntime.value === 'warming up'
-        || micRuntime.value === 'listening';
+        || micRuntime.value === 'listening'
+        || micRuntime.value === 'processing';
 
     const h = health.value;
     const teacherUrl = (h?.url as string) || 'http://127.0.0.1:3721/';
@@ -347,7 +341,7 @@ export function CapturePanel() {
                 <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', flexShrink: 0 }}>
                     <MicButton
                         active={listening.value}
-                        processing={processing.value}
+                        processing={micProcessing.value}
                         onClick={() => { toggleMic().catch(() => {}); }}
                     />
                     <button

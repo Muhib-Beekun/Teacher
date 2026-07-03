@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import {
     statusText, statusKind, settingsOpen, listening, flushing,
     compilingBrief, micRuntime, recordingArmed, liveEditLock,
-    micSpeechBlocked, appSettings, runtime, health,
+    micSpeechBlocked, micProcessing, appSettings, runtime, health,
     transcriptHtml, briefHtml, briefMarkdown, briefByVersion,
     briefVersion, needsRegenerate, compileError,
     codewordsTerms, codewordsPath, activeFixTarget,
@@ -121,5 +121,6 @@ describe('state: signal defaults', () => {
         expect(recordingArmed.value).toBe(false);
         expect(liveEditLock.value).toBe(false);
         expect(micSpeechBlocked.value).toBe(false);
+        expect(micProcessing.value).toBe(false);
     });
 });

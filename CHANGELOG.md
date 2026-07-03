@@ -26,6 +26,7 @@ Version numbers match `package.json` and `teacher-<version>.vsix` builds.
 - `npm run build:web` and `npm run build:web:dev` scripts.
 
 ### Fixed
+- **Mic button spinner stuck after processing** — moved `micProcessing` state to the centralized signals module (`state.ts`) and replaced closure-captured wrapper with direct signal writes. The spinner now reliably clears when compile finishes.
 - All CSS specificity issues from previous `hidden` attribute approach eliminated — Preact controls rendering via conditional JSX.
 
 ## [0.0.65] - 2026-07-03
