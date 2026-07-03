@@ -12,6 +12,9 @@ Version numbers match `package.json` and `teacher-<version>.vsix` builds.
 ### Added
 - **Host-aware compile routing** for remote SSH/WSL/container extension hosts: `auto` prefers Ollama/cloud and skips unreliable `vscode.lm` unless `teacher.compile.vscodeLm.allowOnRemote` is true. Empty `vscode.lm` responses trigger a single fallback to cloud or Ollama with explicit output-channel logs.
 
+### Known issues
+- **Remote workspaces (SSH, WSL, dev containers):** `vscode.lm` (GitHub Copilot) often returns empty compile output on the remote extension host. **Compile and STT polish require cloud inference (`INFERENCE_API_KEY`) or Ollama on the remote side** — local Copilot alone is not sufficient for SSH-remote sessions. Documented in README and `docs/SETUP.md`.
+
 ## [0.0.56] - 2026-07-02
 
 ### Fixed

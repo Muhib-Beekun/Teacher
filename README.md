@@ -43,6 +43,17 @@ Then in Cursor: **`Ctrl+Shift+P`** → **`Extensions: Install from VSIX...`** �
 
 Then in any project: **`Teacher: Open Web UI`** → allow mic in **Chrome or Edge** at `http://127.0.0.1:3721/` (see [SETUP.md](./docs/SETUP.md)).
 
+## Known issues
+
+**Remote SSH, WSL, and dev containers:** GitHub Copilot via `vscode.lm` often returns **empty compile output** on the remote extension host, even when Copilot works on your local machine. Teacher cannot rely on vscode-lm alone there.
+
+**You need inference on the remote side** for **Agent Prompt** compile (and STT polish):
+
+- **Cloud API** — set `INFERENCE_API_KEY` (Teacher Settings UI, SecretStorage, or workspace `.env` on the remote workspace), or
+- **Ollama** — run Ollama where the extension host runs and set `teacher.inference.ollama.url` if needed.
+
+With **Compile provider: Auto** (default), Teacher skips vscode-lm on remote hosts unless you set `teacher.compile.vscodeLm.allowOnRemote` to `true`. See [docs/SETUP.md](./docs/SETUP.md) and [docs/CONFIGURATION.md](./docs/CONFIGURATION.md).
+
 ## vs Cursor voice
 
 | Cursor | Teacher |

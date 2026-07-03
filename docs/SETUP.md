@@ -37,6 +37,7 @@ See [INSTALL-CURSOR.md](./INSTALL-CURSOR.md) for troubleshooting.
 | No mic prompt | Use Chrome or Edge (not Firefox/Safari for Web Speech) |
 | Wrong port | Settings → Web UI port; reload extension |
 | "Compiler not ready" | See § First run checklist — API key or Ollama |
+| Remote SSH / WSL / dev container | vscode.lm (Copilot) often empty on remote — **configure cloud API key or Ollama on the remote host** (see § Known issues) |
 
 ## 3. First run checklist
 
@@ -75,12 +76,21 @@ Presets in Settings:
 
 | Setting | Behavior |
 |---------|----------|
-| **Auto** (default) | Local Ollama if running → else cloud API if key set → else VS Code LM (Copilot in VS Code) |
+| **Auto** (default) | Local Ollama if running → else cloud API if key set → else VS Code LM (Copilot in VS Code). **On remote hosts, Auto skips vscode-lm** unless `teacher.compile.vscodeLm.allowOnRemote` is true. |
 | **Cloud API only** | Always cloud (uses Connection preset above) |
 | **Local Ollama only** | Always Ollama (`teacher.inference.ollama.model`, default `qwen2.5-coder:14b`) |
-| **VS Code LM** | Host models via `vscode.lm` (GitHub Copilot; VS Code only, not Cursor today) |
+| **VS Code LM** | Host models via `vscode.lm` (GitHub Copilot; VS Code only, not Cursor today). On remote SSH/WSL, Teacher may fall back to cloud/Ollama instead. |
 
 The **Compiler:** status line shows the active backend, not just the preset.
+
+### Known issue: remote workspaces need inference
+
+When the extension host runs **remotely** (SSH, WSL, dev containers, Codespaces-style setups), `vscode.lm` can list Copilot models but return **empty text** for compile. Speech still lands in **Your Words**, but **Agent Prompt** will not compile until a real backend is available on the **remote** side:
+
+1. **Cloud API** — `INFERENCE_API_KEY` (Settings UI, **Teacher: Set Inference API Key**, or workspace `.env`), with `teacher.compile.provider` set to **Auto** or **Cloud API**, or
+2. **Ollama** — Ollama running on the remote machine (or reachable from it), with **Auto** or **Local Ollama**.
+
+Optional: `teacher.compile.vscodeLm.allowOnRemote: true` only if you deliberately want Copilot on remote despite the empty-response risk. Check the **Teacher** output channel for `[compile:route]` and `[compile:fallback]` lines.
 
 ## 5. Environment variables
 

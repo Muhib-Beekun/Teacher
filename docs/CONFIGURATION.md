@@ -29,10 +29,25 @@ Use **Inference provider** preset in the web UI Settings, or set URL + model man
 | Setting | Default | Notes |
 |---------|---------|-------|
 | `teacher.compile.provider` | `auto` | `auto` \| `cloud` \| `ollama` \| `vscode-lm` |
+| `teacher.compile.vscodeLm.allowOnRemote` | `false` | Allow vscode.lm on remote extension hosts (often unreliable over SSH) |
 | `teacher.inference.ollama.model` | `qwen2.5-coder:14b` | Used when Ollama is the active compiler |
 | `teacher.inference.ollama.url` | `http://127.0.0.1:11434` | Ollama API base |
 
-**Auto:** Ollama if running locally, else cloud API when key is set.
+**Auto (local):** Ollama if running → cloud API when key is set → VS Code LM (Copilot).
+
+**Auto (remote SSH / WSL / container):** Ollama → cloud API. Skips vscode-lm unless `teacher.compile.vscodeLm.allowOnRemote` is `true`.
+
+### Known issue: remote hosts require inference
+
+On remote extension hosts, `vscode.lm` (GitHub Copilot) may appear available but return empty compile output. **Agent Prompt compile and STT polish need cloud or Ollama configured where the extension host runs** — a Copilot subscription on your laptop is not enough if the workspace is SSH-remote.
+
+| Remote setup | What to configure |
+|--------------|-------------------|
+| SSH / remote VM | `INFERENCE_API_KEY` on the remote workspace, or Ollama on the remote machine |
+| WSL remote | Cloud key in WSL workspace `.env`, or Ollama inside WSL |
+| Dev container | Key in container env / SecretStorage, or Ollama in the container |
+
+Without cloud or Ollama on remote, **Your Words** still works; **Agent Prompt** stays empty or shows placeholder intent until inference is configured.
 
 ## Optional secrets
 
