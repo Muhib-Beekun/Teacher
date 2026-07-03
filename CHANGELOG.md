@@ -5,7 +5,7 @@ All notable changes to **Teacher** are documented in this file.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).  
 Version numbers match `package.json` and `teacher-<version>.vsix` builds.
 
-## [Unreleased]
+## [0.0.62] - 2026-07-03
 
 ### Added
 - **[AGENTS.md](./AGENTS.md)**: AI agent configuration guide — tells Cursor, Copilot, and other AI agents how to configure Teacher via VS Code settings without creating `.env` lock issues.
