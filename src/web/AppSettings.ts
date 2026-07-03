@@ -48,6 +48,7 @@ export interface AppSettingsView {
     inferencePresets: { id: string; label: string; baseUrl: string; model: string; keyHint: string }[];
     inferencePresetId: string;
     vscodeSettingsFilter: string;
+    extensionVersion: string;
     whisper: WhisperStatus;
     whisperReleasesUrl: string;
     whisperModelsUrl: string;
@@ -131,6 +132,7 @@ export async function readAppSettings(deps: {
             keyHint: p.keyHint
         })),
         inferencePresetId: effective.presetId,
+        extensionVersion: vscode.extensions.getExtension('muhib-beekun.teacher')?.packageJSON?.version ?? '?',
         vscodeSettingsFilter: '@ext:muhib-beekun.teacher',
         whisper: await getWhisperStatus(),
         whisperReleasesUrl: WHISPER_RELEASES_URL,

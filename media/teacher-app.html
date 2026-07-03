@@ -80,6 +80,7 @@
       display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
       padding: 8px 0; border-bottom: 1px solid var(--line); font-size: var(--s-body);
     }
+    .setting-row[hidden] { display: none; }
     .setting-row:last-child { border-bottom: none; }
     .setting-row.stack { flex-direction: column; gap: 6px; }
     .setting-row label { flex: 1; min-width: 0; line-height: 1.4; cursor: pointer; font-size: var(--s-body); }
@@ -431,6 +432,7 @@
       <h2 id="settingsTitle">Configuration</h2>
 
       <div class="settings-status" id="settingsStatus">
+        <span id="settingsVersion">Teacher v…</span>
         <span id="settingsActiveCompile">Compile: …</span>
         <span id="settingsCloudInference">Inference: …</span>
         <span id="settingsMic">Mic: idle</span>
@@ -940,6 +942,10 @@
 
     function applySettingsView(settings) {
       if (!settings) return;
+      const versionEl = document.getElementById('settingsVersion');
+      if (versionEl && settings.extensionVersion) {
+        versionEl.textContent = 'Teacher v' + settings.extensionVersion;
+      }
       if (settingsCompilerKey) {
         settingsCompilerKey.textContent = settings.compilerReady
           ? ('Compile: ' + (settings.activeCompileLabel || settings.compileLabel || 'ready'))
