@@ -47,7 +47,7 @@ export class OllamaApiClient {
         }
     }
 
-    public async chat(system: string, user: string, temperature = 0.15): Promise<string> {
+    public async chat(system: string, user: string, temperature = 0.15): Promise<{ text: string; tokensIn?: number; tokensOut?: number }> {
         const baseUrl = this.getBaseUrl();
         const model = this.getConfiguredModel();
         const timeoutMs = this.getTimeoutMs();
@@ -76,11 +76,17 @@ export class OllamaApiClient {
 
         const json = (await response.json()) as {
             message?: { content?: string };
+            prompt_eval_count?: number;
+            eval_count?: number;
         };
         const text = json.message?.content?.trim();
         if (!text) {
             throw new Error('Ollama returned empty response');
         }
-        return text;
+        return {
+            text,
+            tokensIn: json.prompt_eval_count,
+            tokensOut: json.eval_count
+        };
     }
 }

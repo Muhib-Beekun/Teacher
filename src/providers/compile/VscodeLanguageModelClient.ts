@@ -25,7 +25,7 @@ export class VscodeLanguageModelClient {
         return this.lastModelLabel || 'vscode.lm';
     }
 
-    public async chat(system: string, user: string, _temperature = 0.15): Promise<string> {
+    public async chat(system: string, user: string, _temperature = 0.15): Promise<{ text: string; tokensIn?: number; tokensOut?: number }> {
         const models = await vscode.lm.selectChatModels();
         if (!models.length) {
             throw new Error(
@@ -47,7 +47,6 @@ export class VscodeLanguageModelClient {
         this.lastModelLabel = `${preferred.name} (${preferred.family})`;
         this.output.appendLine(`[vscode.lm] model: ${this.lastModelLabel}`);
 
-        // System role is not exposed on all hosts; fold instructions into the user turn.
         const prompt =
             system.trim().length > 0
                 ? `${system.trim()}\n\n---\n\n${user}`
@@ -59,6 +58,6 @@ export class VscodeLanguageModelClient {
         for await (const fragment of response.text) {
             fullText += fragment;
         }
-        return fullText.trim();
+        return { text: fullText.trim() };
     }
 }

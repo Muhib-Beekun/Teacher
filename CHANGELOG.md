@@ -9,6 +9,7 @@ Version numbers match `package.json` and `teacher-<version>.vsix` builds.
 
 ### Added
 - **[AGENTS.md](./AGENTS.md)**: AI agent configuration guide — tells Cursor, Copilot, and other AI agents how to configure Teacher via VS Code settings without creating `.env` lock issues.
+- **Trace log** (`.teacher/trace.jsonl`): every LLM call (compile, STT polish, reformat) is logged with provider, model, latency, input/output chars, token counts (when the provider returns them), and status. File auto-rotates at 500 lines to prevent unbounded growth. Gitignored.
 
 ### Changed
 - **`.env` is no longer the primary config path.** VS Code settings and the Teacher Settings UI are preferred. `.env` `INFERENCE_BASE_URL` / `INFERENCE_MODEL` now warn that they lock the Settings UI fields.

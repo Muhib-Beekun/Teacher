@@ -12,6 +12,7 @@ import { CompiledBrief } from '../../session/types';
 import { SttFix } from '../../session/types';
 import { analyzeSegments } from '../../session/RetractionDetector';
 import { buildCompilePrompt } from '../../compiler/buildCompilePrompt';
+import { traceCall } from '../../trace/TraceLog';
 import { LlmApiClient } from './LlmApiClient';
 import { OllamaApiClient } from './OllamaApiClient';
 import { VscodeLanguageModelClient } from './VscodeLanguageModelClient';
@@ -186,31 +187,38 @@ ${raw}`;
         user: string,
         temperature: number
     ): Promise<string> {
-        const started = Date.now();
-        let text: string;
+        const inputChars = system.length + user.length;
         let model: string;
 
         if (provider === 'ollama') {
             model = this.ollama.getConfiguredModel();
-            text = await this.ollama.chat(system, user, temperature);
         } else if (provider === 'cloud') {
             model = this.llm.getConfiguredModel();
-            text = await this.llm.chat(system, user, temperature);
         } else if (provider === 'vscode-lm') {
             model = this.vscodeLm.getConfiguredModel();
-            text = await this.vscodeLm.chat(system, user, temperature);
-            if (isEmptyLlmResponse(text)) {
-                this.output.appendLine(
-                    `[compile:vscode-lm] empty response from ${model} (${text?.length ?? 0} chars raw)`
-                );
-            }
         } else {
             throw new Error('No inference provider configured');
         }
 
-        const latencyMs = Date.now() - started;
-        this.output.appendLine(`[${name}] ${provider} ${model} ${latencyMs}ms`);
-        return text;
+        const result = await traceCall(name, provider, model, inputChars, async () => {
+            if (provider === 'ollama') {
+                return this.ollama.chat(system, user, temperature);
+            } else if (provider === 'cloud') {
+                return this.llm.chat(system, user, temperature);
+            } else {
+                return this.vscodeLm.chat(system, user, temperature);
+            }
+        });
+
+        if (provider === 'vscode-lm' && isEmptyLlmResponse(result.text)) {
+            this.output.appendLine(
+                `[compile:vscode-lm] empty response from ${model} (${result.text?.length ?? 0} chars raw)`
+            );
+        }
+
+        const tokensLabel = result.tokensIn != null ? ` tokens=${result.tokensIn}→${result.tokensOut}` : '';
+        this.output.appendLine(`[${name}] ${provider} ${model}${tokensLabel}`);
+        return result.text;
     }
 
     private async chatWithEmptyFallback(

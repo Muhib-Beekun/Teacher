@@ -53,6 +53,7 @@ tools/eval-lora-compile.mjs
 tools/generate-synthetic-compile.mjs
 scripts/train_lora_compile.py
 
-# Local Teacher workspace data (user glossary — never commit personal terms)
+# Local Teacher workspace data (never commit personal terms or traces)
 .teacher/codewords.txt
+.teacher/trace.jsonl
 

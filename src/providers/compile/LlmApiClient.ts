@@ -38,7 +38,7 @@ export class LlmApiClient {
         return (configured || DEFAULT_INFERENCE_BASE_URL).replace(/\/$/, '');
     }
 
-    public async chat(system: string, user: string, temperature = 0.15): Promise<string> {
+    public async chat(system: string, user: string, temperature = 0.15): Promise<{ text: string; tokensIn?: number; tokensOut?: number }> {
         const key = await this.getApiKey();
         if (!key) {
             throw new Error(
@@ -78,11 +78,16 @@ export class LlmApiClient {
 
         const json = (await response.json()) as {
             choices?: { message?: { content?: string } }[];
+            usage?: { prompt_tokens?: number; completion_tokens?: number };
         };
         const text = json.choices?.[0]?.message?.content?.trim();
         if (!text) {
             throw new Error('Inference API returned empty response');
         }
-        return text;
+        return {
+            text,
+            tokensIn: json.usage?.prompt_tokens,
+            tokensOut: json.usage?.completion_tokens
+        };
     }
 }
