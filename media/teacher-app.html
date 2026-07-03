@@ -985,8 +985,8 @@
       const apiKeyRow = document.getElementById('apiKeyRow');
       const baseUrlEl = document.getElementById('setLlmBaseUrl');
 
-      if (modelRow) modelRow.hidden = isOllama;
-      if (!isOllama) populateModelSelect(activePresetId, settings.llmModel);
+      if (modelRow) modelRow.hidden = false;
+      populateModelSelect(activePresetId, settings.llmModel);
       if (customUrlRow) customUrlRow.hidden = !isCustom;
       if (baseUrlEl && isCustom) baseUrlEl.value = settings.llmBaseUrl || '';
       if (apiKeyRow) apiKeyRow.hidden = !needsKey;
@@ -1112,7 +1112,7 @@
       const isOllama = presetId === 'ollama-openai';
       const needsKey = !isOllama;
 
-      if (modelRow) modelRow.hidden = isOllama;
+      if (modelRow) modelRow.hidden = false;
       if (customUrlRow) customUrlRow.hidden = !isCustom;
       if (customModelRow) customModelRow.hidden = true;
       if (apiKeyRow) apiKeyRow.hidden = !needsKey;
@@ -1130,7 +1130,7 @@
       await patchSetting('teacher.inference.llm.model', preset.model);
       if (baseUrlEl) baseUrlEl.value = preset.baseUrl;
 
-      if (!isOllama) populateModelSelect(presetId, preset.model);
+      populateModelSelect(presetId, preset.model);
 
       if (keyEl && needsKey && !/saved|\.env/i.test(String(keyEl.placeholder))) {
         keyEl.placeholder = preset.keyHint || 'sk-…';
