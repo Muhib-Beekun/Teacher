@@ -439,7 +439,7 @@
 
       <details class="settings-section" open>
         <summary>
-          <span>Inference<span class="section-hint">API key, provider, model</span></span>
+          <span>Inference<span class="section-hint">Cloud provider, compile routing, API key</span></span>
         </summary>
         <div class="settings-section-body">
           <div class="setting-row">
@@ -450,13 +450,22 @@
             </div>
           </div>
           <div class="setting-row">
-            <label for="setInferencePreset">Provider</label>
+            <label for="setInferencePreset">Cloud provider</label>
             <select id="setInferencePreset">
               <option value="openai">OpenAI (default)</option>
               <option value="xai">xAI Grok</option>
               <option value="groq">Groq</option>
               <option value="deepseek">DeepSeek</option>
               <option value="custom">Custom</option>
+            </select>
+          </div>
+          <div class="setting-row">
+            <label for="setCompileProvider">Brief compile<span class="hint"><strong>Cloud only</strong> uses the provider above and skips local Ollama. <strong>Auto</strong> tries Ollama first when it is running.</span></label>
+            <select id="setCompileProvider" data-key="teacher.compile.provider">
+              <option value="auto">Auto — Ollama first, else cloud</option>
+              <option value="cloud">Cloud only — skip local Ollama</option>
+              <option value="ollama">Local Ollama only</option>
+              <option value="vscode-lm">VS Code LM (Copilot)</option>
             </select>
           </div>
           <div class="setting-row">
@@ -562,18 +571,9 @@
 
       <details class="settings-section">
         <summary>
-          <span>Compile<span class="section-hint">How Agent Prompt is built</span></span>
+          <span>Compile<span class="section-hint">Brief shape (routing is under Inference)</span></span>
         </summary>
         <div class="settings-section-body">
-          <div class="setting-row">
-            <label for="setCompileProvider">Provider<span class="hint">Auto: Ollama → cloud → VS Code LM. VS Code LM needs Copilot (not Cursor).</span></label>
-            <select id="setCompileProvider" data-key="teacher.compile.provider">
-              <option value="auto">Auto (Ollama → cloud → VS Code LM)</option>
-              <option value="cloud">Cloud API only</option>
-              <option value="ollama">Local Ollama only</option>
-              <option value="vscode-lm">VS Code LM (Copilot)</option>
-            </select>
-          </div>
           <div class="setting-row">
             <label for="setCompileMode">Mode</label>
             <select id="setCompileMode" data-key="teacher.compile.mode">
@@ -1060,7 +1060,14 @@
       if (keyEl && !String(keyEl.placeholder).includes('saved')) {
         keyEl.placeholder = preset.keyHint;
       }
-      setStatus('Inference preset: ' + preset.label, 'ok');
+      const compileEl = document.getElementById('setCompileProvider');
+      if (compileEl && presetId !== 'openai') {
+        compileEl.value = 'cloud';
+        await patchSetting('teacher.compile.provider', 'cloud');
+        setStatus('Inference: ' + preset.label + ' · brief compile set to Cloud only (skips Ollama).', 'ok');
+      } else {
+        setStatus('Inference preset: ' + preset.label, 'ok');
+      }
       refreshHealth().catch(() => {});
     }
 

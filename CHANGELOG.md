@@ -12,6 +12,7 @@ Version numbers match `package.json` and `teacher-<version>.vsix` builds.
 - **Your glossary** editor in Teacher Settings: add/remove codewords (`.teacher/codewords.txt`) with +/−; index rebuilds on save.
 - Settings sidebar split by concern (collapsible sections: Inference, Speech, Glossary, Whisper, Compile, Send, Connection).
 - **Settings status** shows effective cloud inference from workspace `.env` (overrides VS Code settings) separately from active compile provider.
+- **Inference** section: cloud provider preset + **Brief compile** routing (Cloud only skips local Ollama); xAI/Groq/DeepSeek preset auto-selects Cloud compile.
 
 ## [0.0.60] - 2026-07-03
 
