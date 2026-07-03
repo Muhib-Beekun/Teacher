@@ -10,11 +10,13 @@
     :root {
       --bg: #14151d; --panel: #1e212b; --surface: #262a37; --ink: #e8eaef;
       --muted: #8b93a7; --accent: #6b8aff; --ok: #43d6a4; --warn: #d4a843; --line: #3a4052;
+      --topbar-h: 41px;
     }
     * { box-sizing: border-box; }
     body {
       margin: 0; font-family: "Segoe UI", system-ui, sans-serif; color: var(--ink);
-      background: var(--bg); min-height: 100vh; display: grid; grid-template-rows: auto 1fr;
+      background: var(--bg); height: 100dvh; min-height: 100vh; overflow: hidden;
+      display: grid; grid-template-rows: auto 1fr;
     }
     .topbar {
       padding: 8px 14px; border-bottom: 1px solid var(--line); background: var(--panel);
@@ -110,12 +112,13 @@
     }
     .layout {
       display: grid; grid-template-columns: 260px minmax(0, 1fr) minmax(0, 1fr);
-      gap: 10px; padding: 10px; min-height: 0; height: calc(100vh - 41px);
-      background: var(--bg); box-sizing: border-box;
+      gap: 10px; padding: 10px; min-height: 0; height: calc(100dvh - var(--topbar-h));
+      background: var(--bg); box-sizing: border-box; overflow: hidden;
     }
     .capture-col {
       border: 1px solid var(--line); border-radius: 12px; background: var(--panel);
-      display: flex; flex-direction: column; align-items: center; padding: 20px 14px 14px; min-height: 0;
+      display: flex; flex-direction: column; align-items: stretch; padding: 20px 14px 14px;
+      min-height: 0; min-width: 0; overflow: hidden;
     }
     .mic-browser-hint {
       width: 100%; margin-bottom: 12px; padding: 10px 12px;
@@ -130,6 +133,7 @@
       display: flex;
       flex-direction: column;
       align-items: center;
+      flex-shrink: 0;
     }
     .mic-wrap { position: relative; width: 72px; height: 72px; margin-bottom: 8px; flex-shrink: 0; }
     .mic-actions button, .mic-cancel {
@@ -168,9 +172,10 @@
       background: var(--bg); border: 1px solid var(--line);
     }
     .live-text {
-      width: 100%; flex: 1; min-height: 72px; font-size: 13px; line-height: 1.55;
+      width: 100%; flex: 1 1 0; min-height: 72px; min-width: 0; font-size: 13px; line-height: 1.55;
       color: var(--ink); background: var(--bg); border: 1px solid var(--line);
-      border-radius: 10px; padding: 10px; overflow: auto; white-space: pre-wrap;
+      border-radius: 10px; padding: 10px; margin-top: 4px;
+      overflow-x: hidden; overflow-y: auto; white-space: pre-wrap; word-break: break-word;
       outline: none;
     }
     .live-text:focus { border-color: var(--accent); background: rgba(107,138,255,.04); }
@@ -292,18 +297,44 @@
     @media (max-width: 1100px) {
       .layout {
         grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-        grid-template-rows: auto minmax(200px, 1fr) minmax(200px, 1fr);
-        height: auto; min-height: calc(100vh - 41px);
+        grid-template-rows: auto minmax(0, 1fr) minmax(0, 1fr);
+        height: calc(100dvh - var(--topbar-h));
+        min-height: 0;
       }
-      .capture-col { grid-column: 1 / -1; max-height: 240px; flex-shrink: 0; }
-      .live-text { min-height: 56px; max-height: 100px; }
+      .capture-col {
+        grid-column: 1 / -1;
+        max-height: min(38dvh, 300px);
+        min-height: 0;
+        flex-shrink: 0;
+      }
+      .live-text {
+        flex: 1 1 0;
+        min-height: 56px;
+        min-width: 0;
+      }
     }
     @media (max-width: 960px) {
-      .layout { grid-template-columns: 1fr; grid-template-rows: auto auto auto; height: auto; padding: 8px; gap: 8px; }
-      .capture-col, .pane { min-height: 220px; max-height: none; }
-      .capture-col { grid-column: auto; }
+      .layout {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto minmax(0, 1fr) minmax(0, 1fr);
+        height: calc(100dvh - var(--topbar-h));
+        padding: 8px;
+        gap: 8px;
+      }
+      .capture-col {
+        grid-column: auto;
+        max-height: min(42dvh, 320px);
+        min-height: 0;
+        padding: 14px 12px 12px;
+      }
+      .mic-wrap, .mic-btn { width: 60px; height: 60px; }
+      .mic-spinner { width: 60px; height: 60px; }
+      .mic-cancel { margin-bottom: 8px; }
+      .waveform { height: 36px; margin-bottom: 8px; }
+      .pane { min-height: 0; max-height: none; }
     }
     @media (max-width: 560px) {
+      :root { --topbar-h: 52px; }
       .topbar { padding: 6px 10px; gap: 8px; }
       .topbar .tagline { display: none; }
       .topbar .status { max-width: 100%; flex: 1 1 100%; text-align: left; order: 5; font-size: 10px; }

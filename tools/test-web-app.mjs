@@ -108,6 +108,38 @@ try {
     const statusAfterCopy = await page.$eval('#status', (el) => el.textContent);
     assert(statusAfterCopy.toLowerCase().includes('copied'), `copy status unexpected: ${statusAfterCopy}`);
 
+    for (const vp of [
+        { width: 420, height: 900, label: 'tall narrow' },
+        { width: 900, height: 1000, label: 'narrow two-column' }
+    ]) {
+        await page.setViewport(vp);
+        await page.waitForFunction(
+            () => {
+                const col = document.querySelector('.capture-col');
+                const live = document.getElementById('liveText');
+                if (!col || !live) return false;
+                const cr = col.getBoundingClientRect();
+                const lr = live.getBoundingClientRect();
+                return (
+                    lr.width > 0 &&
+                    lr.top >= cr.top - 1 &&
+                    lr.bottom <= cr.bottom + 1 &&
+                    lr.left >= cr.left - 1 &&
+                    lr.right <= cr.right + 1
+                );
+            },
+            { timeout: 3000 }
+        );
+        const bounds = await page.evaluate(() => {
+            const col = document.querySelector('.capture-col');
+            const live = document.getElementById('liveText');
+            const cr = col.getBoundingClientRect();
+            const lr = live.getBoundingClientRect();
+            return { liveH: lr.height, colH: cr.height };
+        });
+        assert(bounds.liveH > 40 && bounds.colH > bounds.liveH, `${vp.label}: live text should fit in capture column`);
+    }
+
     await browser.close();
 
     if (failed) {
