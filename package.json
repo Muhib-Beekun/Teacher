@@ -2,7 +2,7 @@
     "name": "teacher",
     "displayName": "Teacher",
     "description": "Lecture your AI: continuous voice sessions that teach the agent what you meant. Workspace-aware STT and structured agent briefs for Cursor and VS Code.",
-    "version": "0.0.65",
+    "version": "0.1.0",
     "publisher": "muhib-beekun",
     "icon": "icon.png",
     "author": "Muhib Beekun",
@@ -310,7 +310,8 @@
         }
     },
     "scripts": {
-        "build": "tsc -p ./",
+        "build": "tsc -p ./ && node esbuild.web.mjs",
+        "build:web": "node esbuild.web.mjs",
         "watch": "tsc -watch -p ./",
         "package": "npm run build && npx @vscode/vsce package --allow-missing-repository --allow-star-activation",
         "publish:ovsx": "node tools/publish-ovsx.mjs",
@@ -319,20 +320,31 @@
         "test:grok": "node tools/test-grok.mjs",
         "test:web-app": "npm run build && node tools/test-web-app.mjs",
         "test:compiler": "npm run build && node tools/test-compiler.mjs",
+        "test:unit": "npx vitest run",
         "test:ui": "npx playwright test",
         "test:compile-providers": "npm run build && node tools/test-compile-providers.mjs",
         "test:stt-context": "npm run build && node tools/test-stt-context.mjs",
         "test:compile-eval": "node tools/eval-compile.mjs --provider grok",
         "eval:compile": "node tools/eval-compile.mjs --compare",
         "render:icon": "node tools/render-icon.mjs",
+        "build:web:dev": "node esbuild.web.mjs --dev",
         "vscode:prepublish": "npm run render:icon && npm run build"
     },
     "devDependencies": {
         "@playwright/test": "^1.61.1",
+        "@preact/signals": "^2.9.2",
+        "@testing-library/preact": "^3.2.4",
         "@types/node": "^20.14.10",
         "@types/vscode": "^1.92.0",
         "@vscode/vsce": "^3.6.0",
+        "esbuild": "^0.28.1",
+        "jsdom": "^29.1.1",
+        "preact": "^10.29.4",
         "puppeteer": "^24.10.0",
-        "typescript": "^5.5.4"
+        "typescript": "^5.5.4",
+        "vitest": "^4.1.9"
+    },
+    "allowScripts": {
+        "esbuild@0.28.1": true
     }
 }

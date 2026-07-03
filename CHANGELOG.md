@@ -5,6 +5,29 @@ All notable changes to **Teacher** are documented in this file.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).  
 Version numbers match `package.json` and `teacher-<version>.vsix` builds.
 
+## [0.1.0] - 2026-07-03
+
+### Changed
+- **Web UI rewritten in Preact** — the monolithic 1,776-line vanilla HTML/CSS/JS file has been replaced by a component-based Preact + TypeScript architecture. Same visual design, same functionality, dramatically better maintainability.
+  - 21 focused components: TopBar, SettingsPanel (with 7 collapsible sections), CapturePanel, TranscriptPane, BriefPane, FixPopover, MicButton, Waveform.
+  - Reactive state via `@preact/signals` — no manual DOM manipulation.
+  - Centralized API layer (`src/web-ui/api.ts`) for all server communication.
+  - Shared types (`src/shared/types.ts`) between backend and frontend — `AppSettingsView`, `SessionSnapshot`, `RuntimeInfo`, `HealthInfo`.
+  - esbuild bundles the frontend to `media/teacher-app.js` + `media/teacher-app.css` (55 KB + 16 KB).
+
+### Added
+- **Vitest unit tests** (45 tests) covering state management, API layer, and all major components.
+- **Playwright E2E tests** (17 tests) covering settings visibility, layout, keyboard navigation, and ARIA accessibility.
+- **Accessibility**: `role="dialog"` + `aria-modal` on settings, focus trapping with Tab/Shift+Tab, `aria-live="polite"` on status, `aria-label` on all icon buttons, `role="region"` on panes.
+- `tsconfig.web.json` for frontend type checking.
+- `esbuild.web.mjs` build script.
+- `vitest.config.ts` test configuration.
+- `npm run test:unit` script.
+- `npm run build:web` and `npm run build:web:dev` scripts.
+
+### Fixed
+- All CSS specificity issues from previous `hidden` attribute approach eliminated — Preact controls rendering via conditional JSX.
+
 ## [0.0.65] - 2026-07-03
 
 ### Fixed

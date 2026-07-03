@@ -474,7 +474,9 @@ export class WebAppServer {
             '/icon.png': 'icon.png',
             '/icon.svg': 'media/icon.svg',
             '/icon-mark.svg': 'media/icon-mark.svg',
-            '/favicon.ico': 'icon.png'
+            '/favicon.ico': 'icon.png',
+            '/teacher-app.js': 'media/teacher-app.js',
+            '/teacher-app.css': 'media/teacher-app.css'
         };
         const file = mediaFiles[url.split('?')[0]];
         if (!file) {
@@ -490,8 +492,13 @@ export class WebAppServer {
         const type =
             ext === '.svg' ? 'image/svg+xml'
                 : ext === '.png' ? 'image/png'
-                    : 'application/octet-stream';
-        res.writeHead(200, { 'Content-Type': type, 'Cache-Control': 'public, max-age=3600' });
+                    : ext === '.js' ? 'application/javascript; charset=utf-8'
+                        : ext === '.css' ? 'text/css; charset=utf-8'
+                            : 'application/octet-stream';
+        const cacheControl = (ext === '.js' || ext === '.css')
+            ? 'no-cache, no-store, must-revalidate'
+            : 'public, max-age=3600';
+        res.writeHead(200, { 'Content-Type': type, 'Cache-Control': cacheControl });
         res.end(fs.readFileSync(filePath));
         return true;
     }

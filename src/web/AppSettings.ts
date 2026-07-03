@@ -12,47 +12,11 @@ import { resolveInferenceConfig, InferenceConfigSource } from '../config/resolve
 import {
     getWhisperStatus,
     WHISPER_MODELS_URL,
-    WHISPER_RELEASES_URL,
-    WhisperStatus
+    WHISPER_RELEASES_URL
 } from '../stt/WhisperSetup';
 
-export interface AppSettingsView {
-    compileLive: boolean;
-    polishStt: boolean;
-    homonymPass: boolean;
-    sendAutoPaste: boolean;
-    sendAutoSubmit: boolean;
-    compileMode: string;
-    compileProvider: string;
-    sttProvider: string;
-    compilerKeySet: boolean;
-    compilerReady: boolean;
-    sttLabel: string;
-    compileLabel: string;
-    contextHint: string;
-    contextRebuildMode: string;
-    sidecarPort: number;
-    serverUrl: string;
-    llmKeySet: boolean;
-    llmBaseUrl: string;
-    llmModel: string;
-    llmConfigSource: string;
-    llmBaseUrlSource: InferenceConfigSource;
-    llmModelSource: InferenceConfigSource;
-    llmKeySource: LlmKeySource;
-    cloudInferenceLabel: string;
-    activeCompileLabel: string;
-    activeCompileProvider: string;
-    compileProviderSetting: string;
-    inferenceModels: { id: string; label: string; provider: string }[];
-    inferencePresets: { id: string; label: string; baseUrl: string; model: string; keyHint: string }[];
-    inferencePresetId: string;
-    vscodeSettingsFilter: string;
-    extensionVersion: string;
-    whisper: WhisperStatus;
-    whisperReleasesUrl: string;
-    whisperModelsUrl: string;
-}
+export type { AppSettingsView } from '../shared/types';
+import type { AppSettingsView } from '../shared/types';
 
 const UI_SETTING_KEYS = [
     'teacher.compile.live',
