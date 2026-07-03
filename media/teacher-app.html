@@ -450,7 +450,7 @@
               <option value="custom">Custom</option>
             </select>
           </div>
-          <div class="setting-row stack">
+          <div class="setting-row stack" id="modelRow" hidden>
             <label for="setLlmModel">Model</label>
             <select id="setLlmModel">
               <option value="">—</option>
@@ -464,7 +464,7 @@
             <label for="setLlmBaseUrl">API base URL</label>
             <input type="text" id="setLlmBaseUrl" placeholder="https://api.openai.com/v1" spellcheck="false" />
           </div>
-          <div class="setting-row stack">
+          <div class="setting-row stack" id="apiKeyRow" hidden>
             <label for="setLlmKey">API key<span class="hint" id="llmKeyHint">Saved to VS Code secrets.</span></label>
             <div class="setting-control">
               <input type="password" id="setLlmKey" placeholder="sk-…" autocomplete="off" spellcheck="false" />
@@ -977,22 +977,30 @@
       }
       const activePresetId = presetEl ? presetEl.value : 'custom';
       const isCustom = activePresetId === 'custom';
-      populateModelSelect(activePresetId, settings.llmModel);
+      const isOllama = activePresetId === 'ollama-openai';
+      const needsKey = !isOllama;
+
+      const modelRow = document.getElementById('modelRow');
       const customUrlRow = document.getElementById('customUrlRow');
-      const customModelRow = document.getElementById('customModelRow');
+      const apiKeyRow = document.getElementById('apiKeyRow');
       const baseUrlEl = document.getElementById('setLlmBaseUrl');
+
+      if (modelRow) modelRow.hidden = isOllama;
+      if (!isOllama) populateModelSelect(activePresetId, settings.llmModel);
       if (customUrlRow) customUrlRow.hidden = !isCustom;
       if (baseUrlEl && isCustom) baseUrlEl.value = settings.llmBaseUrl || '';
+      if (apiKeyRow) apiKeyRow.hidden = !needsKey;
+
       const compileProviderEl = document.getElementById('setCompileProvider');
       if (compileProviderEl) compileProviderEl.value = settings.compileProvider || 'auto';
       const configHint = document.getElementById('inferenceConfigHint');
       if (configHint) {
-        configHint.textContent = settings.cloudInferenceLabel || '';
+        configHint.textContent = isOllama ? '' : (settings.cloudInferenceLabel || '');
       }
       const envNote = document.getElementById('inferenceEnvNote');
       if (envNote) envNote.hidden = !envLocked;
       const keyEl = document.getElementById('setLlmKey');
-      if (keyEl) {
+      if (keyEl && needsKey) {
         const preset = inferencePresets.find(p => p.id === activePresetId);
         if (settings.llmKeySource === 'env') {
           keyEl.placeholder = '•••••••• (from .env)';
@@ -1092,13 +1100,22 @@
     }
 
     async function applyInferencePreset(presetId) {
+      const modelRow = document.getElementById('modelRow');
       const customUrlRow = document.getElementById('customUrlRow');
+      const customModelRow = document.getElementById('customModelRow');
+      const apiKeyRow = document.getElementById('apiKeyRow');
       const baseUrlEl = document.getElementById('setLlmBaseUrl');
       const keyEl = document.getElementById('setLlmKey');
       const compileEl = document.getElementById('setCompileProvider');
-      const isCustom = !presetId || presetId === 'custom';
 
+      const isCustom = !presetId || presetId === 'custom';
+      const isOllama = presetId === 'ollama-openai';
+      const needsKey = !isOllama;
+
+      if (modelRow) modelRow.hidden = isOllama;
       if (customUrlRow) customUrlRow.hidden = !isCustom;
+      if (customModelRow) customModelRow.hidden = true;
+      if (apiKeyRow) apiKeyRow.hidden = !needsKey;
 
       if (isCustom) {
         populateModelSelect('custom', '');
@@ -1113,19 +1130,27 @@
       await patchSetting('teacher.inference.llm.model', preset.model);
       if (baseUrlEl) baseUrlEl.value = preset.baseUrl;
 
-      populateModelSelect(presetId, preset.model);
+      if (!isOllama) populateModelSelect(presetId, preset.model);
 
-      if (keyEl && !/saved|\.env/i.test(String(keyEl.placeholder))) {
+      if (keyEl && needsKey && !/saved|\.env/i.test(String(keyEl.placeholder))) {
         keyEl.placeholder = preset.keyHint || 'sk-…';
       }
 
-      const preferCloud = presetId !== 'openai' && presetId !== 'ollama-openai';
-      if (compileEl && preferCloud) {
-        compileEl.value = 'cloud';
-        await patchSetting('teacher.compile.provider', 'cloud');
-        setStatus(preset.label + ' · compile set to Cloud only.', 'ok');
+      if (isOllama) {
+        if (compileEl) {
+          compileEl.value = 'auto';
+          await patchSetting('teacher.compile.provider', 'auto');
+        }
+        setStatus('Ollama — no API key needed.', 'ok');
       } else {
-        setStatus('Provider: ' + preset.label, 'ok');
+        const preferCloud = presetId !== 'openai';
+        if (compileEl && preferCloud) {
+          compileEl.value = 'cloud';
+          await patchSetting('teacher.compile.provider', 'cloud');
+          setStatus(preset.label + ' · compile set to Cloud only.', 'ok');
+        } else {
+          setStatus('Provider: ' + preset.label, 'ok');
+        }
       }
       refreshHealth().catch(() => {});
     }
