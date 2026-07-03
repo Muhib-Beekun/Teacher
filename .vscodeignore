@@ -2,7 +2,10 @@
 .vscode-test/**
 src/**
 tools/**
+tests/**
+test-results/**
 scripts/**
+playwright.config.ts
 data/synthetic/**
 data/raw-transcripts/**
 data/exports/**

@@ -223,7 +223,12 @@
                 },
                 "teacher.stt.provider": {
                     "type": "string",
-                    "enum": ["auto", "webspeech", "whisper", "deepgram"],
+                    "enum": [
+                        "auto",
+                        "webspeech",
+                        "whisper",
+                        "deepgram"
+                    ],
                     "default": "auto",
                     "description": "STT provider. auto = whisper if configured, else Deepgram if key set, else browser Web Speech."
                 },
@@ -244,7 +249,12 @@
                 },
                 "teacher.compile.provider": {
                     "type": "string",
-                    "enum": ["auto", "cloud", "ollama", "vscode-lm"],
+                    "enum": [
+                        "auto",
+                        "cloud",
+                        "ollama",
+                        "vscode-lm"
+                    ],
                     "default": "auto",
                     "description": "Compile provider. auto = Ollama if running, else cloud API key, else VS Code LM (GitHub Copilot). AI agents: set to 'cloud' when configuring a non-OpenAI cloud provider so Ollama is skipped. On remote SSH/WSL hosts, auto skips vscode-lm unless teacher.compile.vscodeLm.allowOnRemote is true."
                 },
@@ -309,6 +319,7 @@
         "test:grok": "node tools/test-grok.mjs",
         "test:web-app": "npm run build && node tools/test-web-app.mjs",
         "test:compiler": "npm run build && node tools/test-compiler.mjs",
+        "test:ui": "npx playwright test",
         "test:compile-providers": "npm run build && node tools/test-compile-providers.mjs",
         "test:stt-context": "npm run build && node tools/test-stt-context.mjs",
         "test:compile-eval": "node tools/eval-compile.mjs --provider grok",
@@ -317,6 +328,7 @@
         "vscode:prepublish": "npm run render:icon && npm run build"
     },
     "devDependencies": {
+        "@playwright/test": "^1.61.1",
         "@types/node": "^20.14.10",
         "@types/vscode": "^1.92.0",
         "@vscode/vsce": "^3.6.0",

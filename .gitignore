@@ -20,6 +20,9 @@ Thumbs.db
 .cursor/
 *.log
 
+# Test artifacts
+test-results/
+
 # Local inference / models (large)
 models/
 *.gguf

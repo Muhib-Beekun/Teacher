@@ -80,7 +80,7 @@
       display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
       padding: 8px 0; border-bottom: 1px solid var(--line); font-size: var(--s-body);
     }
-    .setting-row[hidden] { display: none; }
+    .d-none { display: none !important; }
     .setting-row:last-child { border-bottom: none; }
     .setting-row.stack { flex-direction: column; gap: 6px; }
     .setting-row label { flex: 1; min-width: 0; line-height: 1.4; cursor: pointer; font-size: var(--s-body); }
@@ -427,7 +427,7 @@
     <button type="button" class="ghost" id="clear">Clear session</button>
   </header>
 
-  <div class="settings-backdrop" id="settingsBackdrop" hidden>
+  <div class="settings-backdrop d-none" id="settingsBackdrop">
     <aside class="settings-panel" role="dialog" aria-labelledby="settingsTitle">
       <h2 id="settingsTitle">Configuration</h2>
 
@@ -452,21 +452,21 @@
               <option value="custom">Custom</option>
             </select>
           </div>
-          <div class="setting-row stack" id="modelRow" hidden>
+          <div class="setting-row stack d-none" id="modelRow">
             <label for="setLlmModel">Model</label>
             <select id="setLlmModel">
               <option value="">—</option>
             </select>
           </div>
-          <div class="setting-row stack" id="customModelRow" hidden>
+          <div class="setting-row stack d-none" id="customModelRow">
             <label for="setLlmModelCustom">Custom model id</label>
             <input type="text" id="setLlmModelCustom" placeholder="your-model-id" spellcheck="false" autocomplete="off" />
           </div>
-          <div class="setting-row stack" id="customUrlRow" hidden>
+          <div class="setting-row stack d-none" id="customUrlRow">
             <label for="setLlmBaseUrl">API base URL</label>
             <input type="text" id="setLlmBaseUrl" placeholder="https://api.openai.com/v1" spellcheck="false" />
           </div>
-          <div class="setting-row stack" id="apiKeyRow" hidden>
+          <div class="setting-row stack d-none" id="apiKeyRow">
             <label for="setLlmKey">API key<span class="hint" id="llmKeyHint">Saved to VS Code secrets.</span></label>
             <div class="setting-control">
               <input type="password" id="setLlmKey" placeholder="sk-…" autocomplete="off" spellcheck="false" />
@@ -484,7 +484,7 @@
             <span class="hint">Auto tries Ollama first, then cloud, then Copilot.</span>
           </div>
           <p class="hint" id="inferenceConfigHint"></p>
-          <p class="hint" id="inferenceEnvNote" hidden>Locked by <code>INFERENCE_BASE_URL</code> / <code>INFERENCE_MODEL</code> in workspace <code>.env</code>. Remove those lines to unlock.</p>
+          <p class="hint d-none" id="inferenceEnvNote">Locked by <code>INFERENCE_BASE_URL</code> / <code>INFERENCE_MODEL</code> in workspace <code>.env</code>. Remove those lines to unlock.</p>
         </div>
       </details>
 
@@ -531,7 +531,7 @@
         <div class="settings-section-body">
           <div class="codewords-editor" id="codewordsEditor">
             <span class="hint">Saved to <code id="codewordsPath">.teacher/codewords.txt</code>. Homonym pass matches mishears to these terms.</span>
-            <p class="codewords-empty" id="codewordsEmpty" hidden>No terms yet.</p>
+            <p class="codewords-empty d-none" id="codewordsEmpty">No terms yet.</p>
             <ul class="codewords-list" id="codewordsList"></ul>
             <div class="codewords-add">
               <input type="text" id="codewordAddInput" placeholder="Add term (e.g. Groq)" spellcheck="false" autocomplete="off" />
@@ -636,7 +636,7 @@
 
   <main class="layout">
     <section class="capture-col" aria-label="Voice capture">
-      <div class="mic-browser-hint mic-unsupported" id="micUnsupported" hidden>
+      <div class="mic-browser-hint mic-unsupported d-none" id="micUnsupported">
         <strong>This browser cannot use voice</strong>
         <span>Cursor's built-in browser and some embedded views fail with <em>Speech: network</em>. Run <em>Teacher: Open Web UI</em> in <strong>Chrome</strong> or <strong>Edge</strong> instead, then bookmark the URL below.</span>
         <div class="copy-row">
@@ -701,12 +701,17 @@
     </section>
   </main>
 
-  <div id="fixPopover" class="fix-popover" hidden>
+  <div id="fixPopover" class="fix-popover d-none">
     <p>Heard: <b id="fixPopoverHeard"></b></p>
     <button type="button" id="fixPopoverRevert">Revert</button>
   </div>
 
   <script>
+    function setVisible(el, visible) {
+      if (!el) return;
+      el.classList.toggle('d-none', !visible);
+    }
+
     const statusEl = document.getElementById('status');
     const liveTextEl = document.getElementById('liveText');
     const micBtn = document.getElementById('mic');
@@ -751,8 +756,8 @@
       micSpeechBlocked = true;
       const capture = document.getElementById('micCaptureUi');
       const wrong = document.getElementById('micUnsupported');
-      if (capture) capture.hidden = true;
-      if (wrong) wrong.hidden = false;
+      setVisible(capture, false);
+      setVisible(wrong, true);
     }
 
     function applyMicBrowserUi() {
@@ -763,8 +768,8 @@
       const supported = isMicCapableBrowser() && !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
       const capture = document.getElementById('micCaptureUi');
       const wrong = document.getElementById('micUnsupported');
-      if (capture) capture.hidden = !supported;
-      if (wrong) wrong.hidden = supported;
+      setVisible(capture, supported);
+      setVisible(wrong, !supported);
       if (!supported && liveTextEl) {
         liveTextEl.dataset.placeholder = 'Type here (mic needs Chrome or Edge).';
       }
@@ -875,10 +880,10 @@
       if (!listEl) return;
       listEl.innerHTML = '';
       if (!codewordsTerms.length) {
-        if (emptyEl) emptyEl.hidden = false;
+        setVisible(emptyEl, true);
         return;
       }
-      if (emptyEl) emptyEl.hidden = true;
+      setVisible(emptyEl, false);
       for (const term of codewordsTerms) {
         const li = document.createElement('li');
         const span = document.createElement('span');
@@ -991,11 +996,11 @@
       const apiKeyRow = document.getElementById('apiKeyRow');
       const baseUrlEl = document.getElementById('setLlmBaseUrl');
 
-      if (modelRow) modelRow.hidden = false;
+      setVisible(modelRow, true);
       populateModelSelect(activePresetId, settings.llmModel);
-      if (customUrlRow) customUrlRow.hidden = !isCustom;
+      setVisible(customUrlRow, isCustom);
       if (baseUrlEl && isCustom) baseUrlEl.value = settings.llmBaseUrl || '';
-      if (apiKeyRow) apiKeyRow.hidden = !needsKey;
+      setVisible(apiKeyRow, needsKey);
 
       const compileProviderEl = document.getElementById('setCompileProvider');
       if (compileProviderEl) compileProviderEl.value = settings.compileProvider || 'auto';
@@ -1004,7 +1009,7 @@
         configHint.textContent = isOllama ? '' : (settings.cloudInferenceLabel || '');
       }
       const envNote = document.getElementById('inferenceEnvNote');
-      if (envNote) envNote.hidden = !envLocked;
+      setVisible(envNote, envLocked);
       const keyEl = document.getElementById('setLlmKey');
       if (keyEl && needsKey) {
         const preset = inferencePresets.find(p => p.id === activePresetId);
@@ -1102,7 +1107,7 @@
       }
 
       const showCustomInput = modelEl.value === '__custom__';
-      if (customModelRow) customModelRow.hidden = !showCustomInput;
+      setVisible(customModelRow, showCustomInput);
     }
 
     async function applyInferencePreset(presetId) {
@@ -1118,10 +1123,10 @@
       const isOllama = presetId === 'ollama-openai';
       const needsKey = !isOllama;
 
-      if (modelRow) modelRow.hidden = false;
-      if (customUrlRow) customUrlRow.hidden = !isCustom;
-      if (customModelRow) customModelRow.hidden = true;
-      if (apiKeyRow) apiKeyRow.hidden = !needsKey;
+      setVisible(modelRow, true);
+      setVisible(customUrlRow, isCustom);
+      setVisible(customModelRow, false);
+      setVisible(apiKeyRow, needsKey);
 
       if (isCustom) {
         populateModelSelect('custom', '');
@@ -1201,7 +1206,7 @@
     }
 
     function openSettings() {
-      settingsBackdrop.hidden = false;
+      setVisible(settingsBackdrop, true);
       settingsBackdrop.classList.add('open');
       loadSettings().catch(() => {});
       loadCodewords().catch(() => {});
@@ -1210,7 +1215,7 @@
 
     function closeSettings() {
       settingsBackdrop.classList.remove('open');
-      settingsBackdrop.hidden = true;
+      setVisible(settingsBackdrop, false);
     }
 
     async function loadSession() {
@@ -1493,13 +1498,13 @@
       };
       fixPopoverHeard.textContent = el.dataset.heard;
       const rect = el.getBoundingClientRect();
-      fixPopover.hidden = false;
+      setVisible(fixPopover, true);
       fixPopover.style.left = Math.min(rect.left, window.innerWidth - 180) + 'px';
       fixPopover.style.top = (rect.bottom + 6) + 'px';
     }
 
     function hideFixPopover() {
-      fixPopover.hidden = true;
+      setVisible(fixPopover, false);
       activeFixTarget = null;
     }
 
@@ -1535,7 +1540,7 @@
     });
 
     document.addEventListener('click', (e) => {
-      if (!fixPopover.hidden && !fixPopover.contains(e.target) && !e.target.closest('.fix-word')) {
+      if (!fixPopover.classList.contains('d-none') && !fixPopover.contains(e.target) && !e.target.closest('.fix-word')) {
         hideFixPopover();
       }
     });
@@ -1709,11 +1714,11 @@
       const val = e.target.value;
       const customModelRow = document.getElementById('customModelRow');
       if (val === '__custom__') {
-        if (customModelRow) customModelRow.hidden = false;
+        setVisible(customModelRow, true);
         document.getElementById('setLlmModelCustom')?.focus();
         return;
       }
-      if (customModelRow) customModelRow.hidden = true;
+      setVisible(customModelRow, false);
       if (val) patchSetting('teacher.inference.llm.model', val).catch(() => setStatus('Could not save model.', 'warn'));
     });
 
