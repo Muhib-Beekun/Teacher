@@ -146,7 +146,13 @@ export function activate(context: vscode.ExtensionContext): void {
         }
     };
 
+    const envWatcher = vscode.workspace.createFileSystemWatcher('**/.env');
+    envWatcher.onDidChange(() => loadWorkspaceEnv());
+    envWatcher.onDidCreate(() => loadWorkspaceEnv());
+    envWatcher.onDidDelete(() => loadWorkspaceEnv());
+
     context.subscriptions.push(
+        envWatcher,
         vscode.workspace.onDidChangeWorkspaceFolders(async (e) => {
             loadWorkspaceEnv();
             for (const folder of e.added) {

@@ -2,7 +2,7 @@
     "name": "teacher",
     "displayName": "Teacher",
     "description": "Lecture your AI: continuous voice sessions that teach the agent what you meant. Workspace-aware STT and structured agent briefs for Cursor and VS Code.",
-    "version": "0.0.63",
+    "version": "0.0.64",
     "publisher": "muhib-beekun",
     "icon": "icon.png",
     "author": "Muhib Beekun",

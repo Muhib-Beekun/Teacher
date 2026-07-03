@@ -5,6 +5,12 @@ All notable changes to **Teacher** are documented in this file.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).  
 Version numbers match `package.json` and `teacher-<version>.vsix` builds.
 
+## [0.0.64] - 2026-07-03
+
+### Fixed
+- **Stale `.env` ghost lock**: emptying or removing `.env` lines now actually clears those values from the extension. Previously, keys set from `.env` persisted in `process.env` for the entire session even after the file was emptied, causing the Settings UI to show "Locked by .env" when no lock existed.
+- **Live `.env` reload**: a file watcher now detects changes to `.env` on disk and re-parses immediately — no extension reload needed.
+
 ## [0.0.63] - 2026-07-03
 
 ### Fixed

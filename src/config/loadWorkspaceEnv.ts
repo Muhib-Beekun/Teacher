@@ -8,8 +8,17 @@ const ENV_ALIASES: Record<string, string> = {
     GROK_API_KEY: 'INFERENCE_API_KEY'
 };
 
+/** Keys injected by the most recent loadWorkspaceEnv call so we can clear stale ones. */
+const managedKeys = new Set<string>();
+
 /** Load workspace `.env` into process.env (extension host does not inherit shell env reliably). */
 export function loadWorkspaceEnv(): void {
+    // Clear keys from the previous load so deleted/emptied lines don't persist.
+    for (const key of managedKeys) {
+        delete process.env[key];
+    }
+    managedKeys.clear();
+
     const folders = vscode.workspace.workspaceFolders;
     if (!folders?.length) {
         return;
@@ -47,8 +56,8 @@ function parseEnvFile(envPath: string): void {
         if (!value) {
             continue;
         }
-        // Workspace .env wins on each reload so Settings reflects the file accurately.
         process.env[key] = value;
+        managedKeys.add(key);
     }
 }
 
@@ -57,6 +66,7 @@ function applyEnvAliases(): void {
         const val = process.env[from]?.trim();
         if (val && !process.env[to]?.trim()) {
             process.env[to] = val;
+            managedKeys.add(to);
         }
     }
 }
