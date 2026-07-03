@@ -28,6 +28,7 @@ export interface BrowserSessionBridgeDeps {
     getRebuildMode: () => ContextRebuildMode;
     rebuildContext: (recentUtterance?: string) => Promise<void>;
     ensureCodewordsFile: () => Promise<void>;
+    getLlmKeySource: () => Promise<'env' | 'secrets' | 'none'>;
     sttService: SttService;
     compileService: CompileService;
     getServerUrl: () => string;
@@ -153,6 +154,7 @@ export class BrowserSessionBridge {
         const snap = this.getSnapshot();
         const compile = await this.deps.compileService.resolveProviderId();
         const llmKeySet = await this.deps.compileService.isLlmConfigured();
+        const llmKeySource = await this.deps.getLlmKeySource();
         return readAppSettings({
             sttLabel: snap.sttLabel,
             compileLabel: snap.compileLabel,
@@ -160,7 +162,9 @@ export class BrowserSessionBridge {
             compilerKeySet: llmKeySet || (await this.deps.compileService.isOllamaAvailable()),
             compilerReady: compile !== 'none',
             serverUrl: this.deps.getServerUrl(),
-            llmKeySet
+            llmKeySet,
+            llmKeySource,
+            activeCompileProvider: compile
         });
     }
 
@@ -175,7 +179,9 @@ export class BrowserSessionBridge {
         if (
             key === 'teacher.compile.live'
             || key === 'teacher.compile.mode'
+            || key === 'teacher.compile.provider'
             || key.startsWith('teacher.stt.')
+            || key.startsWith('teacher.inference.llm.')
         ) {
             await this.refreshProviderLabel();
         }

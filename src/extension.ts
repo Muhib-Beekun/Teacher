@@ -7,7 +7,7 @@ import { WorkspaceContextIndex } from './context/WorkspaceContextIndex';
 import { sendBrief } from './insert/InsertRouter';
 import { CompileService } from './providers/compile/CompileService';
 import { SttService } from './providers/stt/SttService';
-import { getLlmApiKey, promptDeepgramApiKey, promptLlmApiKey, setLlmApiKey } from './secrets/SecretStorage';
+import { getLlmApiKey, getLlmKeySource, promptDeepgramApiKey, promptLlmApiKey, setLlmApiKey } from './secrets/SecretStorage';
 import { TeacherSessionPanel } from './ui/TeacherSessionPanel';
 import { BrowserSessionBridge, ContextRebuildMode } from './web/BrowserSessionBridge';
 
@@ -42,6 +42,7 @@ export function activate(context: vscode.ExtensionContext): void {
                 await ensureCodewordsFile(context.extensionPath, folder);
             }
         },
+        getLlmKeySource: () => getLlmKeySource(context.secrets),
         sttService,
         compileService,
         getServerUrl: () => webApp.getUrl(),
@@ -147,6 +148,7 @@ export function activate(context: vscode.ExtensionContext): void {
 
     context.subscriptions.push(
         vscode.workspace.onDidChangeWorkspaceFolders(async (e) => {
+            loadWorkspaceEnv();
             for (const folder of e.added) {
                 await ensureCodewordsFile(context.extensionPath, folder);
             }

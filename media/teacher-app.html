@@ -428,7 +428,8 @@
 
       <div class="settings-status" id="settingsStatus">
         <span id="settingsServer">Server: …</span>
-        <span id="settingsCompilerKey">Compiler: …</span>
+        <span id="settingsActiveCompile">Active compile: …</span>
+        <span id="settingsCloudInference">Cloud inference: …</span>
         <span id="settingsMic">Mic: idle</span>
         <span id="settingsSegments">Session segments: 0</span>
         <span id="settingsFixes">STT auto-corrections: 0</span>
@@ -467,7 +468,8 @@
             <input type="text" id="setLlmModel" list="inferenceModelList" data-key="teacher.inference.llm.model" placeholder="gpt-4o-mini" />
             <datalist id="inferenceModelList"></datalist>
           </div>
-          <p class="hint" style="margin:0;padding:4px 0 0" id="inferenceConfigHint">Endpoint may come from workspace <code>.env</code>.</p>
+          <p class="hint" style="margin:0;padding:4px 0 0" id="inferenceConfigHint">Effective cloud endpoint (env overrides settings).</p>
+          <p class="hint" style="margin:4px 0 0;display:none" id="inferenceEnvNote">URL/model locked by workspace <code>.env</code> — change the file or remove those lines to edit here.</p>
         </div>
       </details>
 
@@ -716,7 +718,8 @@
     const fixPopoverHeard = document.getElementById('fixPopoverHeard');
     const fixPopoverRevert = document.getElementById('fixPopoverRevert');
     const settingsBackdrop = document.getElementById('settingsBackdrop');
-    const settingsCompilerKey = document.getElementById('settingsCompilerKey');
+    const settingsCompilerKey = document.getElementById('settingsActiveCompile');
+    const settingsCloudInference = document.getElementById('settingsCloudInference');
     const settingsMic = document.getElementById('settingsMic');
     const settingsServer = document.getElementById('settingsServer');
     const settingsSegments = document.getElementById('settingsSegments');
@@ -944,9 +947,14 @@
     function applySettingsView(settings) {
       if (!settings) return;
       if (settingsServer) settingsServer.textContent = 'Server: ' + (settings.serverUrl || '…');
-      settingsCompilerKey.textContent = settings.compilerReady
-        ? ('Compiler: ' + (settings.compileLabel || 'ready'))
-        : 'Compiler: not configured (API key or Ollama)';
+      if (settingsCompilerKey) {
+        settingsCompilerKey.textContent = settings.compilerReady
+          ? ('Active compile: ' + (settings.activeCompileLabel || settings.compileLabel || 'ready'))
+          : 'Active compile: not configured (API key or Ollama)';
+      }
+      if (settingsCloudInference) {
+        settingsCloudInference.textContent = 'Cloud inference: ' + (settings.cloudInferenceLabel || '…');
+      }
       document.getElementById('setLiveCompile').checked = !!settings.compileLive;
       document.getElementById('setPolishStt').checked = !!settings.polishStt;
       document.getElementById('setHomonymPass').checked = !!settings.homonymPass;
@@ -966,9 +974,15 @@
       const compileProviderEl = document.getElementById('setCompileProvider');
       if (compileProviderEl) compileProviderEl.value = settings.compileProvider || 'auto';
       const configHint = document.getElementById('inferenceConfigHint');
-      if (configHint && settings.llmConfigSource) {
-        configHint.textContent = 'Endpoint: ' + (settings.llmBaseUrl || '') + ' · ' + (settings.llmModel || '') + ' (' + settings.llmConfigSource + ')';
+      if (configHint) {
+        configHint.textContent = settings.cloudInferenceLabel
+          || ('Endpoint: ' + (settings.llmBaseUrl || '') + ' · ' + (settings.llmModel || '') + ' (' + (settings.llmConfigSource || '') + ')');
       }
+      const envNote = document.getElementById('inferenceEnvNote');
+      const envLocked = settings.llmBaseUrlSource === 'env' || settings.llmModelSource === 'env';
+      if (baseUrlEl) baseUrlEl.readOnly = envLocked;
+      if (modelEl) modelEl.readOnly = envLocked;
+      if (envNote) envNote.style.display = envLocked ? 'block' : 'none';
       const keyEl = document.getElementById('setLlmKey');
       if (keyEl) {
         const preset = settings.inferencePresets?.find(p => p.id === settings.inferencePresetId);

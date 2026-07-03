@@ -47,9 +47,8 @@ function parseEnvFile(envPath: string): void {
         if (!value) {
             continue;
         }
-        if (!process.env[key]) {
-            process.env[key] = value;
-        }
+        // Workspace .env wins on each reload so Settings reflects the file accurately.
+        process.env[key] = value;
     }
 }
 

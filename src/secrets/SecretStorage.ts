@@ -8,18 +8,40 @@ const DEEPGRAM_KEY = 'teacher.deepgram.apiKey';
 const LEGACY_LLM_KEYS = ['teacher.llm.apiKey', 'teacher.grok.apiKey'] as const;
 
 export async function getLlmApiKey(secrets: vscode.SecretStorage): Promise<string | undefined> {
+    const source = await getLlmKeySource(secrets);
+    if (source === 'secrets') {
+        const fromSecret = await secrets.get(INFERENCE_KEY);
+        if (fromSecret?.trim()) {
+            return fromSecret.trim();
+        }
+        for (const legacy of LEGACY_LLM_KEYS) {
+            const val = await secrets.get(legacy);
+            if (val?.trim()) {
+                return val.trim();
+            }
+        }
+    }
+    if (source === 'env') {
+        return readInferenceApiKeyFromEnv();
+    }
+    return undefined;
+}
+
+export async function getLlmKeySource(secrets: vscode.SecretStorage): Promise<'env' | 'secrets' | 'none'> {
     const fromSecret = await secrets.get(INFERENCE_KEY);
     if (fromSecret?.trim()) {
-        return fromSecret.trim();
+        return 'secrets';
     }
     for (const legacy of LEGACY_LLM_KEYS) {
         const val = await secrets.get(legacy);
         if (val?.trim()) {
-            return val.trim();
+            return 'secrets';
         }
     }
-    const fromEnv = readInferenceApiKeyFromEnv();
-    return fromEnv || undefined;
+    if (readInferenceApiKeyFromEnv()) {
+        return 'env';
+    }
+    return 'none';
 }
 
 export async function setLlmApiKey(secrets: vscode.SecretStorage, key: string): Promise<void> {
