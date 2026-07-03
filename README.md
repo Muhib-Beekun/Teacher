@@ -32,6 +32,7 @@ Install **Teacher** in Cursor or other VS Code–compatible editors:
 | **VSIX (dogfood / latest)** | Cursor — build locally or download from [GitHub Releases](https://github.com/Muhib-Beekun/Teacher/releases) |
 
 - **[docs/SETUP.md](./docs/SETUP.md)** — first-time setup (humans and AI agents)
+- **[AGENTS.md](./AGENTS.md)** — AI agent configuration guide (VS Code settings, no `.env` needed)
 - **[docs/INSTALL-CURSOR.md](./docs/INSTALL-CURSOR.md)** — VSIX install + **open Chrome/Edge for mic**
 - **[CHANGELOG.md](./CHANGELOG.md)** — version history
 - **[docs/CONFIGURATION.md](./docs/CONFIGURATION.md)** — settings reference
@@ -55,7 +56,7 @@ Then in any project: **`Teacher: Open Web UI`** → allow mic in **Chrome or Edg
 
 **You need inference on the remote side** for **Agent Prompt** compile (and STT polish):
 
-- **Cloud API** — set `INFERENCE_API_KEY` (Teacher Settings UI, SecretStorage, or workspace `.env` on the remote workspace), or
+- **Cloud API** — save API key via **Teacher: Set Inference API Key** (SecretStorage), or set `INFERENCE_API_KEY` in workspace `.env` on the remote workspace (see [AGENTS.md](./AGENTS.md)), or
 - **Ollama** — run Ollama where the extension host runs and set `teacher.inference.ollama.url` if needed.
 
 With **Compile provider: Auto** (default), Teacher skips vscode-lm on remote hosts unless you set `teacher.compile.vscodeLm.allowOnRemote` to `true`. See [docs/SETUP.md](./docs/SETUP.md) and [docs/CONFIGURATION.md](./docs/CONFIGURATION.md).
@@ -85,6 +86,7 @@ Open **Run and Debug** → **Run Teacher Extension** in Cursor. Commands under *
 | Doc | Contents |
 |-----|----------|
 | [docs/SETUP.md](./docs/SETUP.md) | **First-time setup** |
+| [AGENTS.md](./AGENTS.md) | AI agent configuration (VS Code settings path) |
 | [docs/INSTALL-CURSOR.md](./docs/INSTALL-CURSOR.md) | VSIX install + mic browser |
 | [docs/CONFIGURATION.md](./docs/CONFIGURATION.md) | Settings reference |
 | [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md) | Extension shape and pipeline |

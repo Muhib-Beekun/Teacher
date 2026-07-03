@@ -43,6 +43,7 @@ docs/fine-tune-eval-lora-compile.md
 docs/PLAN.md
 docs/CONTEXT.md
 docs/CONTINUE-PROMPT.md
+docs/private/
 .cursor/rules/ship-changes.mdc
 tools/analyze-transcripts.mjs
 tools/benchmark-inference.mjs

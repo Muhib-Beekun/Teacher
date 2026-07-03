@@ -2,7 +2,9 @@
 
 Quick reference. For first-time setup (humans or AI agents), start with **[SETUP.md](./SETUP.md)**.
 
-Reload the window after editing `settings.json`. Env vars in workspace `.env` override inference URL/model.
+**AI agents:** see [AGENTS.md](../AGENTS.md) for the preferred configuration path (VS Code settings, not `.env`).
+
+Reload the window after editing `settings.json`. Env vars in workspace `.env` override inference URL/model but **lock** the corresponding fields in the Teacher Settings UI — prefer VS Code settings.
 
 ## Cloud compile (API key)
 

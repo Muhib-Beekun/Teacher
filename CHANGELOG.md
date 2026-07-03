@@ -7,7 +7,15 @@ Version numbers match `package.json` and `teacher-<version>.vsix` builds.
 
 ## [Unreleased]
 
+### Added
+- **[AGENTS.md](./AGENTS.md)**: AI agent configuration guide — tells Cursor, Copilot, and other AI agents how to configure Teacher via VS Code settings without creating `.env` lock issues.
+
 ### Changed
+- **`.env` is no longer the primary config path.** VS Code settings and the Teacher Settings UI are preferred. `.env` `INFERENCE_BASE_URL` / `INFERENCE_MODEL` now warn that they lock the Settings UI fields.
+- Settings UI `.env` lock hint shows the exact env vars and points to `AGENTS.md` for the non-locking path.
+- API key hint in Settings mentions the `Teacher: Set Inference API Key` command for AI agents.
+- `package.json` setting descriptions reference `AGENTS.md` and warn against `.env` for `baseUrl` and `model`.
+- SETUP.md, CONFIGURATION.md, README, and `.env.example` updated to prefer VS Code settings and reference `AGENTS.md`.
 - Speech settings clarify hear-time biasing (Whisper/Deepgram only) vs post-hoc correction (all providers), and Whisper CPU/latency overhead.
 - **Your glossary** editor in Teacher Settings: add/remove codewords (`.teacher/codewords.txt`) with +/−; index rebuilds on save.
 - Settings sidebar split by concern (collapsible sections: Inference, Speech, Glossary, Whisper, Compile, Send, Connection).

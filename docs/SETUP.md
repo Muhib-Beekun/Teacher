@@ -92,26 +92,30 @@ When the extension host runs **remotely** (SSH, WSL, dev containers, Codespaces-
 
 Optional: `teacher.compile.vscodeLm.allowOnRemote: true` only if you deliberately want Copilot on remote despite the empty-response risk. Check the **Teacher** output channel for `[compile:route]` and `[compile:fallback]` lines.
 
-## 5. Environment variables
+## 5. Configuration
 
-Copy [`.env.example`](../.env.example) → `.env` in the **workspace root** (gitignored).
+**Preferred:** use the Teacher Settings UI or VS Code settings (`settings.json`). No `.env` file needed.
 
-Priority: workspace **`.env`** overrides VS Code settings for base URL and model. API key resolves:
+API key → **Teacher: Set Inference API Key** (SecretStorage, encrypted).
+Base URL + model → **Teacher Settings UI** or `teacher.inference.llm.baseUrl` / `teacher.inference.llm.model` in `settings.json`.
 
-1. VS Code SecretStorage (saved in Teacher Settings UI)
-2. Env vars in workspace `.env` (see below)
+**AI agents:** see [AGENTS.md](../AGENTS.md) for how to configure Teacher programmatically via VS Code settings without creating `.env` lock issues.
+
+### Environment variables (optional, advanced)
+
+Copy [`.env.example`](../.env.example) → `.env` in the workspace root (gitignored).
+
+**Warning:** `INFERENCE_BASE_URL` and `INFERENCE_MODEL` in `.env` override VS Code settings and **lock** those fields in the Teacher Settings UI. Prefer VS Code settings unless you need `.env` for team config or remote SSH workspaces.
 
 | Variable | Purpose |
 |----------|---------|
-| `INFERENCE_API_KEY` | Primary cloud API key |
-| `INFERENCE_BASE_URL` | OpenAI-compatible base (no `/chat/completions` suffix) |
-| `INFERENCE_MODEL` | Model id for compile + polish |
+| `INFERENCE_API_KEY` | Cloud API key (SecretStorage preferred) |
+| `INFERENCE_BASE_URL` | OpenAI-compatible base — **locks Settings UI** |
+| `INFERENCE_MODEL` | Model id — **locks Settings UI** |
 | `OPENAI_API_KEY` | Alias → `INFERENCE_API_KEY` |
 | `XAI_API_KEY` / `GROK_API_KEY` | xAI Grok aliases |
 | `DEEPGRAM_API_KEY` | Optional cloud STT |
 | `OLLAMA_HOST` | Optional Ollama URL |
-
-Command Palette: **Teacher: Set Inference API Key** stores key in SecretStorage (not `settings.json`).
 
 ## 6. Workspace glossary (STT)
 
@@ -135,17 +139,20 @@ npm run test:web-app
 
 With a cloud key: `npm run test:grok` (xAI smoke test).
 
-## 8. AI agent handoff block
+## 8. AI agent configuration
+
+**AI agents** (Cursor, Copilot, etc.) should read [AGENTS.md](../AGENTS.md) in the repo root. It explains how to configure Teacher via VS Code settings without creating `.env` lock issues.
 
 When asking an agent to configure Teacher, include:
 
 ```
 Workspace: <path>
 Goal: Configure Teacher extension for <OpenAI | xAI Grok | Groq | Ollama>.
-Read docs/SETUP.md and .env.example.
-Steps: install VSIX, set compile provider, set inference preset + API key or .env,
-confirm Compiler status in web UI Settings, test mic session.
-Do not commit .env or API keys.
+Read AGENTS.md for the preferred configuration path.
+Steps: set teacher.inference.llm.baseUrl and model in settings.json,
+run Teacher: Set Inference API Key, set teacher.compile.provider to cloud,
+confirm Compiler status in web UI Settings.
+Do not write INFERENCE_BASE_URL or INFERENCE_MODEL to .env (locks UI).
 ```
 
 ## Related docs

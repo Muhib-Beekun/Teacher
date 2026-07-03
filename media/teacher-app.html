@@ -448,7 +448,7 @@
         </summary>
         <div class="settings-section-body">
           <div class="setting-row stack">
-            <label for="setLlmKey">API key<span class="hint">Masked entry. Saved to VS Code secrets — no file edit required. <code>INFERENCE_API_KEY</code> in .env also works.</span></label>
+            <label for="setLlmKey">API key<span class="hint">Saved to VS Code secrets (no file needed). AI agents can set this via <code>Teacher: Set Inference API Key</code> command.</span></label>
             <div class="setting-control">
               <input type="password" id="setLlmKey" placeholder="sk-… or xai-…" autocomplete="off" spellcheck="false" />
               <button type="button" class="inline-save" id="saveLlmKey">Save</button>
@@ -479,7 +479,7 @@
             <datalist id="inferenceModelList"></datalist>
           </div>
           <p class="hint" id="inferenceConfigHint">Effective cloud endpoint (env overrides settings).</p>
-          <p class="hint" id="inferenceEnvNote" hidden>URL/model locked by workspace <code>.env</code> — change the file or remove those lines to edit here.</p>
+          <p class="hint" id="inferenceEnvNote" hidden>URL/model locked by <code>INFERENCE_BASE_URL</code> / <code>INFERENCE_MODEL</code> in workspace <code>.env</code>. Remove or comment those lines to unlock. An AI agent can configure Teacher without <code>.env</code> — see <code>AGENTS.md</code> in the repo root.</p>
         </div>
       </details>
 

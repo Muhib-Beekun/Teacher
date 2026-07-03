@@ -2,7 +2,7 @@
     "name": "teacher",
     "displayName": "Teacher",
     "description": "Lecture your AI: continuous voice sessions that teach the agent what you meant. Workspace-aware STT and structured agent briefs for Cursor and VS Code.",
-    "version": "0.0.60",
+    "version": "0.0.61",
     "publisher": "muhib-beekun",
     "icon": "icon.png",
     "author": "Muhib Beekun",
@@ -246,7 +246,7 @@
                     "type": "string",
                     "enum": ["auto", "cloud", "ollama", "vscode-lm"],
                     "default": "auto",
-                    "description": "Compile provider. auto = Ollama if running, else cloud API key, else VS Code LM (GitHub Copilot). On remote SSH/WSL hosts, auto skips vscode-lm unless teacher.compile.vscodeLm.allowOnRemote is true. verbatim mode skips LLM."
+                    "description": "Compile provider. auto = Ollama if running, else cloud API key, else VS Code LM (GitHub Copilot). AI agents: set to 'cloud' when configuring a non-OpenAI cloud provider so Ollama is skipped. On remote SSH/WSL hosts, auto skips vscode-lm unless teacher.compile.vscodeLm.allowOnRemote is true."
                 },
                 "teacher.compile.vscodeLm.allowOnRemote": {
                     "type": "boolean",
@@ -261,12 +261,12 @@
                 "teacher.inference.llm.baseUrl": {
                     "type": "string",
                     "default": "https://api.openai.com/v1",
-                    "description": "OpenAI-compatible API base URL for compile and STT polish."
+                    "description": "OpenAI-compatible API base URL for compile and STT polish. AI agents: set this instead of INFERENCE_BASE_URL in .env to avoid locking the Settings UI. See AGENTS.md."
                 },
                 "teacher.inference.llm.model": {
                     "type": "string",
                     "default": "gpt-4o-mini",
-                    "description": "Model id for compile and STT polish (OpenAI-compatible hosts)."
+                    "description": "Model id for compile and STT polish (OpenAI-compatible hosts). AI agents: set this instead of INFERENCE_MODEL in .env. See AGENTS.md."
                 },
                 "teacher.inference.llm.timeoutMs": {
                     "type": "number",
