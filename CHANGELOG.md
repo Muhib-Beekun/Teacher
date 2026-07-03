@@ -5,6 +5,22 @@ All notable changes to **Teacher** are documented in this file.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).  
 Version numbers match `package.json` and `teacher-<version>.vsix` builds.
 
+## [0.0.63] - 2026-07-03
+
+### Fixed
+- **Runtime crash**: duplicate `const baseUrlEl` declaration in settings JS removed.
+- **Waveform canvas**: internal resolution now matches display size × device pixel ratio — no more blurry bars on high-DPI screens.
+
+### Changed
+- **Settings UX polish**:
+  - Escape key closes Settings dialog.
+  - "Clear session" now asks for confirmation before wiping.
+  - Renamed jargon labels: "Dictionary homonym pass" → "Fix misheard words", "Polish STT via LLM" → "AI-powered cleanup", removed "Legacy" tag from auto-compile.
+  - Merged "Connection" + "Advanced" into a single Advanced section.
+  - Removed the Compile section cross-reference hint ("routing is under Inference").
+  - Trimmed status block from 8 lines to 6 — dropped Server URL and STT auto-corrections count, shortened labels.
+  - Removed "Open one section at a time…" instructional text.
+
 ## [0.0.62] - 2026-07-03
 
 ### Added

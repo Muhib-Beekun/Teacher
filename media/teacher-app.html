@@ -429,57 +429,60 @@
   <div class="settings-backdrop" id="settingsBackdrop" hidden>
     <aside class="settings-panel" role="dialog" aria-labelledby="settingsTitle">
       <h2 id="settingsTitle">Configuration</h2>
-      <p class="settings-lead">Open one section at a time. Status is always visible.</p>
 
       <div class="settings-status" id="settingsStatus">
-        <span id="settingsServer">Server: …</span>
-        <span id="settingsActiveCompile">Active compile: …</span>
-        <span id="settingsCloudInference">Cloud inference: …</span>
+        <span id="settingsActiveCompile">Compile: …</span>
+        <span id="settingsCloudInference">Inference: …</span>
         <span id="settingsMic">Mic: idle</span>
-        <span id="settingsSegments">Session segments: 0</span>
-        <span id="settingsFixes">STT auto-corrections: 0</span>
+        <span id="settingsSegments">Segments: 0</span>
         <span id="settingsBriefState">Brief: …</span>
-        <span id="settingsContextDetail">Workspace: …</span>
+        <span id="settingsContextDetail">Context: …</span>
       </div>
 
       <details class="settings-section" open>
         <summary>
-          <span>Inference<span class="section-hint">Cloud provider, compile routing, API key</span></span>
+          <span>Inference<span class="section-hint">Provider, model, API key, compile routing</span></span>
         </summary>
         <div class="settings-section-body">
           <div class="setting-row stack">
-            <label for="setLlmKey">API key<span class="hint">Saved to VS Code secrets (no file needed). AI agents can set this via <code>Teacher: Set Inference API Key</code> command.</span></label>
+            <label for="setInferencePreset">Provider</label>
+            <select id="setInferencePreset">
+              <option value="custom">Custom</option>
+            </select>
+          </div>
+          <div class="setting-row stack">
+            <label for="setLlmModel">Model</label>
+            <select id="setLlmModel">
+              <option value="">—</option>
+            </select>
+          </div>
+          <div class="setting-row stack" id="customModelRow" hidden>
+            <label for="setLlmModelCustom">Custom model id</label>
+            <input type="text" id="setLlmModelCustom" placeholder="your-model-id" spellcheck="false" autocomplete="off" />
+          </div>
+          <div class="setting-row stack" id="customUrlRow" hidden>
+            <label for="setLlmBaseUrl">API base URL</label>
+            <input type="text" id="setLlmBaseUrl" placeholder="https://api.openai.com/v1" spellcheck="false" />
+          </div>
+          <div class="setting-row stack">
+            <label for="setLlmKey">API key<span class="hint" id="llmKeyHint">Saved to VS Code secrets.</span></label>
             <div class="setting-control">
-              <input type="password" id="setLlmKey" placeholder="sk-… or xai-…" autocomplete="off" spellcheck="false" />
+              <input type="password" id="setLlmKey" placeholder="sk-…" autocomplete="off" spellcheck="false" />
               <button type="button" class="inline-save" id="saveLlmKey">Save</button>
             </div>
           </div>
           <div class="setting-row stack">
-            <label for="setInferencePreset">Cloud provider<span class="hint">Pick a common host or type a label. Custom leaves URL/model free.</span></label>
-            <input type="text" id="setInferencePreset" list="inferencePresetList" placeholder="OpenAI, xAI Grok, Groq…" spellcheck="false" autocomplete="off" />
-            <datalist id="inferencePresetList"></datalist>
-          </div>
-          <div class="setting-row stack">
-            <label for="setCompileProvider">Brief compile<span class="hint"><strong>Cloud only</strong> uses the provider above and skips local Ollama. <strong>Auto</strong> tries Ollama first when it is running.</span></label>
+            <label for="setCompileProvider">Compile routing<span class="hint">How briefs are generated.</span></label>
             <select id="setCompileProvider" data-key="teacher.compile.provider">
-              <option value="auto">Auto — Ollama first, else cloud</option>
-              <option value="cloud">Cloud only — skip local Ollama</option>
+              <option value="auto">Auto</option>
+              <option value="cloud">Cloud only</option>
               <option value="ollama">Local Ollama only</option>
               <option value="vscode-lm">VS Code LM (Copilot)</option>
             </select>
+            <span class="hint">Auto tries Ollama first, then cloud, then Copilot.</span>
           </div>
-          <div class="setting-row stack">
-            <label for="setLlmBaseUrl">API base URL<span class="hint">Pick a common host or type any OpenAI-compatible URL.</span></label>
-            <input type="text" id="setLlmBaseUrl" list="inferenceBaseUrlList" data-key="teacher.inference.llm.baseUrl" placeholder="https://api.openai.com/v1" spellcheck="false" />
-            <datalist id="inferenceBaseUrlList"></datalist>
-          </div>
-          <div class="setting-row stack">
-            <label for="setLlmModel">Model<span class="hint">Pick a suggestion or type any model id (your .env value is included when set).</span></label>
-            <input type="text" id="setLlmModel" list="inferenceModelList" data-key="teacher.inference.llm.model" placeholder="gpt-4o-mini" spellcheck="false" />
-            <datalist id="inferenceModelList"></datalist>
-          </div>
-          <p class="hint" id="inferenceConfigHint">Effective cloud endpoint (env overrides settings).</p>
-          <p class="hint" id="inferenceEnvNote" hidden>URL/model locked by <code>INFERENCE_BASE_URL</code> / <code>INFERENCE_MODEL</code> in workspace <code>.env</code>. Remove or comment those lines to unlock. An AI agent can configure Teacher without <code>.env</code> — see <code>AGENTS.md</code> in the repo root.</p>
+          <p class="hint" id="inferenceConfigHint"></p>
+          <p class="hint" id="inferenceEnvNote" hidden>Locked by <code>INFERENCE_BASE_URL</code> / <code>INFERENCE_MODEL</code> in workspace <code>.env</code>. Remove those lines to unlock.</p>
         </div>
       </details>
 
@@ -501,11 +504,11 @@
             Post-hoc lexicon + homonym pass run on every provider. Recognition-time glossary bias requires Whisper or Deepgram.
           </div>
           <div class="setting-row">
-            <label for="setHomonymPass">Dictionary homonym pass<span class="hint">Post-hoc: match mishears to workspace terms.</span></label>
+            <label for="setHomonymPass">Fix misheard words<span class="hint">Matches mishears to workspace symbols and glossary terms.</span></label>
             <input type="checkbox" id="setHomonymPass" data-key="teacher.stt.homonymPass" />
           </div>
           <div class="setting-row">
-            <label for="setPolishStt">Polish STT via LLM<span class="hint">Needs API key or Ollama.</span></label>
+            <label for="setPolishStt">AI-powered cleanup<span class="hint">Uses your inference provider to fix remaining STT errors before compile.</span></label>
             <input type="checkbox" id="setPolishStt" data-key="teacher.compile.polishStt" />
           </div>
           <div class="setting-row">
@@ -572,7 +575,7 @@
 
       <details class="settings-section">
         <summary>
-          <span>Compile<span class="section-hint">Brief shape (routing is under Inference)</span></span>
+          <span>Compile<span class="section-hint">Brief structure and auto-compile</span></span>
         </summary>
         <div class="settings-section-body">
           <div class="setting-row">
@@ -584,7 +587,7 @@
             </select>
           </div>
           <div class="setting-row">
-            <label for="setLiveCompile">Auto-compile after each pause<span class="hint">Legacy. Prefer Refresh on Agent Prompt.</span></label>
+            <label for="setLiveCompile">Auto-compile after each pause<span class="hint">Recompiles the agent prompt after every mic pause. Off = manual Refresh only.</span></label>
             <input type="checkbox" id="setLiveCompile" data-key="teacher.compile.live" />
           </div>
         </div>
@@ -608,22 +611,14 @@
 
       <details class="settings-section">
         <summary>
-          <span>Connection<span class="section-hint">Web UI port</span></span>
+          <span>Advanced<span class="section-hint">Port, VS Code settings</span></span>
         </summary>
         <div class="settings-section-body">
           <div class="setting-row">
-            <label for="setSidecarPort">Web UI port<span class="hint">Restart extension after change. Falls forward if busy.</span></label>
+            <label for="setSidecarPort">Web UI port<span class="hint">Restart extension after change.</span></label>
             <input type="number" id="setSidecarPort" data-key="teacher.capture.sidecarPort" min="1024" max="65535" />
           </div>
-        </div>
-      </details>
-
-      <details class="settings-section">
-        <summary>
-          <span>Advanced<span class="section-hint">VS Code Settings filter</span></span>
-        </summary>
-        <div class="settings-section-body">
-          <p class="hint">Deepgram key, Ollama model, and other flags live in VS Code Settings. Filter:</p>
+          <p class="hint">Deepgram, Ollama, and other flags live in VS Code Settings:</p>
           <div class="copy-row">
             <code id="settingsFilterText">@ext:muhib-beekun.teacher</code>
             <button type="button" id="copySettingsFilter" title="Copy settings filter">Copy</button>
@@ -722,9 +717,7 @@
     const settingsCompilerKey = document.getElementById('settingsActiveCompile');
     const settingsCloudInference = document.getElementById('settingsCloudInference');
     const settingsMic = document.getElementById('settingsMic');
-    const settingsServer = document.getElementById('settingsServer');
     const settingsSegments = document.getElementById('settingsSegments');
-    const settingsFixes = document.getElementById('settingsFixes');
     const settingsBriefState = document.getElementById('settingsBriefState');
     const settingsContextDetail = document.getElementById('settingsContextDetail');
     const waveformCanvas = document.getElementById('waveform');
@@ -832,11 +825,9 @@
 
     function applyRuntime(runtime) {
       if (!runtime) return;
-      if (settingsServer) settingsServer.textContent = 'Server: ' + (runtime.url || '…');
-      if (settingsSegments) settingsSegments.textContent = 'Session segments: ' + (runtime.segmentCount ?? 0);
-      if (settingsFixes) settingsFixes.textContent = 'STT auto-corrections: ' + (runtime.totalFixCount ?? 0);
+      if (settingsSegments) settingsSegments.textContent = 'Segments: ' + (runtime.segmentCount ?? 0);
       if (settingsContextDetail) {
-        settingsContextDetail.textContent = 'Workspace: ' + (runtime.contextTermCount ?? 0) + ' terms';
+        settingsContextDetail.textContent = 'Context: ' + (runtime.contextTermCount ?? 0) + ' terms';
       }
       if (settingsBriefState) {
         settingsBriefState.textContent = runtime.needsRegenerate
@@ -872,7 +863,9 @@
     }
 
     let inferencePresets = [];
+    let inferenceModels = [];
     let codewordsTerms = [];
+    let presetSelectBuilt = false;
 
     function renderCodewordsList() {
       const listEl = document.getElementById('codewordsList');
@@ -947,14 +940,13 @@
 
     function applySettingsView(settings) {
       if (!settings) return;
-      if (settingsServer) settingsServer.textContent = 'Server: ' + (settings.serverUrl || '…');
       if (settingsCompilerKey) {
         settingsCompilerKey.textContent = settings.compilerReady
-          ? ('Active compile: ' + (settings.activeCompileLabel || settings.compileLabel || 'ready'))
-          : 'Active compile: not configured (API key or Ollama)';
+          ? ('Compile: ' + (settings.activeCompileLabel || settings.compileLabel || 'ready'))
+          : 'Compile: not configured';
       }
       if (settingsCloudInference) {
-        settingsCloudInference.textContent = 'Cloud inference: ' + (settings.cloudInferenceLabel || '…');
+        settingsCloudInference.textContent = 'Inference: ' + (settings.cloudInferenceLabel || '…');
       }
       document.getElementById('setLiveCompile').checked = !!settings.compileLive;
       document.getElementById('setPolishStt').checked = !!settings.polishStt;
@@ -966,63 +958,52 @@
       document.getElementById('setRebuildMode').value = settings.contextRebuildMode || 'clearSession';
       const portEl = document.getElementById('setSidecarPort');
       if (portEl) portEl.value = settings.sidecarPort || 3721;
-      const baseUrlEl = document.getElementById('setLlmBaseUrl');
-      if (baseUrlEl) baseUrlEl.value = settings.llmBaseUrl || '';
-      const modelEl = document.getElementById('setLlmModel');
-      if (modelEl) modelEl.value = settings.llmModel || '';
       inferencePresets = settings.inferencePresets || [];
-      const presetList = document.getElementById('inferencePresetList');
-      if (presetList) {
-        presetList.innerHTML = inferencePresets
-          .map(p => `<option value="${escapeAttr(p.label)}"></option>`)
-          .concat('<option value="Custom"></option>')
-          .join('');
-      }
+      inferenceModels = settings.inferenceModels || [];
       const presetEl = document.getElementById('setInferencePreset');
-      if (presetEl && document.activeElement !== presetEl) {
-        const active = inferencePresets.find(p => p.id === settings.inferencePresetId);
-        presetEl.value = active ? active.label : (settings.inferencePresetId === 'custom' ? 'Custom' : (settings.inferencePresetId || 'Custom'));
-        presetEl.readOnly = settings.llmBaseUrlSource === 'env' && settings.llmModelSource === 'env';
+      if (presetEl && !presetSelectBuilt) {
+        presetEl.innerHTML = inferencePresets
+          .map(p => `<option value="${escapeAttr(p.id)}">${escapeAttr(p.label)}</option>`)
+          .concat('<option value="custom">Custom</option>')
+          .join('');
+        presetSelectBuilt = true;
       }
+      const envLocked = settings.llmBaseUrlSource === 'env' || settings.llmModelSource === 'env';
+      if (presetEl && document.activeElement !== presetEl) {
+        const matchId = settings.inferencePresetId || 'custom';
+        presetEl.value = matchId;
+        if (presetEl.value !== matchId) presetEl.value = 'custom';
+        presetEl.disabled = envLocked;
+      }
+      const activePresetId = presetEl ? presetEl.value : 'custom';
+      const isCustom = activePresetId === 'custom';
+      populateModelSelect(activePresetId, settings.llmModel);
+      const customUrlRow = document.getElementById('customUrlRow');
+      const customModelRow = document.getElementById('customModelRow');
+      const baseUrlEl = document.getElementById('setLlmBaseUrl');
+      if (customUrlRow) customUrlRow.hidden = !isCustom;
+      if (baseUrlEl && isCustom) baseUrlEl.value = settings.llmBaseUrl || '';
       const compileProviderEl = document.getElementById('setCompileProvider');
       if (compileProviderEl) compileProviderEl.value = settings.compileProvider || 'auto';
       const configHint = document.getElementById('inferenceConfigHint');
       if (configHint) {
-        configHint.textContent = settings.cloudInferenceLabel
-          || ('Endpoint: ' + (settings.llmBaseUrl || '') + ' · ' + (settings.llmModel || '') + ' (' + (settings.llmConfigSource || '') + ')');
+        configHint.textContent = settings.cloudInferenceLabel || '';
       }
       const envNote = document.getElementById('inferenceEnvNote');
-      const envLocked = settings.llmBaseUrlSource === 'env' || settings.llmModelSource === 'env';
-      if (baseUrlEl) baseUrlEl.readOnly = envLocked;
-      if (modelEl) modelEl.readOnly = envLocked;
       if (envNote) envNote.hidden = !envLocked;
       const keyEl = document.getElementById('setLlmKey');
       if (keyEl) {
-        const preset = inferencePresets.find(p => p.id === settings.inferencePresetId);
+        const preset = inferencePresets.find(p => p.id === activePresetId);
         if (settings.llmKeySource === 'env') {
           keyEl.placeholder = '•••••••• (from .env)';
         } else if (settings.llmKeySet) {
           keyEl.placeholder = '•••••••• (saved)';
         } else {
-          keyEl.placeholder = preset?.keyHint || 'sk-… or xai-…';
+          keyEl.placeholder = preset?.keyHint || 'sk-…';
         }
       }
       const filterEl = document.getElementById('settingsFilterText');
       if (filterEl) filterEl.textContent = settings.vscodeSettingsFilter || '@ext:muhib-beekun.teacher';
-      const baseUrlList = document.getElementById('inferenceBaseUrlList');
-      if (baseUrlList) {
-        const urls = new Set(settings.inferenceBaseUrls || []);
-        if (settings.llmBaseUrl) urls.add(settings.llmBaseUrl);
-        baseUrlList.innerHTML = [...urls].map(u => `<option value="${escapeAttr(u)}"></option>`).join('');
-      }
-      const modelList = document.getElementById('inferenceModelList');
-      if (modelList) {
-        const models = [...(settings.inferenceModels || [])];
-        if (settings.llmModel && !models.some(m => m.id === settings.llmModel)) {
-          models.unshift({ id: settings.llmModel, label: settings.llmModel + ' (configured)' });
-        }
-        modelList.innerHTML = models.map(m => `<option value="${escapeAttr(m.id)}">${escapeAttr(m.label)}</option>`).join('');
-      }
       applyWhisperView(settings);
     }
 
@@ -1033,37 +1014,6 @@
         .replace(/</g, '&lt;');
     }
 
-    function resolveInferencePresetInput(raw) {
-      const value = String(raw || '').trim();
-      if (!value) return null;
-      const lower = value.toLowerCase();
-      if (lower === 'custom') return { id: 'custom' };
-      const exact = inferencePresets.find(p =>
-        p.id.toLowerCase() === lower || p.label.toLowerCase() === lower
-      );
-      if (exact) return exact;
-      const aliases = {
-        openai: 'openai',
-        'open ai': 'openai',
-        xai: 'xai',
-        grok: 'xai',
-        'xai grok': 'xai',
-        groq: 'groq',
-        deepseek: 'deepseek',
-        'deep seek': 'deepseek',
-        openrouter: 'openrouter',
-        'open router': 'openrouter',
-        together: 'together',
-        fireworks: 'fireworks',
-        mistral: 'mistral',
-        cerebras: 'cerebras',
-        gemini: 'gemini',
-        google: 'gemini',
-        ollama: 'ollama-openai'
-      };
-      const aliasId = aliases[lower];
-      return aliasId ? (inferencePresets.find(p => p.id === aliasId) || null) : { id: 'custom' };
-    }
 
     function applyWhisperView(settings) {
       const w = settings.whisper;
@@ -1113,35 +1063,69 @@
       refreshHealth().catch(() => {});
     }
 
-    async function applyInferencePreset(raw) {
-      const matched = resolveInferencePresetInput(raw);
-      const presetEl = document.getElementById('setInferencePreset');
-      if (!matched || matched.id === 'custom') {
-        if (presetEl) presetEl.value = 'Custom';
-        setStatus('Custom cloud provider — set URL and model below.', 'ok');
+    function populateModelSelect(presetId, currentModel) {
+      const modelEl = document.getElementById('setLlmModel');
+      const customModelRow = document.getElementById('customModelRow');
+      if (!modelEl) return;
+
+      const isCustomProvider = !presetId || presetId === 'custom';
+      const filtered = isCustomProvider
+        ? inferenceModels
+        : inferenceModels.filter(m => m.provider === presetId);
+
+      const options = filtered.map(m =>
+        `<option value="${escapeAttr(m.id)}">${escapeAttr(m.label)}</option>`
+      );
+      options.push('<option value="__custom__">Custom model…</option>');
+      modelEl.innerHTML = options.join('');
+
+      if (currentModel && filtered.some(m => m.id === currentModel)) {
+        modelEl.value = currentModel;
+      } else if (currentModel) {
+        const extra = `<option value="${escapeAttr(currentModel)}">${escapeAttr(currentModel)} (current)</option>`;
+        modelEl.innerHTML = extra + modelEl.innerHTML;
+        modelEl.value = currentModel;
+      }
+
+      const showCustomInput = modelEl.value === '__custom__';
+      if (customModelRow) customModelRow.hidden = !showCustomInput;
+    }
+
+    async function applyInferencePreset(presetId) {
+      const customUrlRow = document.getElementById('customUrlRow');
+      const baseUrlEl = document.getElementById('setLlmBaseUrl');
+      const keyEl = document.getElementById('setLlmKey');
+      const compileEl = document.getElementById('setCompileProvider');
+      const isCustom = !presetId || presetId === 'custom';
+
+      if (customUrlRow) customUrlRow.hidden = !isCustom;
+
+      if (isCustom) {
+        populateModelSelect('custom', '');
+        setStatus('Custom — set URL, model, and key below.', 'ok');
         return;
       }
-      const preset = matched.id ? matched : null;
+
+      const preset = inferencePresets.find(p => p.id === presetId);
       if (!preset?.baseUrl) return;
-      if (presetEl) presetEl.value = preset.label;
+
       await patchSetting('teacher.inference.llm.baseUrl', preset.baseUrl);
       await patchSetting('teacher.inference.llm.model', preset.model);
-      const baseUrlEl = document.getElementById('setLlmBaseUrl');
-      const modelEl = document.getElementById('setLlmModel');
       if (baseUrlEl) baseUrlEl.value = preset.baseUrl;
-      if (modelEl) modelEl.value = preset.model;
-      const keyEl = document.getElementById('setLlmKey');
+
+      populateModelSelect(presetId, preset.model);
+
       if (keyEl && !/saved|\.env/i.test(String(keyEl.placeholder))) {
-        keyEl.placeholder = preset.keyHint;
+        keyEl.placeholder = preset.keyHint || 'sk-…';
       }
-      const compileEl = document.getElementById('setCompileProvider');
-      const preferCloud = preset.id !== 'openai' && preset.id !== 'ollama-openai';
+
+      const preferCloud = presetId !== 'openai' && presetId !== 'ollama-openai';
       if (compileEl && preferCloud) {
         compileEl.value = 'cloud';
         await patchSetting('teacher.compile.provider', 'cloud');
-        setStatus('Inference: ' + preset.label + ' · brief compile set to Cloud only (skips Ollama).', 'ok');
+        setStatus(preset.label + ' · compile set to Cloud only.', 'ok');
       } else {
-        setStatus('Inference preset: ' + preset.label, 'ok');
+        setStatus('Provider: ' + preset.label, 'ok');
       }
       refreshHealth().catch(() => {});
     }
@@ -1213,8 +1197,17 @@
       loadSettings().catch(() => {});
     }
 
+    function sizeWaveformCanvas() {
+      const rect = waveformCanvas.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+      waveformCanvas.width = Math.round(rect.width * dpr);
+      waveformCanvas.height = Math.round(rect.height * dpr);
+      wfCtx.scale(dpr, dpr);
+    }
+
     function startWaveform(stream) {
       stopWaveform();
+      sizeWaveformCanvas();
       audioContext = new (window.AudioContext || window.webkitAudioContext)();
       const source = audioContext.createMediaStreamSource(stream);
       analyser = audioContext.createAnalyser();
@@ -1224,12 +1217,14 @@
         if (!analyser) return;
         const buf = new Uint8Array(analyser.frequencyBinCount);
         analyser.getByteFrequencyData(buf);
-        wfCtx.clearRect(0, 0, waveformCanvas.width, waveformCanvas.height);
-        const bars = 24, step = Math.floor(buf.length / bars), w = waveformCanvas.width / bars;
+        const rect = waveformCanvas.getBoundingClientRect();
+        const cw = rect.width, ch = rect.height;
+        wfCtx.clearRect(0, 0, cw, ch);
+        const bars = 24, step = Math.floor(buf.length / bars), w = cw / bars;
         for (let i = 0; i < bars; i++) {
-          const h = Math.max(3, (buf[i * step] / 255) * waveformCanvas.height * 0.88);
+          const h = Math.max(3, (buf[i * step] / 255) * ch * 0.88);
           wfCtx.fillStyle = listening ? '#6b8aff' : '#3a4052';
-          wfCtx.fillRect(i * w + 2, (waveformCanvas.height - h) / 2, w - 4, h);
+          wfCtx.fillRect(i * w + 2, (ch - h) / 2, w - 4, h);
         }
         waveAnim = requestAnimationFrame(draw);
       };
@@ -1639,12 +1634,18 @@
     document.getElementById('copyWords').addEventListener('click', () => copyWords().catch(() => {}));
     document.getElementById('send').addEventListener('click', () => sendToAgent('brief').catch(() => {}));
     document.getElementById('sendWords').addEventListener('click', () => sendToAgent('words').catch(() => {}));
-    document.getElementById('clear').addEventListener('click', () => clearSession().catch(() => {}));
+    document.getElementById('clear').addEventListener('click', () => {
+      if (!confirm('Clear the entire session? This cannot be undone.')) return;
+      clearSession().catch(() => {});
+    });
 
     document.getElementById('openSettings').addEventListener('click', openSettings);
     document.getElementById('closeSettings').addEventListener('click', closeSettings);
     settingsBackdrop.addEventListener('click', (e) => {
       if (e.target === settingsBackdrop) closeSettings();
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && settingsBackdrop.classList.contains('open')) closeSettings();
     });
     async function copyText(text, okMsg) {
       try {
@@ -1669,16 +1670,37 @@
         saveLlmKey().catch(() => {});
       }
     });
-    const presetInput = document.getElementById('setInferencePreset');
-    let presetApplyTimer = null;
-    function schedulePresetApply(value) {
-      clearTimeout(presetApplyTimer);
-      presetApplyTimer = setTimeout(() => {
-        applyInferencePreset(value).catch(() => setStatus('Could not apply preset.', 'warn'));
-      }, 120);
-    }
-    presetInput?.addEventListener('change', (e) => schedulePresetApply(e.target.value));
-    presetInput?.addEventListener('blur', (e) => schedulePresetApply(e.target.value));
+    document.getElementById('setInferencePreset')?.addEventListener('change', (e) => {
+      applyInferencePreset(e.target.value).catch(() => setStatus('Could not apply preset.', 'warn'));
+    });
+
+    document.getElementById('setLlmModel')?.addEventListener('change', (e) => {
+      const val = e.target.value;
+      const customModelRow = document.getElementById('customModelRow');
+      if (val === '__custom__') {
+        if (customModelRow) customModelRow.hidden = false;
+        document.getElementById('setLlmModelCustom')?.focus();
+        return;
+      }
+      if (customModelRow) customModelRow.hidden = true;
+      if (val) patchSetting('teacher.inference.llm.model', val).catch(() => setStatus('Could not save model.', 'warn'));
+    });
+
+    document.getElementById('setLlmModelCustom')?.addEventListener('blur', (e) => {
+      const val = e.target.value?.trim();
+      if (val) patchSetting('teacher.inference.llm.model', val).catch(() => setStatus('Could not save model.', 'warn'));
+    });
+    document.getElementById('setLlmModelCustom')?.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); e.target.blur(); }
+    });
+
+    document.getElementById('setLlmBaseUrl')?.addEventListener('blur', (e) => {
+      const val = e.target.value?.trim();
+      if (val) patchSetting('teacher.inference.llm.baseUrl', val).catch(() => setStatus('Could not save URL.', 'warn'));
+    });
+    document.getElementById('setLlmBaseUrl')?.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); e.target.blur(); }
+    });
 
     document.getElementById('codewordAddBtn')?.addEventListener('click', () => addCodeword().catch(() => setStatus('Could not add term.', 'warn')));
     document.getElementById('codewordAddInput')?.addEventListener('keydown', (e) => {
