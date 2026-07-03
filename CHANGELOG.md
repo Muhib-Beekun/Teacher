@@ -5,6 +5,12 @@ All notable changes to **Teacher** are documented in this file.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).  
 Version numbers match `package.json` and `teacher-<version>.vsix` builds.
 
+## [0.0.65] - 2026-07-03
+
+### Fixed
+- **Settings field visibility**: Provider selection now controls which fields are visible — Ollama hides API key (not needed) and custom URL (known endpoint); cloud providers hide URL; Custom shows everything. Model dropdown always visible for all providers.
+- **Browser caching**: Web UI HTML response now sends `no-cache` headers so the browser always loads the latest version after extension updates.
+
 ## [0.0.64] - 2026-07-03
 
 ### Fixed
