@@ -127,6 +127,28 @@ const dupBrief = parseCompiledMarkdown(`## Goal\nTest.\n\n## Session - your word
 assert(dupBrief.sessionLog.length === 1, 'duplicate audit disclaimer stripped from session log');
 assert(dupBrief.sessionLog[0].startsWith('[included]'), 'session log keeps segment after dedupe');
 
+const truncatedSessionBrief = parseCompiledMarkdown(`## Goal
+Release pipeline and Whisper.
+
+## Target
+- (no targets inferred — open files or speak file paths)
+
+## Session - your words
+- [included] first segment about releases.
+- [correction] second about Whisper.`);
+const sevenSegs = analyzeSegments([
+    'First segment about releases.',
+    'Second about Whisper.',
+    'Third about VS Code send.',
+    'Fourth correction on VS Code not TV.',
+    'Fifth about cursor reliance.',
+    'Sixth about fix highlight UI.',
+    'Seventh wondering if this one appears.'
+]);
+const backfilled = ensureSessionInBrief(truncatedSessionBrief, sevenSegs);
+assert(backfilled.sessionLog.length === 7, 'truncated LLM session log backfilled from all segments');
+assert(backfilled.sessionLog[6].includes('Seventh'), 'latest segment present after backfill');
+
 const { finalizeLlmCompiledBrief } = await import('../out/compiler/finalizeLlmBrief.js');
 const { normalizeLlmBriefMarkdown } = await import('../out/compiler/parseCompiledMarkdown.js');
 

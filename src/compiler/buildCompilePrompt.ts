@@ -83,9 +83,11 @@ export function ensureSessionInBrief(brief: CompiledBrief, segments: Segment[]):
     if (!active.length) {
         return brief;
     }
-    const sessionLog = brief.sessionLog.length > 0
-        ? sanitizeSessionLog(brief.sessionLog)
-        : buildSessionLogFromSegments(segments);
+    const fromSegments = buildSessionLogFromSegments(segments);
+    const fromLlm = sanitizeSessionLog(brief.sessionLog);
+    // Session audit trail must list every active segment — do not trust a truncated LLM session block.
+    const sessionLog =
+        fromLlm.length >= fromSegments.length ? fromLlm : fromSegments;
     if (!sessionLog.length) {
         return brief;
     }
