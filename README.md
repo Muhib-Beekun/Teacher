@@ -97,6 +97,8 @@ Open **Run and Debug** → **Run Teacher Extension** in Cursor. Commands under *
 
 Teacher is **by Muhib Beekun**. Dual-pane voice UX patterns were inspired by earlier evidence-intake mockups; this extension is a standalone product.
 
+**Support (optional):** Teacher is MIT and free. If it helps your workflow, [GitHub Sponsors](https://github.com/sponsors/Muhib-Beekun) is there for anyone who wants to chip in.
+
 ## License
 
 MIT — see [LICENSE](./LICENSE).

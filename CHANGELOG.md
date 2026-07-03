@@ -9,6 +9,7 @@ Version numbers match `package.json` and `teacher-<version>.vsix` builds.
 
 ### Changed
 - README includes an in-app screenshot (Your Words + Agent Prompt dual pane).
+- Optional [GitHub Sponsors](https://github.com/sponsors/Muhib-Beekun) link via `package.json` `sponsor` field (Open VSX / VS Code extension pages).
 
 ## [0.0.57] - 2026-07-03
 

@@ -15,6 +15,9 @@
     "bugs": {
         "url": "https://github.com/Muhib-Beekun/Teacher/issues"
     },
+    "sponsor": {
+        "url": "https://github.com/sponsors/Muhib-Beekun"
+    },
     "engines": {
         "vscode": "^1.92.0"
     },
