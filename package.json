@@ -2,7 +2,7 @@
     "name": "teacher",
     "displayName": "Teacher",
     "description": "Lecture your AI: continuous voice sessions that teach the agent what you meant. Workspace-aware STT and structured agent briefs for Cursor and VS Code.",
-    "version": "0.0.56",
+    "version": "0.0.57",
     "publisher": "muhib-beekun",
     "icon": "icon.png",
     "author": "Muhib Beekun",
@@ -243,7 +243,12 @@
                     "type": "string",
                     "enum": ["auto", "cloud", "ollama", "vscode-lm"],
                     "default": "auto",
-                    "description": "Compile provider. auto = Ollama if running, else cloud API key, else VS Code LM (GitHub Copilot). vscode-lm uses the host editor models (VS Code only; not Cursor today). verbatim mode skips LLM."
+                    "description": "Compile provider. auto = Ollama if running, else cloud API key, else VS Code LM (GitHub Copilot). On remote SSH/WSL hosts, auto skips vscode-lm unless teacher.compile.vscodeLm.allowOnRemote is true. verbatim mode skips LLM."
+                },
+                "teacher.compile.vscodeLm.allowOnRemote": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Allow vscode.lm (GitHub Copilot) for compile on remote extension hosts. Default false because vscode.lm often returns empty output over SSH; use cloud or Ollama on remote instead."
                 },
                 "teacher.compile.polishStt": {
                     "type": "boolean",
@@ -301,6 +306,7 @@
         "test:grok": "node tools/test-grok.mjs",
         "test:web-app": "npm run build && node tools/test-web-app.mjs",
         "test:compiler": "npm run build && node tools/test-compiler.mjs",
+        "test:compile-providers": "npm run build && node tools/test-compile-providers.mjs",
         "test:stt-context": "npm run build && node tools/test-stt-context.mjs",
         "test:compile-eval": "node tools/eval-compile.mjs --provider grok",
         "eval:compile": "node tools/eval-compile.mjs --compare",

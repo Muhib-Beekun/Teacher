@@ -15,8 +15,15 @@ import { buildCompilePrompt } from '../../compiler/buildCompilePrompt';
 import { LlmApiClient } from './LlmApiClient';
 import { OllamaApiClient } from './OllamaApiClient';
 import { VscodeLanguageModelClient } from './VscodeLanguageModelClient';
+import { extensionHostLabel, isRemoteExtensionHost } from '../../host/isRemoteExtensionHost';
+import {
+    CompileProviderId,
+    isEmptyLlmResponse,
+    planEmptyVscodeLmFallback,
+    resolveCompileProvider
+} from './resolveCompileProvider';
 
-export type CompileProviderId = 'cloud' | 'ollama' | 'vscode-lm' | 'none';
+export type { CompileProviderId };
 
 type ActiveProvider = 'cloud' | 'ollama' | 'vscode-lm' | 'none';
 
@@ -63,49 +70,40 @@ export class CompileService {
     async resolveProviderId(): Promise<CompileProviderId> {
         const raw = vscode.workspace.getConfiguration('teacher.compile').get<string>('provider', 'auto');
         const setting = raw === 'grok' ? 'cloud' : raw;
+        const allowVscodeLmOnRemote = vscode.workspace
+            .getConfiguration('teacher.compile')
+            .get<boolean>('vscodeLm.allowOnRemote', false);
+        const remote = isRemoteExtensionHost();
+        const available = {
+            cloud: await this.llm.isAvailable(),
+            ollama: await this.ollama.isAvailable(),
+            vscodeLm: await this.vscodeLm.isAvailable()
+        };
 
-        if (setting === 'cloud') {
-            if (await this.llm.isAvailable()) {
-                this.setActive('cloud', this.llm.getConfiguredModel());
-                return 'cloud';
-            }
+        const decision = resolveCompileProvider({
+            setting: setting as 'auto' | 'cloud' | 'ollama' | 'vscode-lm',
+            remote,
+            allowVscodeLmOnRemote,
+            available
+        });
+
+        this.output.appendLine(
+            `[compile:route] host=${extensionHostLabel()}${remote ? ` (${vscode.env.remoteName})` : ''} setting=${setting} → ${decision.provider} (${decision.reason})`
+        );
+
+        if (decision.provider === 'none') {
             this.setActive('none', '');
             return 'none';
         }
 
-        if (setting === 'ollama') {
-            if (await this.ollama.isAvailable()) {
-                this.setActive('ollama', this.ollama.getConfiguredModel());
-                return 'ollama';
-            }
-            this.setActive('none', '');
-            return 'none';
-        }
-
-        if (setting === 'vscode-lm') {
-            if (await this.vscodeLm.isAvailable()) {
-                this.setActive('vscode-lm', this.vscodeLm.getConfiguredModel());
-                return 'vscode-lm';
-            }
-            this.setActive('none', '');
-            return 'none';
-        }
-
-        // auto: Ollama → cloud API → host LM (Copilot in VS Code)
-        if (await this.ollama.isAvailable()) {
-            this.setActive('ollama', this.ollama.getConfiguredModel());
-            return 'ollama';
-        }
-        if (await this.llm.isAvailable()) {
-            this.setActive('cloud', this.llm.getConfiguredModel());
-            return 'cloud';
-        }
-        if (await this.vscodeLm.isAvailable()) {
-            this.setActive('vscode-lm', this.vscodeLm.getConfiguredModel());
-            return 'vscode-lm';
-        }
-        this.setActive('none', '');
-        return 'none';
+        const model =
+            decision.provider === 'cloud'
+                ? this.llm.getConfiguredModel()
+                : decision.provider === 'ollama'
+                  ? this.ollama.getConfiguredModel()
+                  : this.vscodeLm.getConfiguredModel();
+        this.setActive(decision.provider, model);
+        return decision.provider;
     }
 
     getActiveModelLabel(): string {
@@ -201,6 +199,11 @@ ${raw}`;
         } else if (provider === 'vscode-lm') {
             model = this.vscodeLm.getConfiguredModel();
             text = await this.vscodeLm.chat(system, user, temperature);
+            if (isEmptyLlmResponse(text)) {
+                this.output.appendLine(
+                    `[compile:vscode-lm] empty response from ${model} (${text?.length ?? 0} chars raw)`
+                );
+            }
         } else {
             throw new Error('No inference provider configured');
         }
@@ -208,6 +211,41 @@ ${raw}`;
         const latencyMs = Date.now() - started;
         this.output.appendLine(`[${name}] ${provider} ${model} ${latencyMs}ms`);
         return text;
+    }
+
+    private async chatWithEmptyFallback(
+        provider: Exclude<CompileProviderId, 'none'>,
+        name: string,
+        system: string,
+        user: string,
+        temperature: number
+    ): Promise<{ text: string; provider: Exclude<CompileProviderId, 'none'> }> {
+        let text = await this.chat(provider, name, system, user, temperature);
+        if (provider !== 'vscode-lm') {
+            return { text, provider };
+        }
+
+        const available = {
+            cloud: await this.llm.isAvailable(),
+            ollama: await this.ollama.isAvailable(),
+            vscodeLm: true
+        };
+        const plan = planEmptyVscodeLmFallback(text, available);
+        if (plan.action === 'use-primary') {
+            return { text, provider };
+        }
+        if (plan.action === 'fail') {
+            throw new Error(plan.message);
+        }
+
+        this.output.appendLine(
+            `[compile:fallback] vscode.lm empty on ${extensionHostLabel()} host; retrying ${name} with ${plan.provider}`
+        );
+        const fallbackModel =
+            plan.provider === 'cloud' ? this.llm.getConfiguredModel() : this.ollama.getConfiguredModel();
+        this.setActive(plan.provider, fallbackModel);
+        text = await this.chat(plan.provider, `${name}:fallback`, system, user, temperature);
+        return { text, provider: plan.provider };
     }
 
     private async compileWithLlm(
@@ -218,24 +256,26 @@ ${raw}`;
     ): Promise<CompiledBrief> {
         const segments = analyzeSegments(rawSegments);
         const { system, user } = buildCompilePrompt(segments, ctx, priorBrief);
-        let markdown = await this.chat(provider, 'compile', system, user, 0.2);
-        let result = finalizeLlmCompiledBrief(markdown, segments);
+        let chatResult = await this.chatWithEmptyFallback(provider, 'compile', system, user, 0.2);
+        let activeProvider = chatResult.provider;
+        let result = finalizeLlmCompiledBrief(chatResult.text, segments);
 
         if (!result.ok) {
-            this.logCompileValidationFailure(provider, result.reason, result.message, result.preview);
+            this.logCompileValidationFailure(activeProvider, result.reason, result.message, result.preview);
             this.output.appendLine('[compile] attempting one reformat pass on malformed output');
-            markdown = await this.chat(
-                provider,
+            chatResult = await this.chatWithEmptyFallback(
+                chatResult.provider,
                 'compile-reformat',
                 REFORMAT_COMPILE_SYSTEM,
-                buildReformatCompileUser(markdown),
+                buildReformatCompileUser(chatResult.text),
                 0.1
             );
-            result = finalizeLlmCompiledBrief(markdown, segments);
+            activeProvider = chatResult.provider;
+            result = finalizeLlmCompiledBrief(chatResult.text, segments);
             if (result.ok) {
                 this.output.appendLine('[compile] repaired near-valid output on reformat retry');
             } else {
-                this.logCompileValidationFailure(provider, result.reason, result.message, result.preview);
+                this.logCompileValidationFailure(activeProvider, result.reason, result.message, result.preview);
                 throw new Error(result.message);
             }
         }

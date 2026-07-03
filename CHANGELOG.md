@@ -7,6 +7,11 @@ Version numbers match `package.json` and `teacher-<version>.vsix` builds.
 
 ## [Unreleased]
 
+## [0.0.57] - 2026-07-03
+
+### Added
+- **Host-aware compile routing** for remote SSH/WSL/container extension hosts: `auto` prefers Ollama/cloud and skips unreliable `vscode.lm` unless `teacher.compile.vscodeLm.allowOnRemote` is true. Empty `vscode.lm` responses trigger a single fallback to cloud or Ollama with explicit output-channel logs.
+
 ## [0.0.56] - 2026-07-02
 
 ### Fixed
