@@ -91,6 +91,35 @@ export function activate(context: vscode.ExtensionContext): void {
         return { ok: false, message: `Unknown action: ${action}` };
     });
 
+    webApp.setWhisperPickHandler(async (target) => {
+        if (target === 'binary') {
+            const picked = await vscode.window.showOpenDialog({
+                canSelectMany: false,
+                canSelectFiles: true,
+                canSelectFolders: false,
+                openLabel: 'Select whisper.cpp CLI',
+                title: 'whisper.cpp binary (whisper-cli or main.exe)',
+                filters: process.platform === 'win32'
+                    ? { Executables: ['exe'], 'All files': ['*'] }
+                    : undefined
+            });
+            return picked?.[0]?.fsPath;
+        }
+
+        const picked = await vscode.window.showOpenDialog({
+            canSelectMany: false,
+            canSelectFiles: true,
+            canSelectFolders: false,
+            openLabel: 'Select model',
+            title: 'Whisper GGML/GGUF model file',
+            filters: {
+                Models: ['bin', 'gguf'],
+                'All files': ['*']
+            }
+        });
+        return picked?.[0]?.fsPath;
+    });
+
     webApp.setSendHandler(async (source, briefVersion) => {
         const result = await panel.sendToAgent(source, briefVersion);
         if (!result) {

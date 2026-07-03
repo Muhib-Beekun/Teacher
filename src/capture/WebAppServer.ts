@@ -18,6 +18,7 @@ export class WebAppServer {
 
     private onAction?: (action: string) => Promise<{ ok: boolean; message: string }>;
     private onLlmKey?: (key: string) => Promise<void>;
+    private onWhisperPick?: (target: 'binary' | 'model') => Promise<string | undefined>;
 
     constructor(private readonly extensionPath: string) {
         const htmlPath = path.join(extensionPath, 'media', 'teacher-app.html');
@@ -42,6 +43,10 @@ export class WebAppServer {
 
     public setLlmKeyHandler(fn: (key: string) => Promise<void>): void {
         this.onLlmKey = fn;
+    }
+
+    public setWhisperPickHandler(fn: (target: 'binary' | 'model') => Promise<string | undefined>): void {
+        this.onWhisperPick = fn;
     }
 
     public getPort(): number {
@@ -193,6 +198,54 @@ export class WebAppServer {
             } catch (err) {
                 const msg = err instanceof Error ? err.message : String(err);
                 this.json(res, 400, { ok: false, error: msg });
+            }
+            return;
+        }
+
+        if (req.method === 'POST' && url === '/api/whisper/discover') {
+            try {
+                const result = await bridge.discoverWhisper();
+                this.json(res, 200, { ok: true, settings: result.settings, message: result.message });
+            } catch (err) {
+                const msg = err instanceof Error ? err.message : String(err);
+                this.json(res, 500, { ok: false, error: msg });
+            }
+            return;
+        }
+
+        if (req.method === 'POST' && url === '/api/whisper/test') {
+            try {
+                const result = await bridge.testWhisper();
+                this.json(res, result.ok ? 200 : 400, result);
+            } catch (err) {
+                const msg = err instanceof Error ? err.message : String(err);
+                this.json(res, 500, { ok: false, error: msg });
+            }
+            return;
+        }
+
+        if (req.method === 'POST' && url === '/api/whisper/pick') {
+            if (!this.onWhisperPick) {
+                this.json(res, 501, { ok: false, error: 'File picker not available' });
+                return;
+            }
+            const body = await this.readBody(req, res);
+            if (!body) return;
+            try {
+                const parsed = JSON.parse(body.toString('utf8')) as { target?: string };
+                const target = parsed.target === 'model' ? 'model' : 'binary';
+                const picked = await this.onWhisperPick(target);
+                if (!picked) {
+                    this.json(res, 200, { ok: true, cancelled: true, settings: await bridge.getAppSettings() });
+                    return;
+                }
+                const key =
+                    target === 'model' ? 'teacher.stt.whisper.modelPath' : 'teacher.stt.whisper.binaryPath';
+                const settings = await bridge.patchAppSetting(key, picked);
+                this.json(res, 200, { ok: true, path: picked, settings });
+            } catch (err) {
+                const msg = err instanceof Error ? err.message : String(err);
+                this.json(res, 500, { ok: false, error: msg });
             }
             return;
         }

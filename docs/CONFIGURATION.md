@@ -73,7 +73,7 @@ Teacher does **not** use vector RAG. Workspace context is a ranked term list fro
 
 For strongest **recognition-time** biasing (Grok vs Groq, file names, symbol names), configure **Whisper** or **Deepgram**. Web Speech still works via post-hoc correction but cannot hear your glossary while you speak.
 
-Whisper paths: `teacher.stt.whisper.binaryPath`, `teacher.stt.whisper.modelPath`. Audio is recorded in the browser on mic pause and transcribed on the extension host.
+Whisper paths are configured in **Teacher Settings → Speech → Local Whisper** (browse, discover, test). See [WHISPER-SETUP.md](./WHISPER-SETUP.md). Audio is recorded in the browser on mic pause and transcribed on the extension host.
 
 ## Optional secrets
 

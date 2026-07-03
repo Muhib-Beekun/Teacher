@@ -2,6 +2,12 @@ import * as vscode from 'vscode';
 import { INFERENCE_MODEL_OPTIONS } from '../config/inferenceModels';
 import { INFERENCE_PROVIDER_PRESETS } from '../config/inferencePresets';
 import { resolveInferenceConfig } from '../config/resolveInferenceConfig';
+import {
+    getWhisperStatus,
+    WHISPER_MODELS_URL,
+    WHISPER_RELEASES_URL,
+    WhisperStatus
+} from '../stt/WhisperSetup';
 
 export interface AppSettingsView {
     compileLive: boolean;
@@ -28,6 +34,9 @@ export interface AppSettingsView {
     inferencePresets: { id: string; label: string; baseUrl: string; model: string; keyHint: string }[];
     inferencePresetId: string;
     vscodeSettingsFilter: string;
+    whisper: WhisperStatus;
+    whisperReleasesUrl: string;
+    whisperModelsUrl: string;
 }
 
 const UI_SETTING_KEYS = [
@@ -42,7 +51,9 @@ const UI_SETTING_KEYS = [
     'teacher.context.rebuildMode',
     'teacher.capture.sidecarPort',
     'teacher.inference.llm.baseUrl',
-    'teacher.inference.llm.model'
+    'teacher.inference.llm.model',
+    'teacher.stt.whisper.binaryPath',
+    'teacher.stt.whisper.modelPath'
 ] as const;
 
 function formatConfigSource(baseUrlSource: string, modelSource: string): string {
@@ -98,7 +109,10 @@ export async function readAppSettings(deps: {
             keyHint: p.keyHint
         })),
         inferencePresetId: effective.presetId,
-        vscodeSettingsFilter: '@ext:muhib-beekun.teacher'
+        vscodeSettingsFilter: '@ext:muhib-beekun.teacher',
+        whisper: await getWhisperStatus(),
+        whisperReleasesUrl: WHISPER_RELEASES_URL,
+        whisperModelsUrl: WHISPER_MODELS_URL
     };
 }
 
@@ -114,6 +128,11 @@ export async function updateAppSetting(key: string, value: boolean | string | nu
     if (key.startsWith('teacher.capture.')) {
         const field = key.replace('teacher.capture.', '');
         await vscode.workspace.getConfiguration('teacher.capture').update(field, value, vscode.ConfigurationTarget.Global);
+        return;
+    }
+    if (key.startsWith('teacher.stt.whisper.')) {
+        const field = key.replace('teacher.stt.whisper.', '');
+        await vscode.workspace.getConfiguration('teacher.stt.whisper').update(field, value, vscode.ConfigurationTarget.Global);
         return;
     }
     const field = key.replace(/^teacher\./, '');

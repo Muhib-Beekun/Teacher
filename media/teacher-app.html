@@ -96,6 +96,18 @@
       border-radius: 6px; padding: 4px 8px; font-size: 10px; cursor: pointer;
     }
     .copy-row button:hover { border-color: var(--accent); color: var(--accent); }
+    .whisper-setup { margin-top: 8px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; background: rgba(0,0,0,0.15); }
+    .whisper-setup ol { margin: 8px 0 10px 18px; padding: 0; font-size: 12px; line-height: 1.5; color: var(--muted); }
+    .whisper-setup ol a { color: var(--accent); }
+    .whisper-status { display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 999px; margin-bottom: 8px; border: 1px solid var(--border); }
+    .whisper-status.ready { border-color: #3d8; color: #3d8; }
+    .whisper-status.warn { border-color: #c90; color: #c90; }
+    .whisper-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+    .whisper-actions button {
+      font-size: 11px; padding: 5px 10px; border-radius: 6px; border: 1px solid var(--border);
+      background: var(--panel); color: var(--text); cursor: pointer;
+    }
+    .whisper-actions button:hover { border-color: var(--accent); color: var(--accent); }
     .settings-footer {
       margin-top: auto; padding-top: 12px; border-top: 1px solid var(--line);
     }
@@ -438,6 +450,33 @@
             <option value="eachSegment">Each mic pause</option>
           </select>
         </div>
+        <div class="whisper-setup" id="whisperSetup">
+          <strong>Local Whisper (optional)</strong>
+          <span class="hint" style="display:block;margin:4px 0 0">Browser speech is the default. Whisper adds offline hear-time vocabulary bias — extra setup, may not beat Chrome for everyone.</span>
+          <span class="whisper-status warn" id="whisperStatus">Status: not configured</span>
+          <ol>
+            <li>Download a <strong>whisper.cpp</strong> build for your OS from <a id="whisperReleasesLink" href="https://github.com/ggml-org/whisper.cpp/releases" target="_blank" rel="noopener">GitHub releases</a> (use <code>whisper-cli</code> or <code>main.exe</code>).</li>
+            <li>Download a model such as <code>ggml-small.en.bin</code> from <a id="whisperModelsLink" href="https://huggingface.co/ggerganov/whisper.cpp/tree/main" target="_blank" rel="noopener">Hugging Face</a>.</li>
+            <li>Browse to both paths below, or tap <strong>Find on disk</strong> if you already built whisper.cpp locally.</li>
+            <li>Tap <strong>Test setup</strong>, then set STT provider to <strong>Auto</strong> or <strong>Local whisper</strong>.</li>
+          </ol>
+          <div class="setting-row">
+            <label for="setWhisperBinary">CLI binary<span class="hint">whisper-cli or main.exe</span></label>
+            <input type="text" id="setWhisperBinary" data-key="teacher.stt.whisper.binaryPath" placeholder="C:\tools\whisper-cli.exe" spellcheck="false" />
+          </div>
+          <div class="copy-row" style="margin:-4px 0 8px">
+            <button type="button" id="pickWhisperBinary">Browse binary…</button>
+            <button type="button" id="pickWhisperModel">Browse model…</button>
+          </div>
+          <div class="setting-row">
+            <label for="setWhisperModel">Model file<span class="hint">.bin or .gguf (small.en recommended for English)</span></label>
+            <input type="text" id="setWhisperModel" data-key="teacher.stt.whisper.modelPath" placeholder="C:\models\ggml-small.en.bin" spellcheck="false" />
+          </div>
+          <div class="whisper-actions">
+            <button type="button" id="discoverWhisper">Find on disk</button>
+            <button type="button" id="testWhisper">Test setup</button>
+          </div>
+        </div>
       </div>
       <div class="settings-group">
         <h3>Compile and send</h3>
@@ -473,7 +512,7 @@
       </div>
       <details class="settings-advanced" style="margin-bottom:16px">
         <summary style="cursor:pointer;font-size:11px;color:var(--muted)">More in VS Code Settings</summary>
-        <p style="margin:10px 0 8px">Whisper paths, Deepgram, Ollama model. Filter:</p>
+        <p style="margin:10px 0 8px">Deepgram key, Ollama model, advanced flags. Filter:</p>
         <div class="copy-row">
           <code id="settingsFilterText">@ext:muhib-beekun.teacher</code>
           <button type="button" id="copySettingsFilter" title="Copy settings filter">Copy</button>
@@ -759,6 +798,55 @@
         modelList.innerHTML = settings.inferenceModels.map(m => `<option value="${m.id}">${m.label}</option>`).join('');
       }
       inferencePresets = settings.inferencePresets || [];
+      applyWhisperView(settings);
+    }
+
+    function applyWhisperView(settings) {
+      const w = settings.whisper;
+      if (!w) return;
+      const binaryEl = document.getElementById('setWhisperBinary');
+      const modelEl = document.getElementById('setWhisperModel');
+      if (binaryEl && document.activeElement !== binaryEl) binaryEl.value = w.binaryPath || '';
+      if (modelEl && document.activeElement !== modelEl) modelEl.value = w.modelPath || '';
+      const statusEl = document.getElementById('whisperStatus');
+      if (statusEl) {
+        statusEl.textContent = 'Status: ' + (w.statusLabel || 'not configured');
+        statusEl.className = 'whisper-status ' + (w.ready ? 'ready' : 'warn');
+      }
+      const releasesLink = document.getElementById('whisperReleasesLink');
+      if (releasesLink && settings.whisperReleasesUrl) releasesLink.href = settings.whisperReleasesUrl;
+      const modelsLink = document.getElementById('whisperModelsLink');
+      if (modelsLink && settings.whisperModelsUrl) modelsLink.href = settings.whisperModelsUrl;
+    }
+
+    async function pickWhisperPath(target) {
+      const json = await fetch('/api/whisper/pick', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ target })
+      }).then(r => r.json());
+      if (json.settings) applySettingsView(json.settings);
+      if (json.cancelled) return;
+      if (json.ok) {
+        setStatus('Saved ' + target + ' path.', 'ok');
+        refreshHealth().catch(() => {});
+      } else {
+        setStatus(json.error || 'Could not pick file.', 'warn');
+      }
+    }
+
+    async function discoverWhisperPaths() {
+      const json = await fetch('/api/whisper/discover', { method: 'POST' }).then(r => r.json());
+      if (json.settings) applySettingsView(json.settings);
+      setStatus(json.message || (json.ok ? 'Discovery finished.' : json.error), json.ok ? 'ok' : 'warn');
+      refreshHealth().catch(() => {});
+    }
+
+    async function testWhisperSetup() {
+      const json = await fetch('/api/whisper/test', { method: 'POST' }).then(r => r.json());
+      if (json.settings) applySettingsView(json.settings);
+      setStatus(json.message || json.error || 'Whisper test finished.', json.ok ? 'ok' : 'warn');
+      refreshHealth().catch(() => {});
     }
 
     async function applyInferencePreset(presetId) {
@@ -1299,6 +1387,11 @@
       applyInferencePreset(e.target.value).catch(() => setStatus('Could not apply preset.', 'warn'));
     });
 
+    document.getElementById('pickWhisperBinary')?.addEventListener('click', () => pickWhisperPath('binary').catch(() => setStatus('Browse failed.', 'warn')));
+    document.getElementById('pickWhisperModel')?.addEventListener('click', () => pickWhisperPath('model').catch(() => setStatus('Browse failed.', 'warn')));
+    document.getElementById('discoverWhisper')?.addEventListener('click', () => discoverWhisperPaths().catch(() => setStatus('Discovery failed.', 'warn')));
+    document.getElementById('testWhisper')?.addEventListener('click', () => testWhisperSetup().catch(() => setStatus('Whisper test failed.', 'warn')));
+
     for (const el of document.querySelectorAll('[data-key]')) {
       el.addEventListener('change', () => {
         const key = el.dataset.key;
@@ -1306,6 +1399,13 @@
         if (el.type === 'number') value = Number(value);
         patchSetting(key, value).catch(() => setStatus('Could not save setting.', 'warn'));
       });
+      if (el.tagName === 'INPUT' && (el.type === 'text' || el.type === 'password')) {
+        el.addEventListener('blur', () => {
+          const key = el.dataset.key;
+          if (!key) return;
+          patchSetting(key, el.value).catch(() => setStatus('Could not save setting.', 'warn'));
+        });
+      }
     }
 
     refreshHealth().then(() => loadSession()).catch(() => setStatus('Cannot reach Teacher server', 'warn'));

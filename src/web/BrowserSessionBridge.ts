@@ -7,6 +7,7 @@ import { SessionManager } from '../session/SessionManager';
 import { SttFix, SttSegmentAudit } from '../session/types';
 import { applyDevVoiceLexicon } from '../stt/DevVoiceLexicon';
 import { attachHeardOriginal, filterSpuriousFixes } from '../stt/fixQuality';
+import { discoverWhisperPaths, setWhisperPath, testWhisperSetup } from '../stt/WhisperSetup';
 import { readAppSettings, updateAppSetting, AppSettingsView } from './AppSettings';
 import { buildAgentHandoff } from './buildAgentHandoff';
 import { buildSttAuditReport } from './buildSttAudit';
@@ -163,10 +164,32 @@ export class BrowserSessionBridge {
 
     public async patchAppSetting(key: string, value: boolean | string | number): Promise<AppSettingsView> {
         await updateAppSetting(key, value);
-        if (key === 'teacher.compile.live' || key === 'teacher.compile.mode') {
+        if (
+            key === 'teacher.compile.live'
+            || key === 'teacher.compile.mode'
+            || key.startsWith('teacher.stt.')
+        ) {
             await this.refreshProviderLabel();
         }
         return this.getAppSettings();
+    }
+
+    public async discoverWhisper(): Promise<{ settings: AppSettingsView; message: string }> {
+        const found = await discoverWhisperPaths();
+        if (found.binaryPath) {
+            await setWhisperPath('binaryPath', found.binaryPath);
+        }
+        if (found.modelPath) {
+            await setWhisperPath('modelPath', found.modelPath);
+        }
+        await this.refreshProviderLabel();
+        return { settings: await this.getAppSettings(), message: found.message };
+    }
+
+    public async testWhisper(): Promise<{ ok: boolean; message: string; settings: AppSettingsView }> {
+        const result = await testWhisperSetup();
+        await this.refreshProviderLabel();
+        return { ...result, settings: await this.getAppSettings() };
     }
 
     public async revertFix(index: number, heard: string, corrected: string): Promise<SessionSnapshot> {

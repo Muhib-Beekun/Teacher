@@ -76,7 +76,10 @@ function createHandler() {
                     sttLabel: 'Browser speech (Chrome/Edge live preview)',
                     compileLabel: 'Harness — Grok compile not wired here',
                     contextHint: '0 workspace terms indexed',
-                    vscodeSettingsPrefix: 'teacher'
+                    vscodeSettingsPrefix: 'teacher',
+                    whisper: { binaryPath: '', modelPath: '', binaryExists: false, modelExists: false, ready: false, statusLabel: 'Not configured' },
+                    whisperReleasesUrl: 'https://github.com/ggml-org/whisper.cpp/releases',
+                    whisperModelsUrl: 'https://huggingface.co/ggerganov/whisper.cpp/tree/main'
                 }
             });
             return;

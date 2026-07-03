@@ -7,6 +7,12 @@ Version numbers match `package.json` and `teacher-<version>.vsix` builds.
 
 ## [Unreleased]
 
+## [0.0.60] - 2026-07-03
+
+### Added
+- **Local Whisper setup** in Teacher Settings: step-by-step instructions, browse binary/model, find-on-disk, test CLI, status badge.
+- [WHISPER-SETUP.md](./docs/WHISPER-SETUP.md) with links to [whisper.cpp releases](https://github.com/ggml-org/whisper.cpp/releases) and Hugging Face models.
+
 ## [0.0.59] - 2026-07-03
 
 ### Fixed
