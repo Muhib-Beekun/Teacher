@@ -8,6 +8,13 @@ import { SttFix, SttSegmentAudit } from '../session/types';
 import { applyDevVoiceLexicon } from '../stt/DevVoiceLexicon';
 import { attachHeardOriginal, filterSpuriousFixes } from '../stt/fixQuality';
 import { discoverWhisperPaths, setWhisperPath, testWhisperSetup } from '../stt/WhisperSetup';
+import {
+    getCodewordsRelPath,
+    getPrimaryWorkspaceFolder,
+    normalizeCodewordTerms,
+    readFileCodewords,
+    writeFileCodewords
+} from '../config/CodewordsManager';
 import { readAppSettings, updateAppSetting, AppSettingsView } from './AppSettings';
 import { buildAgentHandoff } from './buildAgentHandoff';
 import { buildSttAuditReport } from './buildSttAudit';
@@ -20,6 +27,7 @@ export interface BrowserSessionBridgeDeps {
     getVoiceContext: () => VoiceSessionContext;
     getRebuildMode: () => ContextRebuildMode;
     rebuildContext: (recentUtterance?: string) => Promise<void>;
+    ensureCodewordsFile: () => Promise<void>;
     sttService: SttService;
     compileService: CompileService;
     getServerUrl: () => string;
@@ -190,6 +198,33 @@ export class BrowserSessionBridge {
         const result = await testWhisperSetup();
         await this.refreshProviderLabel();
         return { ...result, settings: await this.getAppSettings() };
+    }
+
+    public async getCodewords(): Promise<{ terms: string[]; path: string; ok: boolean; message?: string }> {
+        const folder = getPrimaryWorkspaceFolder();
+        if (!folder) {
+            return { ok: false, terms: [], path: getCodewordsRelPath(), message: 'Open a workspace folder first.' };
+        }
+        await this.deps.ensureCodewordsFile();
+        const terms = await readFileCodewords(folder);
+        return { ok: true, terms, path: getCodewordsRelPath() };
+    }
+
+    public async setCodewords(terms: string[]): Promise<{ ok: boolean; terms: string[]; path: string; message: string }> {
+        const folder = getPrimaryWorkspaceFolder();
+        if (!folder) {
+            return { ok: false, terms: [], path: getCodewordsRelPath(), message: 'Open a workspace folder first.' };
+        }
+        await this.deps.ensureCodewordsFile();
+        const normalized = normalizeCodewordTerms(terms);
+        await writeFileCodewords(folder, normalized);
+        await this.deps.rebuildContext();
+        return {
+            ok: true,
+            terms: normalized,
+            path: getCodewordsRelPath(),
+            message: `Saved ${normalized.length} glossary term(s) and refreshed workspace index.`
+        };
     }
 
     public async revertFix(index: number, heard: string, corrected: string): Promise<SessionSnapshot> {

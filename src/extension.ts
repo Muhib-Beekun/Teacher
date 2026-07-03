@@ -37,6 +37,11 @@ export function activate(context: vscode.ExtensionContext): void {
         rebuildContext: async (recentUtterance) => {
             await contextIndex.rebuild(recentUtterance ? { recentUtterance } : {});
         },
+        ensureCodewordsFile: async () => {
+            for (const folder of vscode.workspace.workspaceFolders ?? []) {
+                await ensureCodewordsFile(context.extensionPath, folder);
+            }
+        },
         sttService,
         compileService,
         getServerUrl: () => webApp.getUrl(),

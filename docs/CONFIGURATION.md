@@ -71,9 +71,13 @@ Teacher does **not** use vector RAG. Workspace context is a ranked term list fro
 
 **Auto order:** Whisper if binary+model configured → Deepgram if key set → else Web Speech.
 
-For strongest **recognition-time** biasing (Grok vs Groq, file names, symbol names), configure **Whisper** or **Deepgram**. Web Speech still works via post-hoc correction but cannot hear your glossary while you speak.
+For strongest **recognition-time** biasing (Grok vs Groq, file names, symbol names), configure **Whisper** or **Deepgram**. **Browser Web Speech does not support hear-time bias** — workspace codewords only help via post-hoc lexicon, homonym pass, and LLM polish after text arrives.
+
+**Whisper overhead:** each mic pause sends audio to the extension host for local inference — typically 1–5+ seconds on CPU depending on model size, plus CPU/GPU use while transcribing. Browser speech has no local compute cost and lower latency.
 
 Whisper paths are configured in **Teacher Settings → Speech → Local Whisper** (browse, discover, test). See [WHISPER-SETUP.md](./WHISPER-SETUP.md). Audio is recorded in the browser on mic pause and transcribed on the extension host.
+
+**Glossary:** edit **Your glossary** in Teacher Settings (writes `.teacher/codewords.txt`). Advanced: `teacher.context.codewords` in VS Code settings still merges at index time but is not shown in the Teacher UI.
 
 ## Optional secrets
 

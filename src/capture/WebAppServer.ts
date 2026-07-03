@@ -250,6 +250,27 @@ export class WebAppServer {
             return;
         }
 
+        if (req.method === 'GET' && url === '/api/codewords') {
+            const result = await bridge.getCodewords();
+            this.json(res, result.ok ? 200 : 400, result);
+            return;
+        }
+
+        if (req.method === 'PUT' && url === '/api/codewords') {
+            const body = await this.readBody(req, res);
+            if (!body) return;
+            try {
+                const parsed = JSON.parse(body.toString('utf8')) as { terms?: string[] };
+                const terms = Array.isArray(parsed.terms) ? parsed.terms : [];
+                const result = await bridge.setCodewords(terms);
+                this.json(res, result.ok ? 200 : 400, result);
+            } catch (err) {
+                const msg = err instanceof Error ? err.message : String(err);
+                this.json(res, 500, { ok: false, error: msg });
+            }
+            return;
+        }
+
         if (req.method === 'GET' && url === '/api/stt-audit') {
             this.json(res, 200, { ok: true, audit: bridge.getSttAuditReport() });
             return;

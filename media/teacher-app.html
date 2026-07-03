@@ -108,6 +108,35 @@
       background: var(--panel); color: var(--text); cursor: pointer;
     }
     .whisper-actions button:hover { border-color: var(--accent); color: var(--accent); }
+    .stt-callout {
+      margin: 10px 0; padding: 10px 12px; border-radius: 8px; font-size: 11px; line-height: 1.5;
+      border: 1px solid var(--border); background: rgba(100, 140, 255, 0.08); color: var(--muted);
+    }
+    .stt-callout strong { color: var(--text); }
+    .codewords-editor { margin-top: 8px; }
+    .codewords-editor .hint { display: block; font-size: 11px; color: var(--muted); margin: 4px 0 8px; line-height: 1.4; }
+    .codewords-list { list-style: none; margin: 0 0 8px; padding: 0; max-height: 140px; overflow-y: auto; }
+    .codewords-list li {
+      display: flex; align-items: center; justify-content: space-between; gap: 8px;
+      padding: 4px 0; border-bottom: 1px solid var(--border); font-size: 12px;
+    }
+    .codewords-list li:last-child { border-bottom: none; }
+    .codewords-list button {
+      flex-shrink: 0; width: 22px; height: 22px; padding: 0; border-radius: 4px;
+      border: 1px solid var(--border); background: var(--panel); color: var(--muted); cursor: pointer; font-size: 14px; line-height: 1;
+    }
+    .codewords-list button:hover { border-color: #c55; color: #c55; }
+    .codewords-add { display: flex; gap: 8px; align-items: center; }
+    .codewords-add input {
+      flex: 1; min-width: 0; padding: 6px 8px; border-radius: 6px; border: 1px solid var(--border);
+      background: var(--panel); color: var(--text); font-size: 12px;
+    }
+    .codewords-add button {
+      width: 28px; height: 28px; padding: 0; border-radius: 6px; border: 1px solid var(--border);
+      background: var(--panel); color: var(--accent); cursor: pointer; font-size: 16px; line-height: 1;
+    }
+    .codewords-add button:hover { border-color: var(--accent); }
+    .codewords-empty { font-size: 11px; color: var(--muted); font-style: italic; margin: 0 0 8px; }
     .settings-footer {
       margin-top: auto; padding-top: 12px; border-top: 1px solid var(--line);
     }
@@ -426,7 +455,7 @@
       <div class="settings-group">
         <h3>Speech</h3>
         <div class="setting-row">
-          <label for="setSttProvider">STT provider</label>
+          <label for="setSttProvider">STT provider<span class="hint">Browser speech is default (low latency). <strong>Hear-time vocabulary bias</strong> (workspace codewords while you speak) only applies with <strong>Whisper</strong> or <strong>Deepgram</strong> — not browser speech.</span></label>
           <select id="setSttProvider" data-key="teacher.stt.provider">
             <option value="auto">Auto</option>
             <option value="webspeech">Browser speech</option>
@@ -434,16 +463,30 @@
             <option value="deepgram">Deepgram</option>
           </select>
         </div>
+        <div class="stt-callout" id="sttBiasCallout">
+          <strong>Biasing:</strong> Lexicon + dictionary homonym pass run on <em>every</em> provider (after text arrives).
+          <strong>Recognition-time bias</strong> — nudging the model with your workspace glossary <em>while</em> it listens — requires Whisper or Deepgram. Browser speech cannot receive codewords at hear time.
+        </div>
         <div class="setting-row">
-          <label for="setHomonymPass">Dictionary homonym pass<span class="hint">Workspace symbols and codewords become STT corrections.</span></label>
+          <label for="setHomonymPass">Dictionary homonym pass<span class="hint">Post-hoc correction: swap heard tokens to workspace symbols after STT (all providers).</span></label>
           <input type="checkbox" id="setHomonymPass" data-key="teacher.stt.homonymPass" />
+        </div>
+        <div class="codewords-editor" id="codewordsEditor">
+          <label>Your glossary</label>
+          <span class="hint">Canonical terms saved to <code id="codewordsPath">.teacher/codewords.txt</code> — homonym pass matches mishears to these.</span>
+          <p class="codewords-empty" id="codewordsEmpty" hidden>No terms yet.</p>
+          <ul class="codewords-list" id="codewordsList"></ul>
+          <div class="codewords-add">
+            <input type="text" id="codewordAddInput" placeholder="Add term (e.g. Groq)" spellcheck="false" autocomplete="off" />
+            <button type="button" id="codewordAddBtn" title="Add term">+</button>
+          </div>
         </div>
         <div class="setting-row">
           <label for="setPolishStt">Polish STT via LLM<span class="hint">Fix transcription before compiling (needs API key or Ollama).</span></label>
           <input type="checkbox" id="setPolishStt" data-key="teacher.compile.polishStt" />
         </div>
         <div class="setting-row">
-          <label for="setRebuildMode">Index rebuild<span class="hint">Codewords: <code>.teacher/codewords.txt</code> or <code>teacher.context.codewords</code></span></label>
+          <label for="setRebuildMode">Index rebuild<span class="hint">When to refresh workspace symbol index (glossary edits save immediately).</span></label>
           <select id="setRebuildMode" data-key="teacher.context.rebuildMode">
             <option value="clearSession">Clear session only</option>
             <option value="onFileChange">On file change</option>
@@ -452,7 +495,10 @@
         </div>
         <div class="whisper-setup" id="whisperSetup">
           <strong>Local Whisper (optional)</strong>
-          <span class="hint" style="display:block;margin:4px 0 0">Browser speech is the default. Whisper adds offline hear-time vocabulary bias — extra setup, may not beat Chrome for everyone.</span>
+          <span class="hint" style="display:block;margin:4px 0 0">Offline hear-time bias via <code>--prompt</code>. Extra setup; may not beat Chrome + post-correction for everyone.</span>
+          <div class="stt-callout" style="margin:8px 0">
+            <strong>Overhead:</strong> On mic pause, audio is sent to your PC and transcribed locally — typically <strong>1–5+ seconds</strong> per chunk on CPU (model-dependent). Uses CPU/GPU while running; mic shows processing until text returns. Browser speech is near-instant with no local compute cost.
+          </div>
           <span class="whisper-status warn" id="whisperStatus">Status: not configured</span>
           <ol>
             <li>Download a <strong>whisper.cpp</strong> build for your OS from <a id="whisperReleasesLink" href="https://github.com/ggml-org/whisper.cpp/releases" target="_blank" rel="noopener">GitHub releases</a> (use <code>whisper-cli</code> or <code>main.exe</code>).</li>
@@ -757,6 +803,78 @@
     }
 
     let inferencePresets = [];
+    let codewordsTerms = [];
+
+    function renderCodewordsList() {
+      const listEl = document.getElementById('codewordsList');
+      const emptyEl = document.getElementById('codewordsEmpty');
+      if (!listEl) return;
+      listEl.innerHTML = '';
+      if (!codewordsTerms.length) {
+        if (emptyEl) emptyEl.hidden = false;
+        return;
+      }
+      if (emptyEl) emptyEl.hidden = true;
+      for (const term of codewordsTerms) {
+        const li = document.createElement('li');
+        const span = document.createElement('span');
+        span.textContent = term;
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.title = 'Remove term';
+        btn.textContent = '−';
+        btn.addEventListener('click', () => removeCodeword(term).catch(() => setStatus('Could not remove term.', 'warn')));
+        li.appendChild(span);
+        li.appendChild(btn);
+        listEl.appendChild(li);
+      }
+    }
+
+    async function loadCodewords() {
+      const json = await fetch('/api/codewords').then(r => r.json()).catch(() => ({}));
+      if (json.path) {
+        const pathEl = document.getElementById('codewordsPath');
+        if (pathEl) pathEl.textContent = json.path;
+      }
+      if (json.ok && Array.isArray(json.terms)) {
+        codewordsTerms = json.terms;
+        renderCodewordsList();
+      } else if (json.message) {
+        setStatus(json.message, 'warn');
+      }
+    }
+
+    async function saveCodewords(terms) {
+      const json = await fetch('/api/codewords', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ terms })
+      }).then(r => r.json());
+      if (json.ok && Array.isArray(json.terms)) {
+        codewordsTerms = json.terms;
+        renderCodewordsList();
+        setStatus(json.message || 'Glossary saved.', 'ok');
+        refreshHealth().catch(() => {});
+      } else {
+        setStatus(json.message || json.error || 'Could not save glossary.', 'warn');
+      }
+    }
+
+    async function addCodeword() {
+      const input = document.getElementById('codewordAddInput');
+      const term = input?.value?.trim();
+      if (!term) return;
+      if (codewordsTerms.includes(term)) {
+        setStatus('Term already in glossary.', 'warn');
+        return;
+      }
+      await saveCodewords([...codewordsTerms, term]);
+      if (input) input.value = '';
+    }
+
+    async function removeCodeword(term) {
+      await saveCodewords(codewordsTerms.filter(t => t !== term));
+    }
 
     function applySettingsView(settings) {
       if (!settings) return;
@@ -910,6 +1028,7 @@
       settingsBackdrop.hidden = false;
       settingsBackdrop.classList.add('open');
       loadSettings().catch(() => {});
+      loadCodewords().catch(() => {});
       loadSession().then(() => fetch('/api/settings').then(r => r.json()).then(j => applyRuntime(j.runtime))).catch(() => {});
     }
 
@@ -1387,6 +1506,13 @@
       applyInferencePreset(e.target.value).catch(() => setStatus('Could not apply preset.', 'warn'));
     });
 
+    document.getElementById('codewordAddBtn')?.addEventListener('click', () => addCodeword().catch(() => setStatus('Could not add term.', 'warn')));
+    document.getElementById('codewordAddInput')?.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        addCodeword().catch(() => setStatus('Could not add term.', 'warn'));
+      }
+    });
     document.getElementById('pickWhisperBinary')?.addEventListener('click', () => pickWhisperPath('binary').catch(() => setStatus('Browse failed.', 'warn')));
     document.getElementById('pickWhisperModel')?.addEventListener('click', () => pickWhisperPath('model').catch(() => setStatus('Browse failed.', 'warn')));
     document.getElementById('discoverWhisper')?.addEventListener('click', () => discoverWhisperPaths().catch(() => setStatus('Discovery failed.', 'warn')));
