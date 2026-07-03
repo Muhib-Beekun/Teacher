@@ -7,6 +7,9 @@ Version numbers match `package.json` and `teacher-<version>.vsix` builds.
 
 ## [Unreleased]
 
+### Changed
+- README includes an in-app screenshot (Your Words + Agent Prompt dual pane).
+
 ## [0.0.57] - 2026-07-03
 
 ### Added

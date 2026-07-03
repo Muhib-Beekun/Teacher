@@ -14,6 +14,12 @@ Context-aware voice input and **intent compilation** for VS Code, Cursor, and ot
 
 **Teacher** (the mode) keeps a **continuous** dictation session. I keep speaking after the first pass and fix mistakes with my voice. The extension **re-scaffolds** an agent-ready brief from everything I said (including *ignore that* / *I meant…*).
 
+<p align="center">
+  <img src="media/extension-in-use.png" alt="Teacher web UI: mic and typing capture, Your Words with included and correction segments, and Agent Prompt v2 with Goal and Target." width="100%" />
+</p>
+
+**Your Words** (center) is the audit trail: **[included]** for the first ask, **[correction]** when I refine mid-session, with STT auto-fixes highlighted. **Agent Prompt** (right) is what Composer gets: synthesized Goal, Target files, and a session log so the agent sees how I arrived there.
+
 **Status:** Full v1 stack implemented. See [docs/SETUP.md](./docs/SETUP.md).
 
 ## Use it
