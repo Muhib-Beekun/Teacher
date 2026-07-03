@@ -469,11 +469,12 @@
             </select>
           </div>
           <div class="setting-row stack">
-            <label for="setLlmBaseUrl">API base URL</label>
-            <input type="text" id="setLlmBaseUrl" data-key="teacher.inference.llm.baseUrl" placeholder="https://api.openai.com/v1" spellcheck="false" />
+            <label for="setLlmBaseUrl">API base URL<span class="hint">Pick a common host or type any OpenAI-compatible URL.</span></label>
+            <input type="text" id="setLlmBaseUrl" list="inferenceBaseUrlList" data-key="teacher.inference.llm.baseUrl" placeholder="https://api.openai.com/v1" spellcheck="false" />
+            <datalist id="inferenceBaseUrlList"></datalist>
           </div>
           <div class="setting-row stack">
-            <label for="setLlmModel">Model<span class="hint">Pick a suggestion or type any model id.</span></label>
+            <label for="setLlmModel">Model<span class="hint">Pick a suggestion or type any model id (your .env value is included when set).</span></label>
             <input type="text" id="setLlmModel" list="inferenceModelList" data-key="teacher.inference.llm.model" placeholder="gpt-4o-mini" spellcheck="false" />
             <datalist id="inferenceModelList"></datalist>
           </div>
@@ -1008,9 +1009,19 @@
       }
       const filterEl = document.getElementById('settingsFilterText');
       if (filterEl) filterEl.textContent = settings.vscodeSettingsFilter || '@ext:muhib-beekun.teacher';
+      const baseUrlList = document.getElementById('inferenceBaseUrlList');
+      if (baseUrlList) {
+        const urls = new Set(settings.inferenceBaseUrls || []);
+        if (settings.llmBaseUrl) urls.add(settings.llmBaseUrl);
+        baseUrlList.innerHTML = [...urls].map(u => `<option value="${escapeAttr(u)}"></option>`).join('');
+      }
       const modelList = document.getElementById('inferenceModelList');
-      if (modelList && settings.inferenceModels?.length) {
-        modelList.innerHTML = settings.inferenceModels.map(m => `<option value="${escapeAttr(m.id)}">${escapeAttr(m.label)}</option>`).join('');
+      if (modelList) {
+        const models = [...(settings.inferenceModels || [])];
+        if (settings.llmModel && !models.some(m => m.id === settings.llmModel)) {
+          models.unshift({ id: settings.llmModel, label: settings.llmModel + ' (configured)' });
+        }
+        modelList.innerHTML = models.map(m => `<option value="${escapeAttr(m.id)}">${escapeAttr(m.label)}</option>`).join('');
       }
       applyWhisperView(settings);
     }
@@ -1039,7 +1050,16 @@
         'xai grok': 'xai',
         groq: 'groq',
         deepseek: 'deepseek',
-        'deep seek': 'deepseek'
+        'deep seek': 'deepseek',
+        openrouter: 'openrouter',
+        'open router': 'openrouter',
+        together: 'together',
+        fireworks: 'fireworks',
+        mistral: 'mistral',
+        cerebras: 'cerebras',
+        gemini: 'gemini',
+        google: 'gemini',
+        ollama: 'ollama-openai'
       };
       const aliasId = aliases[lower];
       return aliasId ? (inferencePresets.find(p => p.id === aliasId) || null) : { id: 'custom' };
@@ -1115,7 +1135,8 @@
         keyEl.placeholder = preset.keyHint;
       }
       const compileEl = document.getElementById('setCompileProvider');
-      if (compileEl && preset.id !== 'openai') {
+      const preferCloud = preset.id !== 'openai' && preset.id !== 'ollama-openai';
+      if (compileEl && preferCloud) {
         compileEl.value = 'cloud';
         await patchSetting('teacher.compile.provider', 'cloud');
         setStatus('Inference: ' + preset.label + ' · brief compile set to Cloud only (skips Ollama).', 'ok');

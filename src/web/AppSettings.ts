@@ -6,7 +6,7 @@ import {
     LlmKeySource
 } from '../config/inferenceDisplay';
 import { INFERENCE_MODEL_OPTIONS } from '../config/inferenceModels';
-import { INFERENCE_PROVIDER_PRESETS } from '../config/inferencePresets';
+import { COMMON_INFERENCE_BASE_URLS, INFERENCE_PROVIDER_PRESETS } from '../config/inferencePresets';
 import { loadWorkspaceEnv } from '../config/loadWorkspaceEnv';
 import { resolveInferenceConfig, InferenceConfigSource } from '../config/resolveInferenceConfig';
 import {
@@ -46,6 +46,7 @@ export interface AppSettingsView {
     compileProviderSetting: string;
     inferenceModels: { id: string; label: string }[];
     inferencePresets: { id: string; label: string; baseUrl: string; model: string; keyHint: string }[];
+    inferenceBaseUrls: string[];
     inferencePresetId: string;
     vscodeSettingsFilter: string;
     whisper: WhisperStatus;
@@ -130,6 +131,13 @@ export async function readAppSettings(deps: {
             model: p.model,
             keyHint: p.keyHint
         })),
+        inferenceBaseUrls: (() => {
+            const urls = new Set(COMMON_INFERENCE_BASE_URLS);
+            if (effective.baseUrl) {
+                urls.add(effective.baseUrl);
+            }
+            return [...urls];
+        })(),
         inferencePresetId: effective.presetId,
         vscodeSettingsFilter: '@ext:muhib-beekun.teacher',
         whisper: await getWhisperStatus(),
