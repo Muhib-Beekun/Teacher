@@ -43,7 +43,7 @@ export class WhisperCppSttAdapter implements SttProvider {
 
         try {
             await fs.writeFile(audioPath, audio);
-            const promptFlag = ctx.stt_prompt ? ['--prompt', ctx.stt_prompt.slice(0, 400)] : [];
+            const promptFlag = ctx.stt_prompt ? ['--prompt', ctx.stt_prompt.slice(0, 800)] : [];
             const args = ['-m', model, '-f', audioPath, '-otxt', '-of', outBase, ...promptFlag];
 
             this.output.appendLine(`[stt:whisper] transcribing ${audio.length} bytes`);

@@ -8,6 +8,15 @@ export interface SendResult {
     submitted: boolean;
 }
 
+const FOCUS_COMMANDS = [
+    'composer.focusComposer',
+    'aichat.focus',
+    'composer.newAgentChat',
+    'aichat.newchataction',
+    'workbench.action.chat.open',
+    'workbench.panel.chat.view.copilot.focus'
+];
+
 const SUBMIT_COMMANDS = [
     'composer.startGeneration',
     'workbench.action.chat.submit',
@@ -57,11 +66,7 @@ async function sendToComposer(
         return { target: 'composer', pasted: false, submitted: false };
     }
 
-    const opened =
-        (await tryCommand('composer.focusComposer'))
-        || (await tryCommand('aichat.focus'))
-        || (await tryCommand('composer.newAgentChat'))
-        || (await tryCommand('aichat.newchataction'));
+    const opened = await tryFirstCommand(FOCUS_COMMANDS);
 
     if (!opened) {
         vscode.window.showWarningMessage(
@@ -83,7 +88,11 @@ async function sendToComposer(
 }
 
 async function trySubmit(): Promise<boolean> {
-    for (const cmd of SUBMIT_COMMANDS) {
+    return tryFirstCommand(SUBMIT_COMMANDS);
+}
+
+async function tryFirstCommand(commands: string[]): Promise<boolean> {
+    for (const cmd of commands) {
         if (await tryCommand(cmd)) {
             return true;
         }

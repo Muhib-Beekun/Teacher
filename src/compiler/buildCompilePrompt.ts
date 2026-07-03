@@ -40,7 +40,7 @@ CRITICAL rules:
    - Bulleted chunks: each bullet = one scoped topic or action ("Discuss …", "Implement …", "Fix …").
    - If the speaker wants both analysis and code changes, split them clearly (e.g. discussion bullets vs implementation bullets).
 2. Latest segment often refines or corrects: fold it into Goal; do NOT replace the entire Goal with only the latest utterance.
-3. Meta-feedback about Teacher, prompt structure, or UI labels IS valid Goal content when that is what the speaker wants changed. The browser tab label is the page **title** (web title), not the topbar header.
+3. Meta-feedback about Teacher, prompt structure, STT fix UI, send/auto-submit, or compile behavior IS valid Goal content when the speaker wants it fixed. Include EVERY active segment in Goal synthesis — do not skip later segments because they sound meta or UI-related.
 4. Write direct agent instructions. Never mention Grok, Teacher, compiler, or that a tool scaffolded this brief.
 5. ## Target = file paths explicitly mentioned in speech. If none: - (no targets inferred: speak file paths; browser UI cannot open files)
 6. ## Constraints ONLY for enduring rules about the WORK product, not for naming voice segments. Omit if none.

@@ -7,6 +7,19 @@ Version numbers match `package.json` and `teacher-<version>.vsix` builds.
 
 ## [Unreleased]
 
+## [0.0.59] - 2026-07-03
+
+### Fixed
+- **STT lexicon:** common mishearings `TV code` / `TVs coded` → VS Code.
+- **Dictionary homonym pass** default matches settings (`true`).
+
+### Changed
+- **Compile prompt** includes meta/UI correction segments in Goal synthesis.
+- **Whisper** initial prompt uses up to 800 chars of workspace `stt_prompt`.
+- **Send to chat** tries VS Code Copilot focus commands when Cursor composer is unavailable.
+- **Compile log** reports `segments`, `sessionLog`, and `goalChars` after each brief.
+- **CONFIGURATION.md** documents STT biasing layers (Web Speech vs Whisper vs Deepgram).
+
 ## [0.0.58] - 2026-07-03
 
 ### Fixed

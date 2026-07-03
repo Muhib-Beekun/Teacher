@@ -81,6 +81,6 @@ export class SttService {
     }
 
     private isHomonymPassEnabled(): boolean {
-        return vscode.workspace.getConfiguration('teacher.stt').get<boolean>('homonymPass', false);
+        return vscode.workspace.getConfiguration('teacher.stt').get<boolean>('homonymPass', true);
     }
 }

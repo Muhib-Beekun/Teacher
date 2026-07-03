@@ -12,7 +12,9 @@ const PHRASE_RULES: { pattern: RegExp; replacement: string }[] = [
     { pattern: /\bcoated 14b\b/gi, replacement: 'coder:14b' },
     { pattern: /\bwhen 2\.5\b/gi, replacement: 'qwen2.5' },
     { pattern: /\blang fuse\b/gi, replacement: 'Langfuse' },
-    { pattern: /\blaying off fuse\b/gi, replacement: 'Langfuse' }
+    { pattern: /\blaying off fuse\b/gi, replacement: 'Langfuse' },
+    { pattern: /\btvs?\s+cod(?:ed|e)\b/gi, replacement: 'VS Code' },
+    { pattern: /\btv\s+code\b/gi, replacement: 'VS Code' }
 ];
 
 export function applyDevVoiceLexicon(text: string): { text: string; fixes: SttFix[] } {

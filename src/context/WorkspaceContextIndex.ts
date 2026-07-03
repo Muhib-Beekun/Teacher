@@ -240,7 +240,8 @@ export class WorkspaceContextIndex {
         const more = terms.length > 40 ? `, ${terms.slice(40, 80).join(', ')}` : '';
         return (
             `Software development dictation. Terms: ${priority}${more}. ` +
-            'Common corrections: INFERENCE_API_KEY not croc/rock API key, Ollama not Obama, design language not sign language, agent prompt.'
+            'Common corrections: VS Code, Cursor, GitHub, Whisper, Ollama, INFERENCE_API_KEY not croc/rock API key, ' +
+            'design language not sign language, agent prompt.'
         );
     }
 

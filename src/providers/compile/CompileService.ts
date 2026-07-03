@@ -280,6 +280,10 @@ ${raw}`;
             }
         }
 
+        const activeCount = segments.filter((s) => !s.superseded).length;
+        this.output.appendLine(
+            `[compile:brief] segments=${activeCount} sessionLog=${result.brief.sessionLog.length} goalChars=${result.brief.goal.length}`
+        );
         return result.brief;
     }
 

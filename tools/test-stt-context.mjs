@@ -45,6 +45,7 @@ function stt(raw) {
 // Dev lexicon
 assert(stt('use Obama for local compile').includes('Ollama'), 'lexicon: Obama → Ollama');
 assert(stt('wire Rock for compile with Grok api').includes('Grok'), 'lexicon: Rock → Grok');
+assert(stt("doesn't like sending TVs coded").includes('VS Code'), 'lexicon: TVs coded → VS Code');
 
 // Single-token homonym + casing
 assert(stt('update compileservice').includes('CompileService'), 'homonym: compileservice casing');

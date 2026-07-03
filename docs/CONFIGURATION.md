@@ -49,6 +49,32 @@ On remote extension hosts, `vscode.lm` (GitHub Copilot) may appear available but
 
 Without cloud or Ollama on remote, **Your Words** still works; **Agent Prompt** stays empty or shows placeholder intent until inference is configured.
 
+## STT provider and workspace biasing
+
+Teacher does **not** use vector RAG. Workspace context is a ranked term list from symbols, open files, `package.json` deps, basenames, and `.teacher/codewords.txt`.
+
+| Stage | When | What it does |
+|-------|------|--------------|
+| **Index** | Rebuild / each segment (optional) | Builds `dictionary_context` + `stt_prompt` (top terms as a text hint) |
+| **Recognition-time bias** | Depends on STT provider | See below |
+| **Lexicon** | Every segment | Phrase rules (Ollama, VS Code, INFERENCE_API_KEY, …) |
+| **Dictionary homonym pass** | Every segment (`teacher.stt.homonymPass`, default on) | Fuzzy match tokens to workspace terms |
+| **LLM polish** | Optional, before compile | Cloud/Ollama fixes remaining STT errors |
+
+### Provider comparison
+
+| Provider | Recognition bias | Post-processing |
+|----------|------------------|-----------------|
+| **Browser Web Speech** (Chrome default) | **None** — browser STT ignores your codewords | Lexicon + dictionary + polish |
+| **Whisper** (`teacher.stt.whisper.*`) | **`--prompt`** with `stt_prompt` (workspace terms, ~800 chars) | Lexicon + dictionary + polish |
+| **Deepgram** (BYOK) | **`keywords=`** query param (top 100 terms) | Lexicon + dictionary + polish |
+
+**Auto order:** Whisper if binary+model configured → Deepgram if key set → else Web Speech.
+
+For strongest **recognition-time** biasing (Grok vs Groq, file names, symbol names), configure **Whisper** or **Deepgram**. Web Speech still works via post-hoc correction but cannot hear your glossary while you speak.
+
+Whisper paths: `teacher.stt.whisper.binaryPath`, `teacher.stt.whisper.modelPath`. Audio is recorded in the browser on mic pause and transcribed on the extension host.
+
 ## Optional secrets
 
 | Secret | Command / setting | Purpose |
