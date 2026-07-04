@@ -5,91 +5,62 @@ All notable changes to **Teacher** are documented in this file.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).  
 Version numbers match `package.json` and `teacher-<version>.vsix` builds.
 
-## [0.1.0] - 2026-07-03
+## [0.1.0] - 2026-07-04
 
-### Changed
-- **Web UI rewritten in Preact** — the monolithic 1,776-line vanilla HTML/CSS/JS file has been replaced by a component-based Preact + TypeScript architecture. Same visual design, same functionality, dramatically better maintainability.
-  - 21 focused components: TopBar, SettingsPanel (with 7 collapsible sections), CapturePanel, TranscriptPane, BriefPane, FixPopover, MicButton, Waveform.
-  - Reactive state via `@preact/signals` — no manual DOM manipulation.
-  - Centralized API layer (`src/web-ui/api.ts`) for all server communication.
-  - Shared types (`src/shared/types.ts`) between backend and frontend — `AppSettingsView`, `SessionSnapshot`, `RuntimeInfo`, `HealthInfo`.
-  - esbuild bundles the frontend to `media/teacher-app.js` + `media/teacher-app.css` (55 KB + 16 KB).
+The first minor release — a ground-up rewrite of the web UI, new local inference support, comprehensive testing, and dozens of bug fixes.
+
+### Highlights
+
+- **Full Preact rewrite** of the web UI — the 1,776-line monolithic HTML/CSS/JS file is now 21 focused TypeScript components with reactive state management.
+- **Local inference first** — Ollama, llama.cpp, LM Studio, and vLLM are first-class citizens, listed before cloud providers.
+- **53 unit tests + 17 E2E tests** — Vitest for components/state/API, Playwright for layout and accessibility.
+- **Compact waveform ring** around the mic button replaces the full-width waveform bar.
+- **Responsive layout** scales proportionally on tall viewports instead of capping the capture area.
 
 ### Added
-- **Test connection button** — lightweight single-word ping (replaces the previous full-compile test). Fires only on explicit click; result shown inline with OK/fail color.
-- **Local inference providers** — added llama.cpp server, LM Studio, and vLLM as first-class presets alongside Ollama. All local providers skip API key prompts.
-- **Provider/model ordering** — presets and models now list local/open-source options first (alphabetical), then cloud/subscription options (alphabetical).
-- **Compact waveform ring** — replaced the full-width waveform bar with a circular visualizer around the mic button. Frequency segments pulse as a ring around the mic icon, saving screen space and providing clearer visual feedback.
-- **Vitest unit tests** (45 tests) covering state management, API layer, and all major components.
+
+- **Preact component architecture** — 21 components: TopBar, SettingsPanel (7 collapsible sections), CapturePanel, TranscriptPane, BriefPane, FixPopover, MicButton, Waveform, InferenceSection, SpeechSection, GlossarySection, WhisperSection, CompileSection, SendSection, AdvancedSection.
+- **Reactive state** via `@preact/signals` — no manual DOM manipulation; centralized signal store (`state.ts`).
+- **Centralized API layer** (`api.ts`) for all frontend-to-backend communication.
+- **Shared types** (`src/shared/types.ts`) between backend and frontend — `AppSettingsView`, `SessionSnapshot`, `RuntimeInfo`, `HealthInfo`.
+- **esbuild frontend pipeline** — bundles to `media/teacher-app.js` + `media/teacher-app.css` (~57 KB + ~16 KB).
+- **Test connection button** in Inference settings — lightweight single-word ping to the configured provider, reports OK/fail with latency inline.
+- **Local inference presets** — llama.cpp server, LM Studio, vLLM added alongside Ollama. All local providers skip API key prompts.
+- **Provider/model ordering** — local/open-source options listed first (alphabetical), then cloud/subscription (alphabetical).
+- **Compact waveform ring** — circular frequency visualizer pulses around the mic icon, replacing the full-width waveform bar.
+- **Vitest unit tests** (53 tests) covering state management, API layer, and all major components including MicButton reactivity.
 - **Playwright E2E tests** (17 tests) covering settings visibility, layout, keyboard navigation, and ARIA accessibility.
-- **Accessibility**: `role="dialog"` + `aria-modal` on settings, focus trapping with Tab/Shift+Tab, `aria-live="polite"` on status, `aria-label` on all icon buttons, `role="region"` on panes.
-- `tsconfig.web.json` for frontend type checking.
-- `esbuild.web.mjs` build script.
-- `vitest.config.ts` test configuration.
-- `npm run test:unit` script.
-- `npm run build:web` and `npm run build:web:dev` scripts.
-
-### Fixed
-- **Mic button spinner stuck after processing** — moved `micProcessing` state to the centralized signals module (`state.ts`) and replaced closure-captured wrapper with direct signal writes. The spinner now reliably clears when compile finishes.
-- **Corrections not reflected in compiled Goal** — when the user edits a segment or speaks a correction ("X should be Y"), the compiler now runs fresh (no anchoring to the prior brief that contained errors). Edited segments are flagged `(edited)` in the compile prompt so the LLM prioritizes the corrected text. New system prompt rule 3 explicitly instructs the model to replace original wording with corrections.
-- All CSS specificity issues from previous `hidden` attribute approach eliminated — Preact controls rendering via conditional JSX.
-- **Cancel button stays enabled after recording** — `recordingArmed` signal was not reset after a successful recording cycle, leaving the cancel button active when no session was in progress.
-- **Clear session confirmation removed** — "Clear session" now acts immediately without a confirmation dialog.
-- **Responsive layout** — capture column scales vertically on tall screens (900px+, 1400px+) instead of being capped at 300px. Horizontal layout uses proportional grid columns instead of fixed pixel widths, allowing the capture column to grow with wider viewports.
-
-## [0.0.65] - 2026-07-03
-
-### Fixed
-- **Settings field visibility**: Provider selection now controls which fields are visible — Ollama hides API key (not needed) and custom URL (known endpoint); cloud providers hide URL; Custom shows everything. Model dropdown always visible for all providers.
-- **Browser caching**: Web UI HTML response now sends `no-cache` headers so the browser always loads the latest version after extension updates.
-
-## [0.0.64] - 2026-07-03
-
-### Fixed
-- **Stale `.env` ghost lock**: emptying or removing `.env` lines now actually clears those values from the extension. Previously, keys set from `.env` persisted in `process.env` for the entire session even after the file was emptied, causing the Settings UI to show "Locked by .env" when no lock existed.
-- **Live `.env` reload**: a file watcher now detects changes to `.env` on disk and re-parses immediately — no extension reload needed.
-
-## [0.0.63] - 2026-07-03
-
-### Fixed
-- **Runtime crash**: duplicate `const baseUrlEl` declaration in settings JS removed.
-- **Waveform canvas**: internal resolution now matches display size × device pixel ratio — no more blurry bars on high-DPI screens.
+- **Accessibility** — `role="dialog"` + `aria-modal` on settings, focus trapping with Tab/Shift+Tab, `aria-live="polite"` on status, `aria-label` on all icon buttons, `role="region"` on panes.
+- **Local Whisper setup** in Teacher Settings — step-by-step instructions, browse binary/model, find-on-disk, test CLI, status badge. [WHISPER-SETUP.md](./docs/WHISPER-SETUP.md) with links to whisper.cpp releases and Hugging Face models.
+- **AGENTS.md** — AI agent configuration guide for Cursor, Copilot, and other AI agents to configure Teacher via VS Code settings without `.env` lock issues.
+- **Trace log** (`.teacher/trace.jsonl`) — every LLM call logged with provider, model, latency, tokens, and status. Auto-rotates at 500 lines.
+- **Your glossary editor** in Settings — add/remove codewords (`.teacher/codewords.txt`) with +/−; index rebuilds on save.
+- `tsconfig.web.json`, `esbuild.web.mjs`, `vitest.config.ts` build/test configuration.
+- `npm run test:unit`, `npm run build:web`, `npm run build:web:dev` scripts.
 
 ### Changed
-- **Settings UX polish**:
-  - Escape key closes Settings dialog.
-  - "Clear session" now asks for confirmation before wiping.
-  - Renamed jargon labels: "Dictionary homonym pass" → "Fix misheard words", "Polish STT via LLM" → "AI-powered cleanup", removed "Legacy" tag from auto-compile.
-  - Merged "Connection" + "Advanced" into a single Advanced section.
-  - Removed the Compile section cross-reference hint ("routing is under Inference").
-  - Trimmed status block from 8 lines to 6 — dropped Server URL and STT auto-corrections count, shortened labels.
-  - Removed "Open one section at a time…" instructional text.
 
-## [0.0.62] - 2026-07-03
+- **`.env` is no longer the primary config path.** VS Code settings and the Teacher Settings UI are preferred. `.env` vars now warn that they lock the Settings UI fields.
+- **Settings UI redesigned** — split by concern (collapsible sections), unified type scale and control sizing, cloud provider combobox with presets (OpenAI, xAI, Groq, DeepSeek, OpenRouter, Together, Fireworks, Mistral, Cerebras, Gemini), masked API key save.
+- **Settings status** shows effective inference configuration from workspace `.env` (overrides VS Code settings) separately from the active compile provider.
+- **Responsive layout** — proportional grid rows on viewports taller than 1100px (capture ≈ 23%, each pane ≈ 38%). Below that threshold, capture auto-sizes to content. Horizontal layout uses proportional grid columns instead of fixed pixel widths.
+- **"Clear session"** acts immediately without a confirmation dialog.
+- Speech settings clarify hear-time biasing (Whisper/Deepgram only) vs post-hoc correction (all providers).
+- Renamed jargon labels: "Dictionary homonym pass" → "Fix misheard words", "Polish STT via LLM" → "AI-powered cleanup".
+- Merged "Connection" + "Advanced" settings into a single Advanced section.
+- Trimmed status block from 8 lines to 6 — dropped Server URL and STT auto-corrections count.
 
-### Added
-- **[AGENTS.md](./AGENTS.md)**: AI agent configuration guide — tells Cursor, Copilot, and other AI agents how to configure Teacher via VS Code settings without creating `.env` lock issues.
-- **Trace log** (`.teacher/trace.jsonl`): every LLM call (compile, STT polish, reformat) is logged with provider, model, latency, input/output chars, token counts (when the provider returns them), and status. File auto-rotates at 500 lines to prevent unbounded growth. Gitignored.
+### Fixed
 
-### Changed
-- **`.env` is no longer the primary config path.** VS Code settings and the Teacher Settings UI are preferred. `.env` `INFERENCE_BASE_URL` / `INFERENCE_MODEL` now warn that they lock the Settings UI fields.
-- Settings UI `.env` lock hint shows the exact env vars and points to `AGENTS.md` for the non-locking path.
-- API key hint in Settings mentions the `Teacher: Set Inference API Key` command for AI agents.
-- `package.json` setting descriptions reference `AGENTS.md` and warn against `.env` for `baseUrl` and `model`.
-- SETUP.md, CONFIGURATION.md, README, and `.env.example` updated to prefer VS Code settings and reference `AGENTS.md`.
-- Speech settings clarify hear-time biasing (Whisper/Deepgram only) vs post-hoc correction (all providers), and Whisper CPU/latency overhead.
-- **Your glossary** editor in Teacher Settings: add/remove codewords (`.teacher/codewords.txt`) with +/−; index rebuilds on save.
-- Settings sidebar split by concern (collapsible sections: Inference, Speech, Glossary, Whisper, Compile, Send, Connection).
-- **Settings status** shows effective cloud inference from workspace `.env` (overrides VS Code settings) separately from active compile provider.
-- **Inference** section: cloud provider combobox (pick or type), common base URL suggestions, masked API key save, **Brief compile** routing (Cloud only skips local Ollama).
-- Expanded cloud presets (OpenAI, xAI, Groq, DeepSeek, OpenRouter, Together, Fireworks, Mistral, Cerebras, Gemini, Ollama OpenAI-compat) and model suggestions; preset match uses base URL so `.env` models (e.g. `grok-4-fast-reasoning`) show the right provider.
-- Settings sidebar typography and control sizing unified (shared type scale and control height).
-
-## [0.0.60] - 2026-07-03
-
-### Added
-- **Local Whisper setup** in Teacher Settings: step-by-step instructions, browse binary/model, find-on-disk, test CLI, status badge.
-- [WHISPER-SETUP.md](./docs/WHISPER-SETUP.md) with links to [whisper.cpp releases](https://github.com/ggml-org/whisper.cpp/releases) and Hugging Face models.
+- **Mic button spinner stuck after processing** — `micProcessing` state centralized in signals module; direct signal writes replace closure-captured wrappers. Spinner reliably clears when compile finishes.
+- **Cancel button stays enabled after recording** — `recordingArmed` signal was not reset after a successful recording cycle, leaving the cancel button active with no session in progress.
+- **Corrections not reflected in compiled Goal** — when the user edits a segment or speaks a correction, the compiler now runs fresh (no anchoring to the prior brief that contained errors). Edited segments are flagged `(edited)` in the compile prompt. New system prompt rule explicitly instructs the model to replace original wording with corrections.
+- **Stale `.env` ghost lock** — emptying or removing `.env` lines now clears those values from the extension. Previously, keys set from `.env` persisted in `process.env` for the entire session. A file watcher now re-parses `.env` on disk changes immediately.
+- **Browser caching** — Web UI responses send `no-cache` headers so the browser loads the latest version after extension updates.
+- **Settings field visibility** — Provider selection controls which fields are visible: local providers hide API key; cloud providers hide URL; Custom shows everything. Model dropdown always visible.
+- **CSS specificity issues** eliminated — Preact controls rendering via conditional JSX instead of `hidden` attributes.
+- **Runtime crash** from duplicate `const baseUrlEl` declaration removed.
+- **Waveform canvas** internal resolution matches display size × device pixel ratio for crisp rendering on high-DPI screens.
 
 ## [0.0.59] - 2026-07-03
 
@@ -183,7 +154,7 @@ Version numbers match `package.json` and `teacher-<version>.vsix` builds.
 
 ### Changed
 - Mic button and Cancel control centered in the capture column.
-- Removed green “Microphone ready” banner when Chrome/Edge is detected.
+- Removed green "Microphone ready" banner when Chrome/Edge is detected.
 
 ## [0.0.47] - 2026-06-30
 
@@ -291,9 +262,9 @@ Initial extension scaffold through first dogfood stack.
 
 ---
 
-## Version index (0.0.1 – 0.0.44)
+## Version index
 
-Each row is one packaged VSIX build during dogfood. Grouped entries above summarize the era.
+Each row is one packaged VSIX build. Grouped entries above summarize the era.
 
 | Version | Era |
 |---------|-----|
@@ -311,3 +282,11 @@ Each row is one packaged VSIX build during dogfood. Grouped entries above summar
 | 0.0.50 | Restore prior-brief in compile; keep prompt versioning |
 | 0.0.51 | Collapsible current + prior agent prompt versions |
 | 0.0.52 | Manual refresh-only compile; blue glow when stale |
+| 0.0.53 | Auto-recompile on pause; refined blue glow |
+| 0.0.54 | Gitignore housekeeping; maintainer docs local-only |
+| 0.0.55 | VS Code LM (Copilot) compile provider |
+| 0.0.56 | Compile validation resilience |
+| 0.0.57 | Remote host compile routing; tall viewport clip fix |
+| 0.0.58 | Session log backfill; README screenshot |
+| 0.0.59 | STT lexicon; compile prompt corrections; Whisper tuning |
+| **0.1.0** | **Preact rewrite, local inference, testing, responsive layout** |
