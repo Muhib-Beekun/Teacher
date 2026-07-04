@@ -16,7 +16,7 @@ Version numbers match `package.json` and `teacher-<version>.vsix` builds.
   - esbuild bundles the frontend to `media/teacher-app.js` + `media/teacher-app.css` (55 KB + 16 KB).
 
 ### Added
-- **Auto-test connection** — inference settings now automatically test the configured provider on open and whenever provider/model changes. Lightweight ping (single-word reply) replaces the heavyweight full-compile test. Manual "Retest connection" button still available. Result shown inline with OK/fail color.
+- **Test connection button** — lightweight single-word ping (replaces the previous full-compile test). Fires only on explicit click; result shown inline with OK/fail color.
 - **Local inference providers** — added llama.cpp server, LM Studio, and vLLM as first-class presets alongside Ollama. All local providers skip API key prompts.
 - **Provider/model ordering** — presets and models now list local/open-source options first (alphabetical), then cloud/subscription options (alphabetical).
 - **Compact waveform ring** — replaced the full-width waveform bar with a circular visualizer around the mic button. Frequency segments pulse as a ring around the mic icon, saving screen space and providing clearer visual feedback.
@@ -33,7 +33,7 @@ Version numbers match `package.json` and `teacher-<version>.vsix` builds.
 - **Mic button spinner stuck after processing** — moved `micProcessing` state to the centralized signals module (`state.ts`) and replaced closure-captured wrapper with direct signal writes. The spinner now reliably clears when compile finishes.
 - **Corrections not reflected in compiled Goal** — when the user edits a segment or speaks a correction ("X should be Y"), the compiler now runs fresh (no anchoring to the prior brief that contained errors). Edited segments are flagged `(edited)` in the compile prompt so the LLM prioritizes the corrected text. New system prompt rule 3 explicitly instructs the model to replace original wording with corrections.
 - All CSS specificity issues from previous `hidden` attribute approach eliminated — Preact controls rendering via conditional JSX.
-- **Responsive layout on tall viewports** — capture column now scales up to use available vertical space on tall screens (900px+, 1400px+) instead of being capped at 300px regardless of viewport height.
+- **Responsive layout** — capture column scales vertically on tall screens (900px+, 1400px+) instead of being capped at 300px. Horizontal layout uses proportional grid columns instead of fixed pixel widths, allowing the capture column to grow with wider viewports.
 
 ## [0.0.65] - 2026-07-03
 

@@ -43,15 +43,6 @@ export function InferenceSection() {
             .finally(() => setTesting(false));
     };
 
-    const autoTestedRef = useRef('');
-    useEffect(() => {
-        const key = `${presetId}|${currentModel}|${s?.llmBaseUrl || ''}`;
-        if (key === autoTestedRef.current) return;
-        autoTestedRef.current = key;
-        const t = setTimeout(runTest, 600);
-        return () => clearTimeout(t);
-    }, [presetId, currentModel, s?.llmBaseUrl]);
-
     const handlePresetChange = (e: Event) => {
         const val = (e.currentTarget as HTMLSelectElement).value;
         setCustomModelVisible(false);
@@ -215,7 +206,7 @@ export function InferenceSection() {
                             disabled={testing}
                             onClick={runTest}
                         >
-                            {testing ? 'Testing…' : 'Retest connection'}
+                            {testing ? 'Testing…' : 'Test connection'}
                         </button>
                         {testing && <span class="hint">Pinging provider…</span>}
                     </div>
