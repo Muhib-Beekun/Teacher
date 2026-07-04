@@ -50,8 +50,8 @@ function makeTestSettings(overrides: Record<string, unknown> = {}) {
             { id: 'qwen2.5-coder:14b', label: 'Ollama qwen2.5-coder:14b', provider: 'ollama-openai' },
         ],
         inferencePresets: [
+            { id: 'ollama-openai', label: 'Ollama', baseUrl: 'http://127.0.0.1:11434/v1', model: 'qwen2.5-coder:14b', keyHint: '(not required)' },
             { id: 'openai', label: 'OpenAI', baseUrl: 'https://api.openai.com/v1', model: 'gpt-4o-mini', keyHint: 'sk-…' },
-            { id: 'ollama-openai', label: 'Ollama (OpenAI-compatible)', baseUrl: 'http://127.0.0.1:11434/v1', model: 'qwen2.5-coder:14b', keyHint: 'ollama (often unused)' },
         ],
         inferencePresetId: 'openai',
         extensionVersion: '0.1.0',

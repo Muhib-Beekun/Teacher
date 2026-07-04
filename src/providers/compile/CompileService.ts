@@ -128,6 +128,24 @@ export class CompileService {
         return this.vscodeLm.isAvailable();
     }
 
+    async testConnection(): Promise<{ ok: boolean; text: string; latencyMs: number; provider: string; model: string }> {
+        const provider = await this.resolveProviderId();
+        if (provider === 'none') {
+            return { ok: false, text: 'No inference provider available.', latencyMs: 0, provider: 'none', model: '' };
+        }
+        const model = this.getActiveModelLabel();
+        const started = Date.now();
+        try {
+            const reply = await this.chat(provider, 'test-connection', 'Reply OK in one word.', 'ping', 0);
+            const ms = Date.now() - started;
+            return { ok: true, text: reply.trim().slice(0, 80), latencyMs: ms, provider, model };
+        } catch (err) {
+            const ms = Date.now() - started;
+            const msg = err instanceof Error ? err.message : String(err);
+            return { ok: false, text: msg, latencyMs: ms, provider, model };
+        }
+    }
+
     async isPolishEnabled(): Promise<boolean> {
         const enabled = vscode.workspace.getConfiguration('teacher.compile').get<boolean>('polishStt', true);
         if (!enabled) {

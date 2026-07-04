@@ -225,12 +225,14 @@ export async function refreshHealth(): Promise<void> {
     loadSettings().catch(() => {});
 }
 
+const LOCAL_PRESET_IDS = new Set(['ollama-openai', 'llamacpp', 'lmstudio', 'vllm']);
+
 export async function applyInferencePreset(presetId: string): Promise<void> {
     const s = appSettings.peek();
     if (!s) return;
 
     const isCustom = !presetId || presetId === 'custom';
-    const isOllama = presetId === 'ollama-openai';
+    const isLocal = LOCAL_PRESET_IDS.has(presetId);
 
     if (isCustom) {
         setStatus('Custom — set URL, model, and key below.', 'ok');
@@ -243,9 +245,9 @@ export async function applyInferencePreset(presetId: string): Promise<void> {
     await patchSetting('teacher.inference.llm.baseUrl', preset.baseUrl);
     await patchSetting('teacher.inference.llm.model', preset.model);
 
-    if (isOllama) {
+    if (isLocal) {
         await patchSetting('teacher.compile.provider', 'auto');
-        setStatus('Ollama — no API key needed.', 'ok');
+        setStatus(preset.label + ' — no API key needed.', 'ok');
     } else {
         const preferCloud = presetId !== 'openai';
         if (preferCloud) {

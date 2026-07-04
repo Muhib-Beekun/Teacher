@@ -1,4 +1,4 @@
-/** Quick-start presets for the Configuration UI. Shipped default is OpenAI. */
+/** Quick-start presets for the Configuration UI. Local/open-source first, then cloud. */
 export interface InferenceProviderPreset {
     id: string;
     label: string;
@@ -9,21 +9,71 @@ export interface InferenceProviderPreset {
 }
 
 export const INFERENCE_PROVIDER_PRESETS: InferenceProviderPreset[] = [
+    // --- Local / open-source (alphabetical) ---
     {
-        id: 'openai',
-        label: 'OpenAI',
-        baseUrl: 'https://api.openai.com/v1',
-        model: 'gpt-4o-mini',
-        keyHint: 'sk-…',
-        docsUrl: 'https://platform.openai.com/api-keys'
+        id: 'llamacpp',
+        label: 'llama.cpp server',
+        baseUrl: 'http://127.0.0.1:8080/v1',
+        model: 'default',
+        keyHint: '(not required)',
+        docsUrl: 'https://github.com/ggml-org/llama.cpp/blob/master/examples/server/README.md'
     },
     {
-        id: 'xai',
-        label: 'xAI Grok',
-        baseUrl: 'https://api.x.ai/v1',
-        model: 'grok-4-fast-reasoning',
-        keyHint: 'xai-…',
-        docsUrl: 'https://console.x.ai/'
+        id: 'lmstudio',
+        label: 'LM Studio',
+        baseUrl: 'http://127.0.0.1:1234/v1',
+        model: 'default',
+        keyHint: '(not required)',
+        docsUrl: 'https://lmstudio.ai/'
+    },
+    {
+        id: 'ollama-openai',
+        label: 'Ollama',
+        baseUrl: 'http://127.0.0.1:11434/v1',
+        model: 'qwen2.5-coder:14b',
+        keyHint: '(not required)',
+        docsUrl: 'https://ollama.com/'
+    },
+    {
+        id: 'vllm',
+        label: 'vLLM',
+        baseUrl: 'http://127.0.0.1:8000/v1',
+        model: 'default',
+        keyHint: '(not required)',
+        docsUrl: 'https://docs.vllm.ai/'
+    },
+    // --- Cloud / subscription (alphabetical) ---
+    {
+        id: 'cerebras',
+        label: 'Cerebras',
+        baseUrl: 'https://api.cerebras.ai/v1',
+        model: 'llama-3.3-70b',
+        keyHint: 'csk-…',
+        docsUrl: 'https://cloud.cerebras.ai/'
+    },
+    {
+        id: 'deepseek',
+        label: 'DeepSeek',
+        baseUrl: 'https://api.deepseek.com/v1',
+        model: 'deepseek-chat',
+        keyHint: 'sk-…',
+        docsUrl: 'https://platform.deepseek.com/'
+    },
+    {
+        id: 'fireworks',
+        label: 'Fireworks',
+        baseUrl: 'https://api.fireworks.ai/inference/v1',
+        model: 'accounts/fireworks/models/llama-v3p3-70b-instruct',
+        keyHint: 'fw_…',
+        docsUrl: 'https://fireworks.ai/account/api-keys'
+    },
+    {
+        id: 'gemini',
+        label: 'Google Gemini (OpenAI compat)',
+        baseUrl: 'https://generativelanguage.googleapis.com/v1beta/openai',
+        model: 'gemini-2.0-flash',
+        keyHint: 'AIza…',
+        docsUrl: 'https://aistudio.google.com/apikey'
     },
     {
         id: 'groq',
@@ -34,12 +84,20 @@ export const INFERENCE_PROVIDER_PRESETS: InferenceProviderPreset[] = [
         docsUrl: 'https://console.groq.com/keys'
     },
     {
-        id: 'deepseek',
-        label: 'DeepSeek',
-        baseUrl: 'https://api.deepseek.com/v1',
-        model: 'deepseek-chat',
+        id: 'mistral',
+        label: 'Mistral',
+        baseUrl: 'https://api.mistral.ai/v1',
+        model: 'mistral-small-latest',
+        keyHint: '…',
+        docsUrl: 'https://console.mistral.ai/api-keys'
+    },
+    {
+        id: 'openai',
+        label: 'OpenAI',
+        baseUrl: 'https://api.openai.com/v1',
+        model: 'gpt-4o-mini',
         keyHint: 'sk-…',
-        docsUrl: 'https://platform.deepseek.com/'
+        docsUrl: 'https://platform.openai.com/api-keys'
     },
     {
         id: 'openrouter',
@@ -58,44 +116,12 @@ export const INFERENCE_PROVIDER_PRESETS: InferenceProviderPreset[] = [
         docsUrl: 'https://api.together.xyz/settings/api-keys'
     },
     {
-        id: 'fireworks',
-        label: 'Fireworks',
-        baseUrl: 'https://api.fireworks.ai/inference/v1',
-        model: 'accounts/fireworks/models/llama-v3p3-70b-instruct',
-        keyHint: 'fw_…',
-        docsUrl: 'https://fireworks.ai/account/api-keys'
-    },
-    {
-        id: 'mistral',
-        label: 'Mistral',
-        baseUrl: 'https://api.mistral.ai/v1',
-        model: 'mistral-small-latest',
-        keyHint: '…',
-        docsUrl: 'https://console.mistral.ai/api-keys'
-    },
-    {
-        id: 'cerebras',
-        label: 'Cerebras',
-        baseUrl: 'https://api.cerebras.ai/v1',
-        model: 'llama-3.3-70b',
-        keyHint: 'csk-…',
-        docsUrl: 'https://cloud.cerebras.ai/'
-    },
-    {
-        id: 'gemini',
-        label: 'Google Gemini (OpenAI compat)',
-        baseUrl: 'https://generativelanguage.googleapis.com/v1beta/openai',
-        model: 'gemini-2.0-flash',
-        keyHint: 'AIza…',
-        docsUrl: 'https://aistudio.google.com/apikey'
-    },
-    {
-        id: 'ollama-openai',
-        label: 'Ollama (OpenAI-compatible)',
-        baseUrl: 'http://127.0.0.1:11434/v1',
-        model: 'qwen2.5-coder:14b',
-        keyHint: 'ollama (often unused)',
-        docsUrl: 'https://ollama.com/'
+        id: 'xai',
+        label: 'xAI Grok',
+        baseUrl: 'https://api.x.ai/v1',
+        model: 'grok-4-fast-reasoning',
+        keyHint: 'xai-…',
+        docsUrl: 'https://console.x.ai/'
     }
 ];
 

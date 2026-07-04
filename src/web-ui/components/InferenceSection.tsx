@@ -12,8 +12,9 @@ export function InferenceSection() {
 
     const presetId = s?.inferencePresetId || 'custom';
     const isCustom = presetId === 'custom';
-    const isOllama = presetId === 'ollama-openai';
-    const needsKey = !isOllama;
+    const LOCAL_PRESETS = new Set(['ollama-openai', 'llamacpp', 'lmstudio', 'vllm']);
+    const isLocal = LOCAL_PRESETS.has(presetId);
+    const needsKey = !isLocal;
     const envLocked = s?.llmBaseUrlSource === 'env' || s?.llmModelSource === 'env';
 
     const presets = s?.inferencePresets || [];
@@ -24,11 +25,32 @@ export function InferenceSection() {
     const currentModel = s?.llmModel || '';
     const modelInList = filteredModels.some(m => m.id === currentModel);
 
+    const [testResult, setTestResult] = useState<string>('');
+
     useEffect(() => {
         if (baseUrlRef.current && document.activeElement !== baseUrlRef.current && isCustom) {
             baseUrlRef.current.value = s?.llmBaseUrl || '';
         }
     }, [s?.llmBaseUrl, isCustom]);
+
+    const runTest = () => {
+        if (testing) return;
+        setTesting(true);
+        setTestResult('');
+        testInference()
+            .then(r => setTestResult(r.ok ? `OK — ${r.message}` : `Failed — ${r.message}`))
+            .catch(() => setTestResult('Connection test failed.'))
+            .finally(() => setTesting(false));
+    };
+
+    const autoTestedRef = useRef('');
+    useEffect(() => {
+        const key = `${presetId}|${currentModel}|${s?.llmBaseUrl || ''}`;
+        if (key === autoTestedRef.current) return;
+        autoTestedRef.current = key;
+        const t = setTimeout(runTest, 600);
+        return () => clearTimeout(t);
+    }, [presetId, currentModel, s?.llmBaseUrl]);
 
     const handlePresetChange = (e: Event) => {
         const val = (e.currentTarget as HTMLSelectElement).value;
@@ -183,23 +205,25 @@ export function InferenceSection() {
                     <span class="hint">Auto tries Ollama first, then cloud, then Copilot.</span>
                 </div>
 
-                <p class="hint">{isOllama ? '' : (s?.cloudInferenceLabel || '')}</p>
+                <p class="hint">{isLocal ? '' : (s?.cloudInferenceLabel || '')}</p>
 
-                <div class="setting-row">
-                    <button
-                        type="button"
-                        class="inline-save"
-                        disabled={testing}
-                        onClick={() => {
-                            setTesting(true);
-                            testInference().finally(() => setTesting(false));
-                        }}
-                    >
-                        {testing ? 'Testing…' : 'Test connection'}
-                    </button>
-                    <span class="hint" style={{ marginLeft: '8px' }}>
-                        Send a test prompt to verify your inference setup.
-                    </span>
+                <div class="setting-row stack">
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <button
+                            type="button"
+                            class="inline-save"
+                            disabled={testing}
+                            onClick={runTest}
+                        >
+                            {testing ? 'Testing…' : 'Retest connection'}
+                        </button>
+                        {testing && <span class="hint">Pinging provider…</span>}
+                    </div>
+                    {testResult && (
+                        <span class="hint" style={{ color: testResult.startsWith('OK') ? 'var(--ok)' : 'var(--warn)' }}>
+                            {testResult}
+                        </span>
+                    )}
                 </div>
 
                 {envLocked && (
