@@ -176,6 +176,7 @@ export function CapturePanel() {
             flushing.value = false;
             micProcessing.value = false;
             micRuntime.value = 'idle';
+            recordingArmed.value = false;
         }
     }, []);
 

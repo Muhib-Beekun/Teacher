@@ -33,10 +33,7 @@ export function TopBar() {
             <button
                 type="button"
                 class="ghost"
-                onClick={() => {
-                    if (!confirm('Clear the entire session? This cannot be undone.')) return;
-                    clearSessionApi().catch(() => {});
-                }}
+                onClick={() => { clearSessionApi().catch(() => {}); }}
             >
                 Clear session
             </button>

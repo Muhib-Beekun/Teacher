@@ -33,6 +33,8 @@ Version numbers match `package.json` and `teacher-<version>.vsix` builds.
 - **Mic button spinner stuck after processing** — moved `micProcessing` state to the centralized signals module (`state.ts`) and replaced closure-captured wrapper with direct signal writes. The spinner now reliably clears when compile finishes.
 - **Corrections not reflected in compiled Goal** — when the user edits a segment or speaks a correction ("X should be Y"), the compiler now runs fresh (no anchoring to the prior brief that contained errors). Edited segments are flagged `(edited)` in the compile prompt so the LLM prioritizes the corrected text. New system prompt rule 3 explicitly instructs the model to replace original wording with corrections.
 - All CSS specificity issues from previous `hidden` attribute approach eliminated — Preact controls rendering via conditional JSX.
+- **Cancel button stays enabled after recording** — `recordingArmed` signal was not reset after a successful recording cycle, leaving the cancel button active when no session was in progress.
+- **Clear session confirmation removed** — "Clear session" now acts immediately without a confirmation dialog.
 - **Responsive layout** — capture column scales vertically on tall screens (900px+, 1400px+) instead of being capped at 300px. Horizontal layout uses proportional grid columns instead of fixed pixel widths, allowing the capture column to grow with wider viewports.
 
 ## [0.0.65] - 2026-07-03
