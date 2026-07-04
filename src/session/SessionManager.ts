@@ -64,6 +64,7 @@ export class SessionManager {
         seg.text = trimmed;
         seg.textRaw = trimmed;
         seg.fixes = [];
+        seg.edited = true;
         this.needsRegenerate = true;
         return true;
     }
@@ -109,14 +110,17 @@ export class SessionManager {
     ): Promise<CompiledBrief | null> {
         this.lastCompileError = undefined;
         try {
-            const priorBrief = options?.fresh
+            const shouldRunFresh = options?.fresh || this.needsRegenerate;
+            const priorBrief = shouldRunFresh
                 ? undefined
                 : (this.briefVersions[0]?.brief ?? this.compiledBrief ?? undefined);
+            const editedFlags = this.segments.map((s) => !!s.edited);
             this.compiledBrief = await compileService.compile(
                 this.getRawTexts(),
                 getContext(),
                 mode,
-                priorBrief
+                priorBrief,
+                editedFlags
             );
             this.briefVersionCounter += 1;
             const version = this.briefVersionCounter;

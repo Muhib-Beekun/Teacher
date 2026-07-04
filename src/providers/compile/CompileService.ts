@@ -48,7 +48,8 @@ export class CompileService {
         rawSegments: string[],
         ctx: VoiceSessionContext,
         mode: CompileMode,
-        priorBrief?: CompiledBrief
+        priorBrief?: CompiledBrief,
+        editedFlags?: boolean[]
     ): Promise<CompiledBrief> {
         if (mode === 'verbatim') {
             return compileSession(rawSegments, ctx, mode);
@@ -62,7 +63,7 @@ export class CompileService {
         }
 
         const started = Date.now();
-        const brief = await this.compileWithLlm(rawSegments, ctx, priorBrief, provider);
+        const brief = await this.compileWithLlm(rawSegments, ctx, priorBrief, provider, editedFlags);
         const ms = Date.now() - started;
         this.output.appendLine(`[compile:${provider}] done in ${ms}ms`);
         return brief;
@@ -260,9 +261,15 @@ ${raw}`;
         rawSegments: string[],
         ctx: VoiceSessionContext,
         priorBrief: CompiledBrief | undefined,
-        provider: Exclude<CompileProviderId, 'none'>
+        provider: Exclude<CompileProviderId, 'none'>,
+        editedFlags?: boolean[]
     ): Promise<CompiledBrief> {
         const segments = analyzeSegments(rawSegments);
+        if (editedFlags) {
+            for (let i = 0; i < segments.length && i < editedFlags.length; i++) {
+                if (editedFlags[i]) segments[i].edited = true;
+            }
+        }
         const { system, user } = buildCompilePrompt(segments, ctx, priorBrief);
         let chatResult = await this.chatWithEmptyFallback(provider, 'compile', system, user, 0.2);
         let activeProvider = chatResult.provider;

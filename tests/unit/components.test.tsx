@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, cleanup } from '@testing-library/preact';
-import { appSettings, settingsOpen, statusText, statusKind, micRuntime, runtime, codewordsTerms, codewordsPath, compilingBrief, briefVersion, needsRegenerate, briefHtml, transcriptHtml } from '../../src/web-ui/state';
+import { appSettings, settingsOpen, statusText, statusKind, micRuntime, micProcessing, runtime, codewordsTerms, codewordsPath, compilingBrief, briefVersion, needsRegenerate, briefHtml, transcriptHtml } from '../../src/web-ui/state';
 
 vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ json: () => Promise.resolve({}) }));
 
@@ -14,6 +14,7 @@ import { InferenceSection } from '../../src/web-ui/components/InferenceSection';
 import { BriefPane } from '../../src/web-ui/components/BriefPane';
 import { TranscriptPane } from '../../src/web-ui/components/TranscriptPane';
 import { SettingsPanel } from '../../src/web-ui/components/SettingsPanel';
+import { MicButton } from '../../src/web-ui/components/MicButton';
 
 function makeTestSettings(overrides: Record<string, unknown> = {}) {
     return {
@@ -68,6 +69,7 @@ beforeEach(() => {
     statusKind.value = 'ok';
     settingsOpen.value = false;
     micRuntime.value = 'idle';
+    micProcessing.value = false;
     compilingBrief.value = false;
     briefVersion.value = undefined;
     needsRegenerate.value = false;
@@ -279,5 +281,64 @@ describe('TranscriptPane', () => {
         transcriptHtml.value = '<p class="empty">Session ready.</p>';
         const { container } = render(<TranscriptPane />);
         expect(container.textContent).toContain('Session ready.');
+    });
+});
+
+describe('MicButton', () => {
+    it('renders without spinner when not processing', () => {
+        const { container } = render(<MicButton active={false} processing={false} onClick={() => {}} />);
+        const btn = container.querySelector('.mic-btn')!;
+        expect(btn.classList.contains('processing')).toBe(false);
+        expect((btn as HTMLButtonElement).disabled).toBe(false);
+    });
+
+    it('shows spinner class when processing=true', () => {
+        const { container } = render(<MicButton active={false} processing={true} onClick={() => {}} />);
+        const btn = container.querySelector('.mic-btn')!;
+        expect(btn.classList.contains('processing')).toBe(true);
+        expect((btn as HTMLButtonElement).disabled).toBe(true);
+    });
+
+    it('removes spinner class when processing changes from true to false', () => {
+        const { container, rerender } = render(<MicButton active={false} processing={true} onClick={() => {}} />);
+        const btn = container.querySelector('.mic-btn')!;
+        expect(btn.classList.contains('processing')).toBe(true);
+
+        rerender(<MicButton active={false} processing={false} onClick={() => {}} />);
+        expect(btn.classList.contains('processing')).toBe(false);
+        expect((btn as HTMLButtonElement).disabled).toBe(false);
+    });
+
+    it('shows active class when listening', () => {
+        const { container } = render(<MicButton active={true} processing={false} onClick={() => {}} />);
+        const btn = container.querySelector('.mic-btn')!;
+        expect(btn.classList.contains('active')).toBe(true);
+    });
+
+    it('fires onClick when not processing', () => {
+        const onClick = vi.fn();
+        render(<MicButton active={false} processing={false} onClick={onClick} />);
+        fireEvent.click(screen.getByRole('button'));
+        expect(onClick).toHaveBeenCalledOnce();
+    });
+
+    it('is disabled during processing so clicks are blocked', () => {
+        const onClick = vi.fn();
+        const { container } = render(<MicButton active={false} processing={true} onClick={onClick} />);
+        const btn = container.querySelector('.mic-btn') as HTMLButtonElement;
+        expect(btn.disabled).toBe(true);
+    });
+});
+
+describe('micProcessing signal reactivity', () => {
+    it('defaults to false', () => {
+        expect(micProcessing.value).toBe(false);
+    });
+
+    it('can be set to true and back to false', () => {
+        micProcessing.value = true;
+        expect(micProcessing.value).toBe(true);
+        micProcessing.value = false;
+        expect(micProcessing.value).toBe(false);
     });
 });

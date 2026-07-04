@@ -27,6 +27,7 @@ Version numbers match `package.json` and `teacher-<version>.vsix` builds.
 
 ### Fixed
 - **Mic button spinner stuck after processing** — moved `micProcessing` state to the centralized signals module (`state.ts`) and replaced closure-captured wrapper with direct signal writes. The spinner now reliably clears when compile finishes.
+- **Corrections not reflected in compiled Goal** — when the user edits a segment or speaks a correction ("X should be Y"), the compiler now runs fresh (no anchoring to the prior brief that contained errors). Edited segments are flagged `(edited)` in the compile prompt so the LLM prioritizes the corrected text. New system prompt rule 3 explicitly instructs the model to replace original wording with corrections.
 - All CSS specificity issues from previous `hidden` attribute approach eliminated — Preact controls rendering via conditional JSX.
 
 ## [0.0.65] - 2026-07-03

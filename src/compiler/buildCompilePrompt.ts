@@ -40,18 +40,19 @@ CRITICAL rules:
    - Bulleted chunks: each bullet = one scoped topic or action ("Discuss …", "Implement …", "Fix …").
    - If the speaker wants both analysis and code changes, split them clearly (e.g. discussion bullets vs implementation bullets).
 2. Latest segment often refines or corrects: fold it into Goal; do NOT replace the entire Goal with only the latest utterance.
-3. Meta-feedback about Teacher, prompt structure, STT fix UI, send/auto-submit, or compile behavior IS valid Goal content when the speaker wants it fixed. Include EVERY active segment in Goal synthesis — do not skip later segments because they sound meta or UI-related.
-4. Write direct agent instructions. Never mention Grok, Teacher, compiler, or that a tool scaffolded this brief.
-5. ## Target = file paths explicitly mentioned in speech. If none: - (no targets inferred: speak file paths; browser UI cannot open files)
-6. ## Constraints ONLY for enduring rules about the WORK product, not for naming voice segments. Omit if none.
-7. ## Verification ONLY when the speaker said how to verify. Omit if none. Never put "---" inside Verification.
-8. ## Session — your words (ALWAYS REQUIRED): verbatim list of each active segment with role prefix:
+3. **Corrections override earlier wording.** When a [correction] segment says "X should be Y" or "I said X but meant Y", you MUST use Y (not X) everywhere in the Goal. The corrected term replaces the original - do not keep the original alongside the correction. Likewise, if the speaker manually edited a segment's text (marked "(edited)"), prefer the edited text over any earlier version.
+4. Meta-feedback about Teacher, prompt structure, STT fix UI, send/auto-submit, or compile behavior IS valid Goal content when the speaker wants it fixed. Include EVERY active segment in Goal synthesis — do not skip later segments because they sound meta or UI-related.
+5. Write direct agent instructions. Never mention Grok, Teacher, compiler, or that a tool scaffolded this brief.
+6. ## Target = file paths explicitly mentioned in speech. If none: - (no targets inferred: speak file paths; browser UI cannot open files)
+7. ## Constraints ONLY for enduring rules about the WORK product, not for naming voice segments. Omit if none.
+8. ## Verification ONLY when the speaker said how to verify. Omit if none. Never put "---" inside Verification.
+9. ## Session — your words (ALWAYS REQUIRED): verbatim list of each active segment with role prefix:
    - [included] first segment text
    - [correction] later segment text
    Include FULL segment text even when there is only one segment. Do NOT repeat the audit-trail disclaimer as a bullet; it is added automatically.
-9. Retracted/superseded content only in the reference block at the end, not in Goal or Session.
-10. Output ends with a single line "---" then the reference header.
-11. NEVER use em dashes (—) anywhere in output. Use a colon, comma, hyphen (-), or rewrite the sentence instead.
+10. Retracted/superseded content only in the reference block at the end, not in Goal or Session.
+11. Output ends with a single line "---" then the reference header.
+12. NEVER use em dashes (—) anywhere in output. Use a colon, comma, hyphen (-), or rewrite the sentence instead.
 
 Output markdown: ## Goal, ## Target, optional ## Constraints / ## Verification, ## Session - your words (always), then:
 ---
@@ -64,7 +65,11 @@ Output markdown: ## Goal, ## Target, optional ## Constraints / ## Verification, 
     const segmentLines = segments
         .map((s, i) => {
             const role = segmentVoiceRole(s, i);
-            const tag = s.superseded ? ' (superseded)' : i === segments.length - 1 ? ' (newest)' : '';
+            const tags: string[] = [];
+            if (s.superseded) tags.push('superseded');
+            if (s.edited) tags.push('edited');
+            if (i === segments.length - 1) tags.push('newest');
+            const tag = tags.length ? ` (${tags.join(', ')})` : '';
             return `${i + 1} [${role}]${tag}. ${s.text}`;
         })
         .join('\n');

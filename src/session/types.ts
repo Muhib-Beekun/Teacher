@@ -19,6 +19,8 @@ export interface RawSegment {
     textRaw: string;
     fixes: SttFix[];
     audit?: SttSegmentAudit;
+    /** True when the user manually edited this segment's text in the transcript pane. */
+    edited?: boolean;
 }
 
 export type SegmentTag =
@@ -33,6 +35,8 @@ export interface Segment {
     text: string;
     tags: SegmentTag[];
     superseded: boolean;
+    /** True when the user manually edited this segment's text. */
+    edited?: boolean;
 }
 
 export interface CompiledBrief {
