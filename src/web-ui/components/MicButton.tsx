@@ -1,16 +1,20 @@
+import type { ComponentChildren } from 'preact';
+
 interface MicButtonProps {
     active: boolean;
     processing: boolean;
     onClick: () => void;
+    children?: ComponentChildren;
 }
 
-export function MicButton({ active, processing, onClick }: MicButtonProps) {
+export function MicButton({ active, processing, onClick, children }: MicButtonProps) {
     const classes = ['mic-btn'];
     if (active) classes.push('active');
     if (processing) classes.push('processing');
 
     return (
         <div class="mic-wrap">
+            {children}
             <button
                 type="button"
                 class={classes.join(' ')}

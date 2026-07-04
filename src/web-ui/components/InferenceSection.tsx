@@ -1,10 +1,11 @@
 import { useState, useRef, useEffect } from 'preact/hooks';
 import { appSettings, setStatus } from '../state';
-import { patchSetting, saveLlmKey, applyInferencePreset, handleChange } from '../api';
+import { patchSetting, saveLlmKey, applyInferencePreset, handleChange, testInference } from '../api';
 
 export function InferenceSection() {
     const s = appSettings.value;
     const [customModelVisible, setCustomModelVisible] = useState(false);
+    const [testing, setTesting] = useState(false);
     const baseUrlRef = useRef<HTMLInputElement>(null);
     const customModelRef = useRef<HTMLInputElement>(null);
     const keyRef = useRef<HTMLInputElement>(null);
@@ -183,6 +184,23 @@ export function InferenceSection() {
                 </div>
 
                 <p class="hint">{isOllama ? '' : (s?.cloudInferenceLabel || '')}</p>
+
+                <div class="setting-row">
+                    <button
+                        type="button"
+                        class="inline-save"
+                        disabled={testing}
+                        onClick={() => {
+                            setTesting(true);
+                            testInference().finally(() => setTesting(false));
+                        }}
+                    >
+                        {testing ? 'Testing…' : 'Test connection'}
+                    </button>
+                    <span class="hint" style={{ marginLeft: '8px' }}>
+                        Send a test prompt to verify your inference setup.
+                    </span>
+                </div>
 
                 {envLocked && (
                     <p class="hint">

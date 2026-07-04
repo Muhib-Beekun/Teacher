@@ -16,6 +16,8 @@ Version numbers match `package.json` and `teacher-<version>.vsix` builds.
   - esbuild bundles the frontend to `media/teacher-app.js` + `media/teacher-app.css` (55 KB + 16 KB).
 
 ### Added
+- **Test connection button** in Inference settings — sends a test prompt to the configured inference provider and reports success/failure with latency. Works with all providers (Ollama, cloud, VS Code LM).
+- **Compact waveform ring** — replaced the full-width waveform bar with a circular visualizer around the mic button. Frequency segments pulse as a ring around the mic icon, saving screen space and providing clearer visual feedback.
 - **Vitest unit tests** (45 tests) covering state management, API layer, and all major components.
 - **Playwright E2E tests** (17 tests) covering settings visibility, layout, keyboard navigation, and ARIA accessibility.
 - **Accessibility**: `role="dialog"` + `aria-modal` on settings, focus trapping with Tab/Shift+Tab, `aria-live="polite"` on status, `aria-label` on all icon buttons, `role="region"` on panes.

@@ -201,6 +201,20 @@ export async function testWhisperSetup(): Promise<void> {
     refreshHealth().catch(() => {});
 }
 
+export async function testInference(): Promise<{ ok: boolean; message: string }> {
+    setStatus('Testing inference…');
+    try {
+        const json = await fetch('/api/inference/test', { method: 'POST' }).then(r => r.json());
+        if (json.settings) appSettings.value = json.settings;
+        setStatus(json.message || (json.ok ? 'Test passed.' : 'Test failed.'), json.ok ? 'ok' : 'warn');
+        return json;
+    } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        setStatus('Test failed: ' + msg, 'warn');
+        return { ok: false, message: msg };
+    }
+}
+
 export async function refreshHealth(): Promise<void> {
     const h = await fetch('/health').then(r => r.json()) as HealthInfo;
     healthSignal.value = h;

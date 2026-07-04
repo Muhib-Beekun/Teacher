@@ -343,7 +343,9 @@ export function CapturePanel() {
                         active={listening.value}
                         processing={micProcessing.value}
                         onClick={() => { toggleMic().catch(() => {}); }}
-                    />
+                    >
+                        <Waveform analyser={activeAnalyser} />
+                    </MicButton>
                     <button
                         type="button"
                         class="mic-cancel"
@@ -353,7 +355,6 @@ export function CapturePanel() {
                     >
                         Cancel
                     </button>
-                    <Waveform analyser={activeAnalyser} />
                 </div>
             )}
             <div

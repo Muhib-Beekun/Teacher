@@ -206,6 +206,45 @@ export class BrowserSessionBridge {
         return { ...result, settings: await this.getAppSettings() };
     }
 
+    public async testInference(): Promise<{ ok: boolean; message: string; provider: string; model: string; latencyMs: number; settings: AppSettingsView }> {
+        await this.refreshProviderLabel();
+        const provider = await this.deps.compileService.resolveProviderId();
+        if (provider === 'none') {
+            return {
+                ok: false,
+                message: 'No inference provider available. Set an API key, start Ollama, or enable Copilot.',
+                provider: 'none', model: '', latencyMs: 0,
+                settings: await this.getAppSettings()
+            };
+        }
+        const model = this.deps.compileService.getActiveModelLabel();
+        const started = Date.now();
+        try {
+            const brief = await this.deps.compileService.compile(
+                ['Say hello.'],
+                this.deps.getVoiceContext(),
+                'teacher'
+            );
+            const ms = Date.now() - started;
+            const goalPreview = brief.goal.slice(0, 80);
+            return {
+                ok: true,
+                message: `${provider} (${model}) responded in ${ms}ms: "${goalPreview}"`,
+                provider, model, latencyMs: ms,
+                settings: await this.getAppSettings()
+            };
+        } catch (err) {
+            const ms = Date.now() - started;
+            const msg = err instanceof Error ? err.message : String(err);
+            return {
+                ok: false,
+                message: `${provider} (${model}) failed after ${ms}ms: ${msg}`,
+                provider, model, latencyMs: ms,
+                settings: await this.getAppSettings()
+            };
+        }
+    }
+
     public async getCodewords(): Promise<{ terms: string[]; path: string; ok: boolean; message?: string }> {
         const folder = getPrimaryWorkspaceFolder();
         if (!folder) {

@@ -183,7 +183,7 @@ body {
 .mic-browser-hint strong { display: block; color: var(--warn); margin-bottom: 4px; }
 .mic-browser-hint em { font-style: normal; color: var(--accent); }
 .mic-unsupported { border-color: var(--warn); }
-.mic-wrap { position: relative; width: 72px; height: 72px; margin-bottom: 8px; flex-shrink: 0; }
+.mic-wrap { position: relative; width: 84px; height: 84px; margin-bottom: 8px; flex-shrink: 0; }
 .mic-actions button, .mic-cancel {
     border: 1px solid var(--line); background: transparent; color: var(--muted);
     border-radius: 8px; padding: 4px 10px; font-size: 11px; cursor: pointer; margin: 0 0 14px;
@@ -196,9 +196,10 @@ body {
     color: var(--muted); border-color: var(--line); opacity: 0.35; outline: none; box-shadow: none; cursor: default;
 }
 .mic-btn {
-    width: 72px; height: 72px; border-radius: 50%; border: 2px solid var(--line);
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    width: 56px; height: 56px; border-radius: 50%; border: 2px solid var(--line);
     background: var(--surface); cursor: pointer; display: flex; align-items: center; justify-content: center;
-    transition: border-color .15s, background .15s;
+    transition: border-color .15s, background .15s; z-index: 1;
 }
 .mic-btn svg { width: 28px; height: 28px; stroke: var(--muted); fill: none; stroke-width: 1.75; }
 .mic-btn:hover { border-color: var(--accent); }
@@ -209,15 +210,15 @@ body {
 .mic-btn.processing svg.icon-mic { opacity: 0.25; }
 .mic-spinner {
     display: none; position: absolute; inset: 0; margin: auto;
-    width: 72px; height: 72px; border-radius: 50%;
+    width: 56px; height: 56px; border-radius: 50%;
     border: 2px solid transparent; border-top-color: var(--accent);
     animation: spin .7s linear infinite;
 }
 .mic-btn.processing .mic-spinner { display: block; }
 @keyframes spin { to { transform: rotate(360deg); } }
-.waveform {
-    width: 100%; height: 44px; margin-bottom: 12px; border-radius: 10px;
-    background: var(--bg); border: 1px solid var(--line);
+.waveform-ring {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    width: 84px; height: 84px; pointer-events: none;
 }
 .live-text {
     width: 100%; flex: 1 1 0; min-height: 72px; min-width: 0; font-size: 13px; line-height: 1.55;
@@ -375,10 +376,11 @@ body {
         min-height: 0;
         padding: 14px 12px 12px;
     }
-    .mic-wrap, .mic-btn { width: 60px; height: 60px; }
-    .mic-spinner { width: 60px; height: 60px; }
+    .mic-wrap { width: 72px; height: 72px; }
+    .mic-btn { width: 48px; height: 48px; }
+    .mic-spinner { width: 48px; height: 48px; }
+    .waveform-ring { width: 72px; height: 72px; }
     .mic-cancel { margin-bottom: 8px; }
-    .waveform { height: 36px; margin-bottom: 8px; }
     .pane { min-height: 0; max-height: none; }
 }
 @media (max-width: 560px) {

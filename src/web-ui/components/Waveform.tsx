@@ -16,30 +16,41 @@ export function Waveform({ analyser }: WaveformProps) {
         const ctx = canvas.getContext('2d');
         if (!ctx) return;
 
-        const sizeCanvas = () => {
-            const rect = canvas.getBoundingClientRect();
-            const dpr = window.devicePixelRatio || 1;
-            canvas.width = Math.round(rect.width * dpr);
-            canvas.height = Math.round(rect.height * dpr);
-            ctx.scale(dpr, dpr);
-        };
-        sizeCanvas();
+        const SIZE = 84;
+        const dpr = window.devicePixelRatio || 1;
+        canvas.width = Math.round(SIZE * dpr);
+        canvas.height = Math.round(SIZE * dpr);
+        ctx.scale(dpr, dpr);
+
+        const cx = SIZE / 2;
+        const cy = SIZE / 2;
+        const radius = 36;
+        const segments = 16;
 
         const draw = () => {
             const buf = new Uint8Array(analyser.frequencyBinCount);
             analyser.getByteFrequencyData(buf);
-            const rect = canvas.getBoundingClientRect();
-            const cw = rect.width;
-            const ch = rect.height;
-            ctx.clearRect(0, 0, cw, ch);
-            const bars = 24;
-            const step = Math.floor(buf.length / bars);
-            const w = cw / bars;
-            for (let i = 0; i < bars; i++) {
-                const h = Math.max(3, (buf[i * step] / 255) * ch * 0.88);
-                ctx.fillStyle = listening.peek() ? '#6b8aff' : '#3a4052';
-                ctx.fillRect(i * w + 2, (ch - h) / 2, w - 4, h);
+            ctx.clearRect(0, 0, SIZE, SIZE);
+
+            const step = Math.max(1, Math.floor(buf.length / segments));
+            const active = listening.peek();
+            const arcLen = (2 * Math.PI) / segments;
+            const gap = 0.04;
+
+            for (let i = 0; i < segments; i++) {
+                const level = buf[i * step] / 255;
+                const startAngle = i * arcLen - Math.PI / 2 + gap;
+                const endAngle = startAngle + arcLen - gap * 2;
+                const width = 2 + level * 4;
+
+                ctx.beginPath();
+                ctx.arc(cx, cy, radius, startAngle, endAngle);
+                ctx.strokeStyle = active ? `rgba(107, 138, 255, ${0.3 + level * 0.7})` : '#3a4052';
+                ctx.lineWidth = width;
+                ctx.lineCap = 'round';
+                ctx.stroke();
             }
+
             animRef.current = requestAnimationFrame(draw);
         };
         draw();
@@ -49,12 +60,14 @@ export function Waveform({ analyser }: WaveformProps) {
         };
     }, [analyser]);
 
+    if (!analyser) return null;
+
     return (
         <canvas
             ref={canvasRef}
-            class="waveform"
-            width={232}
-            height={44}
+            class="waveform-ring"
+            width={84}
+            height={84}
             aria-hidden="true"
         />
     );

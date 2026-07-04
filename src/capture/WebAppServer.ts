@@ -205,6 +205,17 @@ export class WebAppServer {
             return;
         }
 
+        if (req.method === 'POST' && url === '/api/inference/test') {
+            try {
+                const result = await bridge.testInference();
+                this.json(res, result.ok ? 200 : 400, result);
+            } catch (err) {
+                const msg = err instanceof Error ? err.message : String(err);
+                this.json(res, 500, { ok: false, error: msg });
+            }
+            return;
+        }
+
         if (req.method === 'POST' && url === '/api/whisper/discover') {
             try {
                 const result = await bridge.discoverWhisper();
