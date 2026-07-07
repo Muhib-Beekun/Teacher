@@ -15,6 +15,10 @@ export interface OpenVsxLatestRelease {
 export interface OpenVsxFetchOptions {
     timeoutMs?: number;
     fetchImpl?: typeof fetch;
+    /** Retry once after a short delay when Open VSX returns 404 (publish propagation lag). */
+    retryOn404?: boolean;
+    retryDelayMs?: number;
+    sleep?: (ms: number) => Promise<void>;
 }
 
 export function parseOpenVsxLatestPayload(json: unknown): OpenVsxLatestRelease | null {
@@ -44,9 +48,14 @@ export function isAllowedDownloadUrl(url: string): boolean {
     return url.startsWith(DOWNLOAD_PREFIX) && url.includes('/file/') && url.endsWith('.vsix');
 }
 
+const defaultSleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
+
 export async function fetchOpenVsxLatest(options: OpenVsxFetchOptions = {}): Promise<OpenVsxLatestRelease> {
     const timeoutMs = options.timeoutMs ?? 30_000;
     const fetchImpl = options.fetchImpl ?? fetch;
+    const retryOn404 = options.retryOn404 ?? true;
+    const retryDelayMs = options.retryDelayMs ?? 2_000;
+    const sleep = options.sleep ?? defaultSleep;
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
     try {
@@ -54,6 +63,11 @@ export async function fetchOpenVsxLatest(options: OpenVsxFetchOptions = {}): Pro
             signal: controller.signal,
             headers: { Accept: 'application/json' }
         });
+        if (response.status === 404 && retryOn404) {
+            clearTimeout(timer);
+            await sleep(retryDelayMs);
+            return fetchOpenVsxLatest({ ...options, retryOn404: false });
+        }
         if (!response.ok) {
             throw new Error(`Open VSX returned HTTP ${response.status}`);
         }

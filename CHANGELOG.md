@@ -17,6 +17,14 @@ Version numbers match `package.json` and `teacher-<version>.vsix` builds.
 - Settings status block shows update state and extension host alongside version and compile info.
 - Docs (`README`, `SETUP`, `AGENTS`) explain Open VSX/VSIX manual updates, remote-host install, and troubleshooting stale behavior after upgrade.
 
+### Added (pending next release)
+
+- **CONFIGURATION.md** — update commands, remote-host scope, pin-state best effort, reload requirement, and troubleshooting.
+- **Pin-state detection** — reads profile `extensions.json` when available; tries to clear pin before Open VSX install; shows pin hint in Host & updates.
+- **Update integration tests** — mocked Open VSX fetch, VSIX download, and install command flow.
+- **Open VSX 404 retry** — one automatic retry when `/latest` 404s shortly after publish.
+- Status block shows separate **Installed** and **Latest** version lines when known.
+
 ## [0.1.1] - 2026-07-06
 
 ### Changed

@@ -122,3 +122,32 @@ npm run test:compiler
 npm run test:web-app
 npm run test:grok    # xAI smoke test when XAI/GROK key present
 ```
+
+## Updates (Open VSX / VSIX)
+
+Teacher does **not** auto-update when installed from Open VSX or a manual VSIX. Use the built-in commands or the **Host & updates** section in Teacher Settings.
+
+| Command | Purpose |
+|---------|---------|
+| **Teacher: Check for Updates** | Query Open VSX for the latest published version and compare with the running extension |
+| **Teacher: Update from Open VSX** | Download the VSIX to extension global storage and install via `workbench.extensions.installExtension`, then prompt to reload |
+
+| UI | Purpose |
+|----|---------|
+| **Host & updates** (Settings) | Extension host (local vs remote), install channel hint, installed vs latest version, pin state (best effort), check/update buttons |
+
+### Remote hosts (SSH / WSL / dev containers)
+
+Install and update **where the extension host runs**, not only on your laptop. After updating, **reload the window** on that host. Settings shows `Extension host: remote (…)` when applicable.
+
+### Pinning and stale versions
+
+VS Code can **pin** an extension to a specific version. Pinned extensions may ignore updates until unpinned. Teacher reads profile `extensions.json` beside the install folder when possible and tries to clear the pin flag before installing. If pin state is **unknown**, unpin manually in the Extensions view if updates fail to apply.
+
+### Troubleshooting
+
+| Symptom | What to try |
+|---------|-------------|
+| Check returns HTTP 404 shortly after a release | Open VSX propagation lag — retry in a few minutes (Teacher retries once automatically) |
+| Installed version unchanged after update | Reload the window; check pin state; reinstall VSIX from [GitHub Releases](https://github.com/Muhib-Beekun/Teacher/releases) |
+| Update works locally but not on SSH | Run **Teacher: Update from Open VSX** in the remote workspace; confirm host diagnostics show remote |

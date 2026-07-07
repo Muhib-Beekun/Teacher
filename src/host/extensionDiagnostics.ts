@@ -3,6 +3,11 @@ import { resolveInferenceConfig } from '../config/resolveInferenceConfig';
 import { extensionHostLabel, isRemoteExtensionHost } from './isRemoteExtensionHost';
 import type { ExtensionDiagnosticsView } from '../shared/types';
 import type { UpdateCheckResult } from '../shared/types';
+import {
+    pinStateHint,
+    readExtensionPinState,
+    TEACHER_EXTENSION_ID
+} from '../update/extensionProfileState';
 
 export function inferInstallChannelHint(): string {
     const ext = vscode.extensions.getExtension('muhib-beekun.teacher');
@@ -43,6 +48,10 @@ export function gatherExtensionDiagnostics(updateCheck?: UpdateCheckResult | nul
         (compileProvider === 'auto' && !remote) ||
         (compileProvider === 'auto' && remote && allowRemoteLm);
 
+    const ext = vscode.extensions.getExtension(TEACHER_EXTENSION_ID);
+    const installedVersion = ext?.packageJSON?.version ?? '?';
+    const pinState = ext ? readExtensionPinState(ext.extensionUri.fsPath, TEACHER_EXTENSION_ID) : 'unknown';
+
     return {
         extensionHost: extensionHostLabel(),
         remoteName: vscode.env.remoteName ?? '',
@@ -50,8 +59,11 @@ export function gatherExtensionDiagnostics(updateCheck?: UpdateCheckResult | nul
         envOverrideDetected,
         envOverrideHint: envOverrideDetected ? envParts.join(', ') || 'workspace .env' : '',
         vscodeLmRemoteWarning: remote && usesVscodeLm,
+        installedVersion,
         updateStatus: updateCheck?.status ?? 'unknown',
         latestVersion: updateCheck?.latestVersion,
-        updateMessage: updateCheck?.message
+        updateMessage: updateCheck?.message,
+        pinState,
+        pinStateHint: pinStateHint(pinState)
     };
 }

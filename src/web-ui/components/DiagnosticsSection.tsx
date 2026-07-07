@@ -15,12 +15,12 @@ export function DiagnosticsSection() {
 
     const updateLabel =
         d.updateStatus === 'available' && d.latestVersion
-            ? `update available: v${d.latestVersion}`
-            : d.updateStatus === 'current'
-              ? 'up to date'
+            ? `update available (installed v${d.installedVersion}, latest v${d.latestVersion})`
+            : d.updateStatus === 'current' && d.latestVersion
+              ? `up to date (v${d.installedVersion})`
               : d.updateStatus === 'error'
                 ? 'check failed'
-                : 'not checked yet';
+                : `not checked yet (installed v${d.installedVersion})`;
 
     return (
         <details class="settings-section" open>
@@ -38,7 +38,15 @@ export function DiagnosticsSection() {
                         Env override: {d.envOverrideDetected ? d.envOverrideHint || 'yes' : 'no'}
                     </span>
                     <span>Updates (Open VSX): {updateLabel}</span>
+                    <span>Pin state: {d.pinStateHint}</span>
                 </div>
+
+                {d.pinState === 'pinned' ? (
+                    <p class="hint warn">
+                        Teacher is pinned in your profile. Updates may not apply until you unpin in the Extensions
+                        view or reinstall. The update command tries to clear the pin flag automatically.
+                    </p>
+                ) : null}
 
                 {d.vscodeLmRemoteWarning ? (
                     <p class="hint warn">

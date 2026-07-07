@@ -1,4 +1,5 @@
 import { defineConfig } from 'vitest/config';
+import path from 'path';
 
 export default defineConfig({
     test: {
@@ -16,6 +17,7 @@ export default defineConfig({
             'react': 'preact/compat',
             'react-dom': 'preact/compat',
             'react/jsx-runtime': 'preact/jsx-runtime',
+            vscode: path.resolve(__dirname, 'tests/unit/mocks/vscode.ts'),
         },
     },
 });

@@ -100,7 +100,10 @@ export interface ExtensionDiagnosticsView {
     envOverrideDetected: boolean;
     envOverrideHint: string;
     vscodeLmRemoteWarning: boolean;
+    installedVersion: string;
     updateStatus: UpdateCheckStatus;
     latestVersion?: string;
     updateMessage?: string;
+    pinState: 'pinned' | 'unpinned' | 'unknown';
+    pinStateHint: string;
 }

@@ -24,7 +24,10 @@ function defaultDiagnostics(overrides: Record<string, unknown> = {}) {
         envOverrideDetected: false,
         envOverrideHint: '',
         vscodeLmRemoteWarning: false,
+        installedVersion: '0.1.0',
         updateStatus: 'unknown',
+        pinState: 'unknown',
+        pinStateHint: 'unknown (profile metadata not readable)',
         ...overrides,
     };
 }
