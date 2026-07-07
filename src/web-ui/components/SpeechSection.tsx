@@ -92,6 +92,48 @@ export function SpeechSection() {
                 </div>
 
                 <div class="setting-row">
+                    <label for="setBrowserRecoveryAudible">
+                        Recovery alert sounds
+                        <span class="hint">Short tones on retry, recovery, and fallback when you are not watching the tab.</span>
+                    </label>
+                    <input
+                        type="checkbox"
+                        id="setBrowserRecoveryAudible"
+                        checked={s?.browserRecoveryAudibleAlerts ?? true}
+                        onChange={handleChange('teacher.stt.browserRecovery.audibleAlerts')}
+                    />
+                </div>
+
+                <div class="setting-row">
+                    <label for="setBrowserRecoveryAlertVolume">
+                        Alert volume
+                        <span class="hint">0 = silent, 1 = full (default 0.35).</span>
+                    </label>
+                    <input
+                        type="number"
+                        id="setBrowserRecoveryAlertVolume"
+                        min={0}
+                        max={1}
+                        step={0.05}
+                        value={s?.browserRecoveryAlertVolume ?? 0.35}
+                        onChange={handleChange('teacher.stt.browserRecovery.alertVolume')}
+                    />
+                </div>
+
+                <div class="setting-row">
+                    <label for="setBrowserRecoveryAlertsHidden">
+                        Alerts only when tab hidden
+                        <span class="hint">Retry/recovered tones when backgrounded; fallback tones always play.</span>
+                    </label>
+                    <input
+                        type="checkbox"
+                        id="setBrowserRecoveryAlertsHidden"
+                        checked={s?.browserRecoveryAlertsOnlyWhenHidden ?? false}
+                        onChange={handleChange('teacher.stt.browserRecovery.alertsOnlyWhenHidden')}
+                    />
+                </div>
+
+                <div class="setting-row">
                     <label for="setPolishStt">
                         AI-powered cleanup
                         <span class="hint">Uses your inference provider to fix remaining STT errors before compile.</span>

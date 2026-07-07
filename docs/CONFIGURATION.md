@@ -85,6 +85,10 @@ Long sessions in embedded browsers (Cursor webviews) can hit transient **`Speech
 | `teacher.stt.browserRecovery.enableAutoFallback` | `true` | Fall back to Whisper/Deepgram when configured |
 | `teacher.stt.browserRecovery.resetWindowSec` | `75` | Stable listening window before failure counter resets |
 
+| `teacher.stt.browserRecovery.audibleAlerts` | `true` | Short alert tones on retry / recovery / fallback |
+| `teacher.stt.browserRecovery.alertVolume` | `0.35` | Alert tone volume (0–1) |
+| `teacher.stt.browserRecovery.alertsOnlyWhenHidden` | `false` | Retry/recovered tones only when tab is backgrounded (fallback always plays) |
+
 Retry-worthy failures: `Speech: network`, or end-without-result shortly after start. User mic stop/pause is never counted. Trace events (`speech_recovery_*`, `speech_fallback_*`) append to `.teacher/trace.jsonl` without speech content.
 
 **Whisper overhead:** each mic pause sends audio to the extension host for local inference — typically 1–5+ seconds on CPU depending on model size, plus CPU/GPU use while transcribing. Browser speech has no local compute cost and lower latency.

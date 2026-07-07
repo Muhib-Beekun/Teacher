@@ -278,6 +278,23 @@
                     "maximum": 90,
                     "description": "Seconds of stable browser speech before the consecutive failure counter resets."
                 },
+                "teacher.stt.browserRecovery.audibleAlerts": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Play short alert tones when browser speech recovery retries or falls back (helps when the tab is not focused)."
+                },
+                "teacher.stt.browserRecovery.alertVolume": {
+                    "type": "number",
+                    "default": 0.35,
+                    "minimum": 0,
+                    "maximum": 1,
+                    "description": "Volume for browser speech recovery alert tones (0–1)."
+                },
+                "teacher.stt.browserRecovery.alertsOnlyWhenHidden": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "When true, retry/recovered tones play only when the Teacher tab is in the background. Fallback tones always play."
+                },
                 "teacher.compile.provider": {
                     "type": "string",
                     "enum": [

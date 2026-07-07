@@ -50,6 +50,9 @@ export interface AppSettingsView {
     browserRecoveryMaxRetries: number;
     browserRecoveryEnableAutoFallback: boolean;
     browserRecoveryResetWindowSec: number;
+    browserRecoveryAudibleAlerts: boolean;
+    browserRecoveryAlertVolume: number;
+    browserRecoveryAlertsOnlyWhenHidden: boolean;
 }
 
 export interface SessionSnapshot {

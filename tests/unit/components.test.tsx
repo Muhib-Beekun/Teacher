@@ -79,6 +79,9 @@ function makeTestSettings(overrides: Record<string, unknown> = {}) {
         browserRecoveryMaxRetries: 4,
         browserRecoveryEnableAutoFallback: true,
         browserRecoveryResetWindowSec: 75,
+        browserRecoveryAudibleAlerts: true,
+        browserRecoveryAlertVolume: 0.35,
+        browserRecoveryAlertsOnlyWhenHidden: false,
         ...overrides,
     } as any;
 }

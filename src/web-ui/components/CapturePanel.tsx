@@ -14,6 +14,7 @@ import {
     type SpeechRecoveryEvent,
     DEFAULT_BROWSER_RECOVERY_CONFIG
 } from '../speechRecovery';
+import { alertForRecoveryAction, speechAlertQueue } from '../speechAlertQueue';
 
 const PERMANENT_SPEECH_ERRORS = new Set(['service-not-allowed', 'audio-capture']);
 const STABLE_CHECK_MS = 15_000;
@@ -117,6 +118,10 @@ export function CapturePanel() {
     const applyRecoveryActions = useCallback(
         (actions: RecoveryAction[]) => {
             for (const action of actions) {
+                const alertKind = alertForRecoveryAction(action);
+                if (alertKind) {
+                    speechAlertQueue.enqueue(alertKind);
+                }
                 switch (action.type) {
                     case 'trace':
                         void logSpeechTrace(action.payload);
@@ -347,6 +352,7 @@ export function CapturePanel() {
         stopWebSpeech();
         clearRecoveryTimers();
         dispatchRecovery({ type: 'user_stop' });
+        speechAlertQueue.reset();
         listening.value = false;
         listeningRef.current = false;
         chunkTranscriptRef.current = '';
@@ -427,6 +433,7 @@ export function CapturePanel() {
             setStatus('Microphone needs Chrome or Edge. Copy the URL above.', 'warn');
             return;
         }
+        speechAlertQueue.unlock();
         resetRecoveryForNewChunk();
         recordingArmed.value = true;
         liveEditLock.value = false;

@@ -36,7 +36,10 @@ const UI_SETTING_KEYS = [
     'teacher.stt.whisper.modelPath',
     'teacher.stt.browserRecovery.maxRetries',
     'teacher.stt.browserRecovery.enableAutoFallback',
-    'teacher.stt.browserRecovery.resetWindowSec'
+    'teacher.stt.browserRecovery.resetWindowSec',
+    'teacher.stt.browserRecovery.audibleAlerts',
+    'teacher.stt.browserRecovery.alertVolume',
+    'teacher.stt.browserRecovery.alertsOnlyWhenHidden'
 ] as const;
 
 function formatConfigSource(baseUrlSource: InferenceConfigSource, modelSource: InferenceConfigSource): string {
@@ -109,7 +112,10 @@ export async function readAppSettings(deps: {
         whisperModelsUrl: WHISPER_MODELS_URL,
         browserRecoveryMaxRetries: config.get<number>('stt.browserRecovery.maxRetries', 4),
         browserRecoveryEnableAutoFallback: config.get<boolean>('stt.browserRecovery.enableAutoFallback', true),
-        browserRecoveryResetWindowSec: config.get<number>('stt.browserRecovery.resetWindowSec', 75)
+        browserRecoveryResetWindowSec: config.get<number>('stt.browserRecovery.resetWindowSec', 75),
+        browserRecoveryAudibleAlerts: config.get<boolean>('stt.browserRecovery.audibleAlerts', true),
+        browserRecoveryAlertVolume: config.get<number>('stt.browserRecovery.alertVolume', 0.35),
+        browserRecoveryAlertsOnlyWhenHidden: config.get<boolean>('stt.browserRecovery.alertsOnlyWhenHidden', false)
     };
 }
 
