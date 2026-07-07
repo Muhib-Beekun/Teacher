@@ -26,6 +26,7 @@ Version numbers match `package.json` and `teacher-<version>.vsix` builds.
 - Status block shows separate **Installed** and **Latest** version lines when known.
 - **Browser speech recovery** — retry-first state machine for `Speech: network` (default 4 retries, jittered backoff) before Whisper/Deepgram fallback; push-to-talk degraded mode when no provider; settings under Speech; trace events in `.teacher/trace.jsonl`.
 - **Recovery alert sounds** — queued tones on retry, recovery, and fallback (coalesced so fallback replaces pending retry beeps); configurable volume and background-only mode.
+- **Mic session cues** — optional barely-audible start/stop tones when listening begins and when you pause to commit (default on at 0.12 volume; disable via settings or volume 0).
 - Host & updates button row wraps in narrow settings panel.
 
 ## [0.1.1] - 2026-07-06

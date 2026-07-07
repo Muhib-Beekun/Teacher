@@ -82,6 +82,8 @@ function makeTestSettings(overrides: Record<string, unknown> = {}) {
         browserRecoveryAudibleAlerts: true,
         browserRecoveryAlertVolume: 0.35,
         browserRecoveryAlertsOnlyWhenHidden: false,
+        sessionCuesEnabled: true,
+        sessionCueVolume: 0.12,
         ...overrides,
     } as any;
 }

@@ -89,6 +89,9 @@ Long sessions in embedded browsers (Cursor webviews) can hit transient **`Speech
 | `teacher.stt.browserRecovery.alertVolume` | `0.35` | Alert tone volume (0–1) |
 | `teacher.stt.browserRecovery.alertsOnlyWhenHidden` | `false` | Retry/recovered tones only when tab is backgrounded (fallback always plays) |
 
+| `teacher.stt.sessionCues.enabled` | `true` | Very quiet mic start/stop cues |
+| `teacher.stt.sessionCues.volume` | `0.12` | Session cue volume (0 = silent) |
+
 Retry-worthy failures: `Speech: network`, or end-without-result shortly after start. User mic stop/pause is never counted. Trace events (`speech_recovery_*`, `speech_fallback_*`) append to `.teacher/trace.jsonl` without speech content.
 
 **Whisper overhead:** each mic pause sends audio to the extension host for local inference — typically 1–5+ seconds on CPU depending on model size, plus CPU/GPU use while transcribing. Browser speech has no local compute cost and lower latency.

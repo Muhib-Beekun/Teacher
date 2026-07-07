@@ -53,6 +53,8 @@ export interface AppSettingsView {
     browserRecoveryAudibleAlerts: boolean;
     browserRecoveryAlertVolume: number;
     browserRecoveryAlertsOnlyWhenHidden: boolean;
+    sessionCuesEnabled: boolean;
+    sessionCueVolume: number;
 }
 
 export interface SessionSnapshot {

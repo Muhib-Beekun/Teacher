@@ -134,6 +134,35 @@ export function SpeechSection() {
                 </div>
 
                 <div class="setting-row">
+                    <label for="setSessionCues">
+                        Mic start/stop cues
+                        <span class="hint">Very quiet tones when listening starts and when you pause to commit.</span>
+                    </label>
+                    <input
+                        type="checkbox"
+                        id="setSessionCues"
+                        checked={s?.sessionCuesEnabled ?? true}
+                        onChange={handleChange('teacher.stt.sessionCues.enabled')}
+                    />
+                </div>
+
+                <div class="setting-row">
+                    <label for="setSessionCueVolume">
+                        Session cue volume
+                        <span class="hint">0 = silent even if enabled above (default 0.12).</span>
+                    </label>
+                    <input
+                        type="number"
+                        id="setSessionCueVolume"
+                        min={0}
+                        max={1}
+                        step={0.05}
+                        value={s?.sessionCueVolume ?? 0.12}
+                        onChange={handleChange('teacher.stt.sessionCues.volume')}
+                    />
+                </div>
+
+                <div class="setting-row">
                     <label for="setPolishStt">
                         AI-powered cleanup
                         <span class="hint">Uses your inference provider to fix remaining STT errors before compile.</span>

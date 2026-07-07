@@ -403,6 +403,7 @@ export function CapturePanel() {
 
     const stopRecording = useCallback(() => {
         userStoppingRef.current = true;
+        speechAlertQueue.playSessionCue('session_stop');
         listening.value = false;
         listeningRef.current = false;
         stopWebSpeech();
@@ -508,6 +509,7 @@ export function CapturePanel() {
         listeningRef.current = true;
         micRuntime.value = 'listening';
         setStatus('Listening. Tap mic to pause.');
+        speechAlertQueue.playSessionCue('session_start');
         startStableWindowTimer();
         startWebSpeech();
     }, [commitChunk, resetRecoveryForNewChunk, startStableWindowTimer, startWaveform, startWebSpeech, stopWaveform]);

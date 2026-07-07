@@ -5,6 +5,7 @@ import {
     clampVolume,
     coalesceAlertQueue,
     shouldPlayAlert,
+    shouldPlaySessionCue,
     shouldRateLimit
 } from '../../src/web-ui/speechAlertQueue';
 
@@ -47,6 +48,12 @@ describe('speechAlertQueue helpers', () => {
     it('clamps alert volume', () => {
         expect(clampVolume(1.5)).toBe(1);
         expect(clampVolume(-1)).toBe(0);
+    });
+
+    it('respects session cue enable and volume', () => {
+        expect(shouldPlaySessionCue({ enabled: false, volume: 0.12 })).toBe(false);
+        expect(shouldPlaySessionCue({ enabled: true, volume: 0 })).toBe(false);
+        expect(shouldPlaySessionCue({ enabled: true, volume: 0.12 })).toBe(true);
     });
 });
 
@@ -114,5 +121,12 @@ describe('SpeechAlertQueue', () => {
         });
         await new Promise((r) => setTimeout(r, 0));
         expect(playTone).not.toHaveBeenCalled();
+    });
+
+    it('skips session cues when disabled before unlock', () => {
+        const queue = new SpeechAlertQueue(vi.fn(), () => 0, () => false);
+        queue.playSessionCue('session_start', { enabled: false, volume: 0.12 });
+        queue.unlock();
+        expect(queue.peekQueue()).toEqual([]);
     });
 });

@@ -2,6 +2,8 @@ import { appSettings } from './state';
 
 export type SpeechAlertKind = 'retry' | 'recovered' | 'fallback_provider' | 'fallback_degraded';
 
+export type SessionCueKind = 'session_start' | 'session_stop';
+
 export interface SpeechAlertQueueConfig {
     enabled: boolean;
     volume: number;
@@ -17,6 +19,28 @@ export const DEFAULT_SPEECH_ALERT_CONFIG: SpeechAlertQueueConfig = {
     minIntervalMs: 2_000,
     maxQueueSize: 3
 };
+
+export interface SessionCueConfig {
+    enabled: boolean;
+    volume: number;
+}
+
+export const DEFAULT_SESSION_CUE_CONFIG: SessionCueConfig = {
+    enabled: true,
+    volume: 0.12
+};
+
+export function readSessionCueConfig(): SessionCueConfig {
+    const s = appSettings.peek();
+    return {
+        enabled: s?.sessionCuesEnabled ?? DEFAULT_SESSION_CUE_CONFIG.enabled,
+        volume: clampVolume(s?.sessionCueVolume ?? DEFAULT_SESSION_CUE_CONFIG.volume)
+    };
+}
+
+export function shouldPlaySessionCue(config: SessionCueConfig): boolean {
+    return config.enabled && config.volume > 0;
+}
 
 const FALLBACK_ALERTS = new Set<SpeechAlertKind>(['fallback_provider', 'fallback_degraded']);
 
@@ -96,12 +120,33 @@ export const ALERT_TONE_PROFILES: Record<SpeechAlertKind, ToneStep[]> = {
     fallback_degraded: [{ frequency: 280, durationMs: 180 }]
 };
 
+export const SESSION_CUE_PROFILES: Record<SessionCueKind, ToneStep[]> = {
+    session_start: [{ frequency: 392, durationMs: 36 }],
+    session_stop: [{ frequency: 311, durationMs: 42 }]
+};
+
 export async function playAlertTone(
     kind: SpeechAlertKind,
     volume: number,
     audioContext: AudioContext
 ): Promise<void> {
-    const steps = ALERT_TONE_PROFILES[kind];
+    await playToneSteps(ALERT_TONE_PROFILES[kind], volume, audioContext, false);
+}
+
+export async function playSessionCueTone(
+    kind: SessionCueKind,
+    volume: number,
+    audioContext: AudioContext
+): Promise<void> {
+    await playToneSteps(SESSION_CUE_PROFILES[kind], volume, audioContext, true);
+}
+
+async function playToneSteps(
+    steps: ToneStep[],
+    volume: number,
+    audioContext: AudioContext,
+    softEnvelope: boolean
+): Promise<void> {
     const gainValue = clampVolume(volume);
     if (gainValue <= 0) {
         return;
@@ -111,12 +156,19 @@ export async function playAlertTone(
         const gain = audioContext.createGain();
         osc.type = 'sine';
         osc.frequency.value = step.frequency;
-        gain.gain.value = gainValue;
         osc.connect(gain);
         gain.connect(audioContext.destination);
         const startAt = audioContext.currentTime;
+        const durationSec = step.durationMs / 1000;
+        if (softEnvelope) {
+            gain.gain.setValueAtTime(0.0001, startAt);
+            gain.gain.exponentialRampToValueAtTime(Math.max(gainValue, 0.0001), startAt + 0.008);
+            gain.gain.exponentialRampToValueAtTime(0.0001, startAt + durationSec);
+        } else {
+            gain.gain.value = gainValue;
+        }
         osc.start(startAt);
-        osc.stop(startAt + step.durationMs / 1000);
+        osc.stop(startAt + durationSec);
         await sleep(step.durationMs + (step.gapMs ?? 0));
     }
 }
@@ -170,6 +222,31 @@ export class SpeechAlertQueue {
         this.playing = false;
         this.lastKind = null;
         this.lastPlayedAt = 0;
+    }
+
+    /** Immediate, non-queued mic session cue (start/stop). */
+    public playSessionCue(
+        kind: SessionCueKind,
+        config: SessionCueConfig = readSessionCueConfig()
+    ): void {
+        if (!this.unlocked || !shouldPlaySessionCue(config)) {
+            return;
+        }
+        void this.playSessionCueNow(kind, config);
+    }
+
+    private async playSessionCueNow(kind: SessionCueKind, config: SessionCueConfig): Promise<void> {
+        try {
+            if (!this.audioContext && typeof AudioContext !== 'undefined') {
+                this.audioContext = new AudioContext();
+            }
+            if (this.audioContext) {
+                await this.audioContext.resume();
+            }
+            await playSessionCueTone(kind, config.volume, this.audioContext ?? ({} as AudioContext));
+        } catch {
+            // Never block capture for cue failures.
+        }
     }
 
     private async flush(config: SpeechAlertQueueConfig): Promise<void> {

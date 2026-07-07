@@ -295,6 +295,18 @@
                     "default": false,
                     "description": "When true, retry/recovered tones play only when the Teacher tab is in the background. Fallback tones always play."
                 },
+                "teacher.stt.sessionCues.enabled": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Play very quiet start/stop tones when mic listening begins and when you pause to commit."
+                },
+                "teacher.stt.sessionCues.volume": {
+                    "type": "number",
+                    "default": 0.12,
+                    "minimum": 0,
+                    "maximum": 1,
+                    "description": "Volume for mic session start/stop cues (0 = off, default 0.12)."
+                },
                 "teacher.compile.provider": {
                     "type": "string",
                     "enum": [

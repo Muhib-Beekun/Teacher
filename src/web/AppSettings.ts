@@ -39,7 +39,9 @@ const UI_SETTING_KEYS = [
     'teacher.stt.browserRecovery.resetWindowSec',
     'teacher.stt.browserRecovery.audibleAlerts',
     'teacher.stt.browserRecovery.alertVolume',
-    'teacher.stt.browserRecovery.alertsOnlyWhenHidden'
+    'teacher.stt.browserRecovery.alertsOnlyWhenHidden',
+    'teacher.stt.sessionCues.enabled',
+    'teacher.stt.sessionCues.volume'
 ] as const;
 
 function formatConfigSource(baseUrlSource: InferenceConfigSource, modelSource: InferenceConfigSource): string {
@@ -115,7 +117,9 @@ export async function readAppSettings(deps: {
         browserRecoveryResetWindowSec: config.get<number>('stt.browserRecovery.resetWindowSec', 75),
         browserRecoveryAudibleAlerts: config.get<boolean>('stt.browserRecovery.audibleAlerts', true),
         browserRecoveryAlertVolume: config.get<number>('stt.browserRecovery.alertVolume', 0.35),
-        browserRecoveryAlertsOnlyWhenHidden: config.get<boolean>('stt.browserRecovery.alertsOnlyWhenHidden', false)
+        browserRecoveryAlertsOnlyWhenHidden: config.get<boolean>('stt.browserRecovery.alertsOnlyWhenHidden', false),
+        sessionCuesEnabled: config.get<boolean>('stt.sessionCues.enabled', true),
+        sessionCueVolume: config.get<number>('stt.sessionCues.volume', 0.12)
     };
 }
 
