@@ -25,6 +25,20 @@ export async function loadSettings(): Promise<void> {
     if (json.runtime) applyRuntime(json.runtime);
 }
 
+export async function runSettingsAction(action: string): Promise<void> {
+    const json = await fetch('/api/action', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action })
+    }).then(r => r.json()).catch(() => ({}));
+    if (json.message) {
+        setStatus(json.message, json.ok ? 'ok' : 'warn');
+    }
+    if (action === 'checkForUpdates' || action === 'updateFromOpenVsx') {
+        await loadSettings();
+    }
+}
+
 export async function patchSetting(key: string, value: boolean | string | number): Promise<void> {
     const json = await fetch('/api/settings', {
         method: 'PATCH',

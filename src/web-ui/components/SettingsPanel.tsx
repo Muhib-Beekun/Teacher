@@ -8,6 +8,7 @@ import { WhisperSection } from './WhisperSection';
 import { CompileSection } from './CompileSection';
 import { SendSection } from './SendSection';
 import { AdvancedSection } from './AdvancedSection';
+import { DiagnosticsSection } from './DiagnosticsSection';
 
 export function SettingsPanel() {
     const panelRef = useRef<HTMLElement>(null);
@@ -64,6 +65,7 @@ export function SettingsPanel() {
             >
                 <h2 id="settingsTitle">Configuration</h2>
                 <StatusBlock />
+                <DiagnosticsSection />
                 <InferenceSection />
                 <SpeechSection />
                 <GlossarySection />

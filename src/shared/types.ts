@@ -43,6 +43,7 @@ export interface AppSettingsView {
     inferencePresetId: string;
     vscodeSettingsFilter: string;
     extensionVersion: string;
+    diagnostics: ExtensionDiagnosticsView;
     whisper: WhisperStatusView;
     whisperReleasesUrl: string;
     whisperModelsUrl: string;
@@ -79,4 +80,27 @@ export interface HealthInfo {
     compileReady?: boolean;
     stt?: string;
     [key: string]: unknown;
+}
+
+export type UpdateCheckStatus = 'unknown' | 'current' | 'available' | 'error';
+
+export interface UpdateCheckResult {
+    status: UpdateCheckStatus;
+    installedVersion: string;
+    latestVersion?: string;
+    downloadUrl?: string;
+    message: string;
+    checkedAt: number;
+}
+
+export interface ExtensionDiagnosticsView {
+    extensionHost: 'local' | 'remote';
+    remoteName: string;
+    installChannelHint: string;
+    envOverrideDetected: boolean;
+    envOverrideHint: string;
+    vscodeLmRemoteWarning: boolean;
+    updateStatus: UpdateCheckStatus;
+    latestVersion?: string;
+    updateMessage?: string;
 }

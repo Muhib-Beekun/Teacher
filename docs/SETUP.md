@@ -130,7 +130,17 @@ INFERENCE_API_KEY
 
 Run **Teacher: Rebuild Context Index** after edits.
 
-## 7. Verify
+## 7. Updates and troubleshooting
+
+Open VSX and VSIX installs **do not auto-update**. Use **Teacher: Check for Updates** or **Settings → Host & updates** in the web UI. To install: **Teacher: Update from Open VSX**, then **Reload Window**.
+
+| Symptom | What to do |
+|---------|------------|
+| Updated but old behavior | Confirm **Settings → Status** shows the new `Teacher vX.Y.Z`, then **Developer: Reload Window** |
+| Update check fails | Install from [GitHub Releases](https://github.com/Muhib-Beekun/Teacher/releases) or retry when Open VSX is reachable |
+| Remote SSH/WSL/container | Install/update Teacher **on the remote extension host**, not only your local machine |
+
+## 8. Verify
 
 ```powershell
 npm run test:compiler
@@ -139,7 +149,7 @@ npm run test:web-app
 
 With a cloud key: `npm run test:grok` (xAI smoke test).
 
-## 8. AI agent configuration
+## 9. AI agent configuration
 
 **AI agents** (Cursor, Copilot, etc.) should read [AGENTS.md](../AGENTS.md) in the repo root. It explains how to configure Teacher via VS Code settings without creating `.env` lock issues.
 

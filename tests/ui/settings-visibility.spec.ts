@@ -17,6 +17,19 @@ const MOCK_MODELS = [
     { id: 'qwen2.5-coder:14b', label: 'Ollama qwen2.5-coder:14b', provider: 'ollama-openai' },
 ];
 
+function defaultDiagnostics(overrides: Record<string, unknown> = {}) {
+    return {
+        extensionHost: 'local',
+        remoteName: '',
+        installChannelHint: 'Open VSX / VSIX (manual updates)',
+        envOverrideDetected: false,
+        envOverrideHint: '',
+        vscodeLmRemoteWarning: false,
+        updateStatus: 'unknown',
+        ...overrides,
+    };
+}
+
 function makeSettings(overrides: Record<string, unknown> = {}) {
     return {
         compileLive: true,
@@ -50,6 +63,7 @@ function makeSettings(overrides: Record<string, unknown> = {}) {
         inferencePresets: MOCK_PRESETS,
         inferencePresetId: 'openai',
         extensionVersion: '0.1.0',
+        diagnostics: defaultDiagnostics(),
         vscodeSettingsFilter: '@ext:muhib-beekun.teacher',
         whisper: { binaryPath: '', modelPath: '', binaryExists: false, modelExists: false, ready: false, statusLabel: 'not configured' },
         whisperReleasesUrl: '',
@@ -117,6 +131,16 @@ test.beforeAll(async () => {
         if (req.method === 'GET' && url === '/api/codewords') {
             res.writeHead(200, { 'Content-Type': 'application/json' });
             res.end(JSON.stringify({ ok: true, terms: [], path: '.teacher/codewords.txt' }));
+            return;
+        }
+
+        if (req.method === 'POST' && url === '/api/action') {
+            let body = '';
+            req.on('data', (c) => { body += c; });
+            req.on('end', () => {
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ ok: true, message: 'Action ok (mock).' }));
+            });
             return;
         }
 

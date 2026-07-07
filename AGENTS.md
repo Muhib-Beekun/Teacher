@@ -137,6 +137,15 @@ To configure Teacher for **xAI Grok** with cloud-only compile:
 | `Teacher: Compile Session`            | Recompile the agent brief |
 | `Teacher: Send`                       | Send brief to Composer/chat |
 | `Teacher: Rebuild Context Index`      | Refresh workspace symbol index |
+| `Teacher: Check for Updates`          | Compare installed version to Open VSX latest |
+| `Teacher: Update from Open VSX`       | Download/install latest VSIX from Open VSX |
+
+## Updates and remote hosts
+
+- **Open VSX / VSIX** installs do not auto-update. Use **Teacher: Check for Updates** or Settings → **Host & updates** in the web UI.
+- On **SSH / WSL / dev containers**, install/update where the **remote extension host** runs.
+- After VSIX install, **Reload Window** before expecting new behavior.
+- Verify active version in Settings → Status (`Teacher vX.Y.Z`).
 
 ## What to avoid
 

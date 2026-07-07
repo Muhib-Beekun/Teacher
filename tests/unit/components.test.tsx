@@ -16,6 +16,19 @@ import { TranscriptPane } from '../../src/web-ui/components/TranscriptPane';
 import { SettingsPanel } from '../../src/web-ui/components/SettingsPanel';
 import { MicButton } from '../../src/web-ui/components/MicButton';
 
+function defaultDiagnostics(overrides: Record<string, unknown> = {}) {
+    return {
+        extensionHost: 'local',
+        remoteName: '',
+        installChannelHint: 'Open VSX / VSIX (manual updates)',
+        envOverrideDetected: false,
+        envOverrideHint: '',
+        vscodeLmRemoteWarning: false,
+        updateStatus: 'unknown',
+        ...overrides,
+    };
+}
+
 function makeTestSettings(overrides: Record<string, unknown> = {}) {
     return {
         compileLive: true,
@@ -55,6 +68,7 @@ function makeTestSettings(overrides: Record<string, unknown> = {}) {
         ],
         inferencePresetId: 'openai',
         extensionVersion: '0.1.0',
+        diagnostics: defaultDiagnostics(),
         vscodeSettingsFilter: '@ext:muhib-beekun.teacher',
         whisper: { binaryPath: '', modelPath: '', binaryExists: false, modelExists: false, ready: false, statusLabel: 'not configured' },
         whisperReleasesUrl: 'https://github.com/ggml-org/whisper.cpp/releases',

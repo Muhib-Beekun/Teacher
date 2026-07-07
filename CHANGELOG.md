@@ -9,6 +9,7 @@ Version numbers match `package.json` and `teacher-<version>.vsix` builds.
 
 ### Changed
 
+- **Update awareness** — `Teacher: Check for Updates` and `Teacher: Update from Open VSX` query Open VSX, compare semver, and assist VSIX install with reload prompt. Settings **Host & updates** shows extension host (local/remote), install channel hint, env override, and update status.
 - **Clear session is instant** — session panes reset immediately; workspace index refresh runs in the background without blocking the UI.
 - **Tiered workspace index** — pin (open files), warm (recently closed symbols, LRU cap), cold (basename-only, lazy), and eviction under hard caps. Tab switches re-rank from cache instead of full workspace rescans. File saves and create/delete/rename events patch the cache incrementally when index rebuild mode is `onFileChange`.
 

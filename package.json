@@ -43,7 +43,9 @@
         "onCommand:teacher.setInferenceApiKey",
         "onCommand:teacher.setDeepgramKey",
         "onCommand:teacher.openWebUi",
-        "onCommand:teacher.openMicSidecar"
+        "onCommand:teacher.openMicSidecar",
+        "onCommand:teacher.checkForUpdates",
+        "onCommand:teacher.updateFromOpenVsx"
     ],
     "contributes": {
         "commands": [
@@ -113,6 +115,16 @@
                     "light": "icon.png",
                     "dark": "icon.png"
                 }
+            },
+            {
+                "command": "teacher.checkForUpdates",
+                "title": "Teacher: Check for Updates",
+                "category": "Teacher"
+            },
+            {
+                "command": "teacher.updateFromOpenVsx",
+                "title": "Teacher: Update from Open VSX",
+                "category": "Teacher"
             }
         ],
         "configuration": {

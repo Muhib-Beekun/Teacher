@@ -81,6 +81,8 @@ body {
     display: block; font-size: var(--s-meta); color: var(--muted); margin-top: 3px; line-height: 1.4;
     font-style: normal;
 }
+.hint.warn { color: var(--warn); }
+.diagnostics-grid { margin-bottom: 8px; }
 .setting-row input[type="checkbox"] { margin-top: 4px; width: 16px; height: 16px; accent-color: var(--accent); flex-shrink: 0; }
 .setting-row select,
 .setting-row input[type="text"],

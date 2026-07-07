@@ -61,6 +61,14 @@ Then in any project: **`Teacher: Open Web UI`** → allow mic in **Chrome or Edg
 
 With **Compile provider: Auto** (default), Teacher skips vscode-lm on remote hosts unless you set `teacher.compile.vscodeLm.allowOnRemote` to `true`. See [docs/SETUP.md](./docs/SETUP.md) and [docs/CONFIGURATION.md](./docs/CONFIGURATION.md).
 
+### Updates (Open VSX / VSIX)
+
+Open VSX and VSIX installs **do not auto-update** like Marketplace extensions. Use **Teacher: Check for Updates** or **Settings → Host & updates → Check for updates**. To install the latest build: **Teacher: Update from Open VSX** (downloads from Open VSX, then reload the window).
+
+On **SSH / WSL / dev containers**, install or update Teacher **where the extension host runs** (the remote side), not only on your laptop.
+
+**Updated but still old behavior?** Confirm **Settings → Status** shows the expected version, then run **Developer: Reload Window**. VSIX updates do not apply until reload.
+
 ## vs Cursor voice
 
 | Cursor | Teacher |

@@ -3,8 +3,23 @@ import { appSettings, runtime, micRuntime } from '../state';
 export function StatusBlock() {
     const s = appSettings.value;
     const rt = runtime.value;
+    const d = s?.diagnostics;
 
     const version = s?.extensionVersion ? 'Teacher v' + s.extensionVersion : 'Teacher v…';
+    const update =
+        d?.updateStatus === 'available' && d.latestVersion
+            ? `Update: v${d.latestVersion} available`
+            : d?.updateStatus === 'current'
+              ? 'Update: up to date'
+              : d?.updateStatus === 'error'
+                ? 'Update: check failed'
+                : 'Update: —';
+    const host =
+        d?.extensionHost === 'remote'
+            ? `Host: remote${d.remoteName ? ` (${d.remoteName})` : ''}`
+            : d
+              ? 'Host: local'
+              : 'Host: …';
     const compile = s
         ? (s.compilerReady
             ? 'Compile: ' + (s.activeCompileLabel || s.compileLabel || 'ready')
@@ -21,6 +36,8 @@ export function StatusBlock() {
     return (
         <div class="settings-status" role="status" aria-label="System status">
             <span>{version}</span>
+            <span>{update}</span>
+            <span>{host}</span>
             <span>{compile}</span>
             <span>{inference}</span>
             <span>{mic}</span>

@@ -15,8 +15,9 @@ import {
     WHISPER_RELEASES_URL
 } from '../stt/WhisperSetup';
 
-export type { AppSettingsView } from '../shared/types';
-import type { AppSettingsView } from '../shared/types';
+import type { AppSettingsView, ExtensionDiagnosticsView } from '../shared/types';
+
+export type { AppSettingsView };
 
 const UI_SETTING_KEYS = [
     'teacher.compile.live',
@@ -49,6 +50,7 @@ export async function readAppSettings(deps: {
     llmKeySet: boolean;
     llmKeySource: LlmKeySource;
     activeCompileProvider: string;
+    diagnostics: ExtensionDiagnosticsView;
 }): Promise<AppSettingsView> {
     loadWorkspaceEnv();
     const config = vscode.workspace.getConfiguration('teacher');
@@ -97,6 +99,7 @@ export async function readAppSettings(deps: {
         })),
         inferencePresetId: effective.presetId,
         extensionVersion: vscode.extensions.getExtension('muhib-beekun.teacher')?.packageJSON?.version ?? '?',
+        diagnostics: deps.diagnostics,
         vscodeSettingsFilter: '@ext:muhib-beekun.teacher',
         whisper: await getWhisperStatus(),
         whisperReleasesUrl: WHISPER_RELEASES_URL,

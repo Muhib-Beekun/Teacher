@@ -19,6 +19,7 @@ import { readAppSettings, updateAppSetting, AppSettingsView } from './AppSetting
 import { buildAgentHandoff } from './buildAgentHandoff';
 import { buildSttAuditReport } from './buildSttAudit';
 import { formatCompileLabel, formatContextHint, formatSttLabel } from './labels';
+import type { ExtensionDiagnosticsView, UpdateCheckResult } from '../shared/types';
 import { EMPTY_COMPILED_PLACEHOLDER, SessionSnapshot } from './types';
 
 export type ContextRebuildMode = 'clearSession' | 'onFileChange' | 'eachSegment';
@@ -33,6 +34,9 @@ export interface BrowserSessionBridgeDeps {
     compileService: CompileService;
     getServerUrl: () => string;
     setLlmApiKey: (key: string) => Promise<void>;
+    getDiagnostics: () => ExtensionDiagnosticsView;
+    checkForUpdates: (options?: { notify?: boolean; silent?: boolean }) => Promise<UpdateCheckResult>;
+    updateFromOpenVsx: () => Promise<{ ok: boolean; message: string }>;
 }
 
 export class BrowserSessionBridge {
@@ -164,8 +168,17 @@ export class BrowserSessionBridge {
             serverUrl: this.deps.getServerUrl(),
             llmKeySet,
             llmKeySource,
-            activeCompileProvider: compile
+            activeCompileProvider: compile,
+            diagnostics: this.deps.getDiagnostics()
         });
+    }
+
+    public checkForUpdates(options?: { notify?: boolean; silent?: boolean }): Promise<UpdateCheckResult> {
+        return this.deps.checkForUpdates(options);
+    }
+
+    public updateFromOpenVsx(): Promise<{ ok: boolean; message: string }> {
+        return this.deps.updateFromOpenVsx();
     }
 
     public async setLlmApiKey(key: string): Promise<AppSettingsView> {

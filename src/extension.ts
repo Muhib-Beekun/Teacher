@@ -10,8 +10,11 @@ import { SttService } from './providers/stt/SttService';
 import { getLlmApiKey, getLlmKeySource, promptDeepgramApiKey, promptLlmApiKey, setLlmApiKey } from './secrets/SecretStorage';
 import { TeacherSessionPanel } from './ui/TeacherSessionPanel';
 import { BrowserSessionBridge, ContextRebuildMode } from './web/BrowserSessionBridge';
+import { gatherExtensionDiagnostics } from './host/extensionDiagnostics';
+import { UpdateService } from './update/UpdateService';
 
 const CURSOR_SETTINGS_FILTER = '@ext:muhib-beekun.teacher';
+const GITHUB_RELEASES_URL = 'https://github.com/Muhib-Beekun/Teacher/releases/latest';
 
 export function activate(context: vscode.ExtensionContext): void {
     loadWorkspaceEnv();
@@ -22,6 +25,7 @@ export function activate(context: vscode.ExtensionContext): void {
         }
     })();
     const output = vscode.window.createOutputChannel('Teacher');
+    const updateService = new UpdateService(context, output);
     const sttService = new SttService(context.secrets, output);
     const compileService = new CompileService(output, () => getLlmApiKey(context.secrets));
     const webApp = new WebAppServer(context.extensionPath);
@@ -47,7 +51,10 @@ export function activate(context: vscode.ExtensionContext): void {
         getServerUrl: () => webApp.getUrl(),
         setLlmApiKey: async (key) => {
             await setLlmApiKey(context.secrets, key);
-        }
+        },
+        getDiagnostics: () => gatherExtensionDiagnostics(updateService.getCachedCheck()),
+        checkForUpdates: (options) => updateService.checkForUpdates(options),
+        updateFromOpenVsx: () => updateService.updateFromOpenVsx()
     });
 
     webApp.setHealthProvider(async () => {
@@ -92,6 +99,18 @@ export function activate(context: vscode.ExtensionContext): void {
                 ok: true,
                 message: `Copied "${CURSOR_SETTINGS_FILTER}". In Cursor press Ctrl+, and paste into Settings search.`
             };
+        }
+        if (action === 'checkForUpdates') {
+            const result = await bridge.checkForUpdates({ notify: false, silent: true });
+            return { ok: result.status !== 'error', message: result.message };
+        }
+        if (action === 'updateFromOpenVsx') {
+            const result = await bridge.updateFromOpenVsx();
+            return result;
+        }
+        if (action === 'openGitHubReleases') {
+            await vscode.env.openExternal(vscode.Uri.parse(GITHUB_RELEASES_URL));
+            return { ok: true, message: 'Opened GitHub Releases in your browser.' };
         }
         return { ok: false, message: `Unknown action: ${action}` };
     });
@@ -294,8 +313,24 @@ export function activate(context: vscode.ExtensionContext): void {
             output.appendLine(`Index rebuilt: ${ctx.dictionary_context.length} terms`);
             await panel.forceCompile();
             vscode.window.showInformationMessage(`Context index rebuilt (${ctx.dictionary_context.length} terms).`);
+        }),
+
+        vscode.commands.registerCommand('teacher.checkForUpdates', async () => {
+            await bridge.checkForUpdates({ notify: true });
+            if (panel.isOpen()) {
+                await panel.refreshFromBridge();
+            }
+        }),
+
+        vscode.commands.registerCommand('teacher.updateFromOpenVsx', async () => {
+            const result = await bridge.updateFromOpenVsx();
+            if (!result.ok) {
+                vscode.window.showWarningMessage(result.message);
+            }
         })
     );
+
+    void updateService.checkForUpdates({ notify: false, silent: true });
 }
 
 export function deactivate(): void { }
