@@ -5,6 +5,23 @@ All notable changes to **Teacher** are documented in this file.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).  
 Version numbers match `package.json` and `teacher-<version>.vsix` builds.
 
+## [0.1.3] - 2026-07-07
+
+### Added
+
+- **Browser speech recovery** — retry-first state machine for `Speech: network` (default 4 retries, jittered backoff) before Whisper/Deepgram fallback; push-to-talk degraded mode when no provider; settings under Speech; trace events in `.teacher/trace.jsonl`.
+- **Recovery alert sounds** — queued tones on retry, recovery, and fallback (coalesced so fallback replaces pending retry beeps); configurable volume and background-only mode.
+- **Mic session cues** — optional barely-audible start/stop tones when listening begins and when you pause to commit (default on at 0.12 volume; disable via settings or volume 0).
+- **Pin-state detection** — reads profile `extensions.json` when available; tries to clear pin before Open VSX install; shows pin hint in Host & updates.
+- **Update integration tests** — mocked Open VSX fetch, VSIX download, and install command flow.
+- **CONFIGURATION.md** — update commands, remote-host scope, pin-state, browser recovery, reload requirement, and troubleshooting.
+
+### Changed
+
+- Status block shows separate **Installed** and **Latest** version lines when known.
+- Host & updates button row wraps in narrow settings panel.
+- **Open VSX 404 retry** — one automatic retry when `/latest` 404s shortly after publish.
+
 ## [0.1.2] - 2026-07-07
 
 ### Added
@@ -16,18 +33,6 @@ Version numbers match `package.json` and `teacher-<version>.vsix` builds.
 
 - Settings status block shows update state and extension host alongside version and compile info.
 - Docs (`README`, `SETUP`, `AGENTS`) explain Open VSX/VSIX manual updates, remote-host install, and troubleshooting stale behavior after upgrade.
-
-### Added (pending next release)
-
-- **CONFIGURATION.md** — update commands, remote-host scope, pin-state best effort, reload requirement, and troubleshooting.
-- **Pin-state detection** — reads profile `extensions.json` when available; tries to clear pin before Open VSX install; shows pin hint in Host & updates.
-- **Update integration tests** — mocked Open VSX fetch, VSIX download, and install command flow.
-- **Open VSX 404 retry** — one automatic retry when `/latest` 404s shortly after publish.
-- Status block shows separate **Installed** and **Latest** version lines when known.
-- **Browser speech recovery** — retry-first state machine for `Speech: network` (default 4 retries, jittered backoff) before Whisper/Deepgram fallback; push-to-talk degraded mode when no provider; settings under Speech; trace events in `.teacher/trace.jsonl`.
-- **Recovery alert sounds** — queued tones on retry, recovery, and fallback (coalesced so fallback replaces pending retry beeps); configurable volume and background-only mode.
-- **Mic session cues** — optional barely-audible start/stop tones when listening begins and when you pause to commit (default on at 0.12 volume; disable via settings or volume 0).
-- Host & updates button row wraps in narrow settings panel.
 
 ## [0.1.1] - 2026-07-06
 
