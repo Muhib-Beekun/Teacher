@@ -330,3 +330,15 @@ export async function copyText(text: string, okMsg: string): Promise<void> {
         setStatus('Could not copy to clipboard.', 'warn');
     }
 }
+
+export async function logSpeechTrace(payload: Record<string, unknown>): Promise<void> {
+    try {
+        await fetch('/api/trace/speech', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+    } catch {
+        // Best-effort tracing from browser
+    }
+}

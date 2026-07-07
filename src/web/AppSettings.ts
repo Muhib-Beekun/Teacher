@@ -33,7 +33,10 @@ const UI_SETTING_KEYS = [
     'teacher.inference.llm.baseUrl',
     'teacher.inference.llm.model',
     'teacher.stt.whisper.binaryPath',
-    'teacher.stt.whisper.modelPath'
+    'teacher.stt.whisper.modelPath',
+    'teacher.stt.browserRecovery.maxRetries',
+    'teacher.stt.browserRecovery.enableAutoFallback',
+    'teacher.stt.browserRecovery.resetWindowSec'
 ] as const;
 
 function formatConfigSource(baseUrlSource: InferenceConfigSource, modelSource: InferenceConfigSource): string {
@@ -103,7 +106,10 @@ export async function readAppSettings(deps: {
         vscodeSettingsFilter: '@ext:muhib-beekun.teacher',
         whisper: await getWhisperStatus(),
         whisperReleasesUrl: WHISPER_RELEASES_URL,
-        whisperModelsUrl: WHISPER_MODELS_URL
+        whisperModelsUrl: WHISPER_MODELS_URL,
+        browserRecoveryMaxRetries: config.get<number>('stt.browserRecovery.maxRetries', 4),
+        browserRecoveryEnableAutoFallback: config.get<boolean>('stt.browserRecovery.enableAutoFallback', true),
+        browserRecoveryResetWindowSec: config.get<number>('stt.browserRecovery.resetWindowSec', 75)
     };
 }
 

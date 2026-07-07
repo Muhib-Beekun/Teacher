@@ -75,6 +75,18 @@ Teacher does **not** use vector RAG. Workspace context is a ranked term list fro
 
 For strongest **recognition-time** biasing (Grok vs Groq, file names, symbol names), configure **Whisper** or **Deepgram**. **Browser Web Speech does not support hear-time bias** — workspace codewords only help via post-hoc lexicon, homonym pass, and LLM polish after text arrives.
 
+### Browser speech recovery (Web Speech)
+
+Long sessions in embedded browsers (Cursor webviews) can hit transient **`Speech: network`** errors. Teacher retries browser speech before switching providers.
+
+| Setting | Default | Purpose |
+|---------|---------|---------|
+| `teacher.stt.browserRecovery.maxRetries` | `4` | Consecutive retry-worthy failures before fallback (3–7) |
+| `teacher.stt.browserRecovery.enableAutoFallback` | `true` | Fall back to Whisper/Deepgram when configured |
+| `teacher.stt.browserRecovery.resetWindowSec` | `75` | Stable listening window before failure counter resets |
+
+Retry-worthy failures: `Speech: network`, or end-without-result shortly after start. User mic stop/pause is never counted. Trace events (`speech_recovery_*`, `speech_fallback_*`) append to `.teacher/trace.jsonl` without speech content.
+
 **Whisper overhead:** each mic pause sends audio to the extension host for local inference — typically 1–5+ seconds on CPU depending on model size, plus CPU/GPU use while transcribing. Browser speech has no local compute cost and lower latency.
 
 Whisper paths are configured in **Teacher Settings → Speech → Local Whisper** (browse, discover, test). See [WHISPER-SETUP.md](./WHISPER-SETUP.md). Audio is recorded in the browser on mic pause and transcribed on the extension host.

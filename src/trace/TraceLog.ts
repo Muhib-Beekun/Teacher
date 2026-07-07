@@ -16,6 +16,20 @@ export interface TraceEntry {
     tokensOut?: number;
 }
 
+export interface SpeechTraceEntry {
+    ts: string;
+    kind: 'speech';
+    event: string;
+    attempt?: number;
+    maxRetries?: number;
+    errorClass?: string;
+    delayMs?: number;
+    fallback?: string;
+    elapsedSessionMs?: number;
+    consecutiveFailures?: number;
+    rollingFailures?: number;
+}
+
 const MAX_LINES = 500;
 const PRUNE_TO = 400;
 
@@ -63,6 +77,25 @@ export function writeTrace(entry: TraceEntry): void {
         rotateIfNeeded(filePath);
     } catch {
         // Best-effort — never crash the extension for tracing
+    }
+}
+
+export function writeSpeechTrace(entry: Omit<SpeechTraceEntry, 'ts' | 'kind'>): void {
+    const filePath = traceFilePath();
+    if (!filePath) {
+        return;
+    }
+    try {
+        ensureDir(filePath);
+        const line = JSON.stringify({
+            ts: new Date().toISOString(),
+            kind: 'speech',
+            ...entry
+        } satisfies SpeechTraceEntry);
+        fs.appendFileSync(filePath, line + '\n', 'utf8');
+        rotateIfNeeded(filePath);
+    } catch {
+        // Best-effort
     }
 }
 

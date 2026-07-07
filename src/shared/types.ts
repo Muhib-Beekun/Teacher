@@ -47,6 +47,9 @@ export interface AppSettingsView {
     whisper: WhisperStatusView;
     whisperReleasesUrl: string;
     whisperModelsUrl: string;
+    browserRecoveryMaxRetries: number;
+    browserRecoveryEnableAutoFallback: boolean;
+    browserRecoveryResetWindowSec: number;
 }
 
 export interface SessionSnapshot {

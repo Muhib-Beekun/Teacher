@@ -68,18 +68,19 @@ export function DiagnosticsSection() {
                             });
                         }}
                     >
-                        Check for updates
+                        Check updates
                     </button>
                     <button
                         type="button"
                         disabled={d.updateStatus !== 'available'}
+                        title="Download and install the latest VSIX from Open VSX"
                         onClick={() => {
                             runSettingsAction('updateFromOpenVsx').catch(() => {
                                 setStatus('Update failed.', 'warn');
                             });
                         }}
                     >
-                        Update from Open VSX
+                        Install update
                     </button>
                     <button
                         type="button"
@@ -88,7 +89,7 @@ export function DiagnosticsSection() {
                             runSettingsAction('openGitHubReleases').catch(() => {});
                         }}
                     >
-                        GitHub Releases
+                        Releases
                     </button>
                 </div>
                 <p class="hint">

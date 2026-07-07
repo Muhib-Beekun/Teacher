@@ -13,6 +13,7 @@ export const recordingArmed = signal(false);
 export const liveEditLock = signal(false);
 export const micSpeechBlocked = signal(false);
 export const micProcessing = signal(false);
+export const speechRecoveryMode = signal<'browser' | 'provider' | 'degraded'>('browser');
 
 export const appSettings = signal<AppSettingsView | null>(null);
 export const runtime = signal<RuntimeInfo | null>(null);

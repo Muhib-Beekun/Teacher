@@ -259,6 +259,25 @@
                     "default": "nova-2",
                     "description": "Deepgram model id (BYOK)."
                 },
+                "teacher.stt.browserRecovery.maxRetries": {
+                    "type": "number",
+                    "default": 4,
+                    "minimum": 3,
+                    "maximum": 7,
+                    "description": "Max consecutive browser speech retries before STT fallback (Web Speech recovery)."
+                },
+                "teacher.stt.browserRecovery.enableAutoFallback": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "After browser speech retries are exhausted, fall back to Whisper/Deepgram when configured."
+                },
+                "teacher.stt.browserRecovery.resetWindowSec": {
+                    "type": "number",
+                    "default": 75,
+                    "minimum": 60,
+                    "maximum": 90,
+                    "description": "Seconds of stable browser speech before the consecutive failure counter resets."
+                },
                 "teacher.compile.provider": {
                     "type": "string",
                     "enum": [

@@ -49,6 +49,49 @@ export function SpeechSection() {
                 </div>
 
                 <div class="setting-row">
+                    <label for="setBrowserRecoveryRetries">
+                        Browser speech retries
+                        <span class="hint">Retries on Speech: network before fallback (3–7).</span>
+                    </label>
+                    <input
+                        type="number"
+                        id="setBrowserRecoveryRetries"
+                        min={3}
+                        max={7}
+                        value={s?.browserRecoveryMaxRetries ?? 4}
+                        onChange={handleChange('teacher.stt.browserRecovery.maxRetries')}
+                    />
+                </div>
+
+                <div class="setting-row">
+                    <label for="setBrowserRecoveryFallback">
+                        Auto-fallback STT
+                        <span class="hint">Switch to Whisper/Deepgram after retries fail.</span>
+                    </label>
+                    <input
+                        type="checkbox"
+                        id="setBrowserRecoveryFallback"
+                        checked={s?.browserRecoveryEnableAutoFallback ?? true}
+                        onChange={handleChange('teacher.stt.browserRecovery.enableAutoFallback')}
+                    />
+                </div>
+
+                <div class="setting-row">
+                    <label for="setBrowserRecoveryReset">
+                        Recovery reset window (sec)
+                        <span class="hint">Stable speech duration before failure counter resets.</span>
+                    </label>
+                    <input
+                        type="number"
+                        id="setBrowserRecoveryReset"
+                        min={60}
+                        max={90}
+                        value={s?.browserRecoveryResetWindowSec ?? 75}
+                        onChange={handleChange('teacher.stt.browserRecovery.resetWindowSec')}
+                    />
+                </div>
+
+                <div class="setting-row">
                     <label for="setPolishStt">
                         AI-powered cleanup
                         <span class="hint">Uses your inference provider to fix remaining STT errors before compile.</span>

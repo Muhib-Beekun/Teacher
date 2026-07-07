@@ -24,6 +24,8 @@ Version numbers match `package.json` and `teacher-<version>.vsix` builds.
 - **Update integration tests** — mocked Open VSX fetch, VSIX download, and install command flow.
 - **Open VSX 404 retry** — one automatic retry when `/latest` 404s shortly after publish.
 - Status block shows separate **Installed** and **Latest** version lines when known.
+- **Browser speech recovery** — retry-first state machine for `Speech: network` (default 4 retries, jittered backoff) before Whisper/Deepgram fallback; push-to-talk degraded mode when no provider; settings under Speech; trace events in `.teacher/trace.jsonl`.
+- Host & updates button row wraps in narrow settings panel.
 
 ## [0.1.1] - 2026-07-06
 

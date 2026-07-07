@@ -1,19 +1,39 @@
 import { useRef, useEffect, useCallback, useState } from 'preact/hooks';
 import {
     listening, flushing, micRuntime, recordingArmed, liveEditLock,
-    micSpeechBlocked, micProcessing, health, setStatus, applySession
+    micSpeechBlocked, micProcessing, health, setStatus, applySession,
+    speechRecoveryMode, appSettings
 } from '../state';
-import { addSegment, addAudio, loadSettings, copyText } from '../api';
+import { addSegment, addAudio, loadSettings, copyText, logSpeechTrace } from '../api';
 import { MicButton } from './MicButton';
 import { Waveform } from './Waveform';
+import {
+    SpeechRecoveryController,
+    type BrowserRecoveryConfig,
+    type RecoveryAction,
+    type SpeechRecoveryEvent,
+    DEFAULT_BROWSER_RECOVERY_CONFIG
+} from '../speechRecovery';
 
-const UNSUPPORTED_SPEECH_ERRORS = new Set(['network', 'service-not-allowed', 'audio-capture']);
+const PERMANENT_SPEECH_ERRORS = new Set(['service-not-allowed', 'audio-capture']);
+const STABLE_CHECK_MS = 15_000;
 
 function isMicCapableBrowser(): boolean {
     const ua = navigator.userAgent;
     if (/Edg\//.test(ua)) return true;
     if (/Chrome\//.test(ua) && !/OPR\//.test(ua) && !/SamsungBrowser\//.test(ua)) return true;
     return false;
+}
+
+function buildRecoveryConfig(): BrowserRecoveryConfig {
+    const s = appSettings.peek();
+    return {
+        ...DEFAULT_BROWSER_RECOVERY_CONFIG,
+        maxRetries: s?.browserRecoveryMaxRetries ?? DEFAULT_BROWSER_RECOVERY_CONFIG.maxRetries,
+        enableAutoFallback: s?.browserRecoveryEnableAutoFallback ?? true,
+        resetWindowSec: s?.browserRecoveryResetWindowSec ?? DEFAULT_BROWSER_RECOVERY_CONFIG.resetWindowSec,
+        sttProvider: s?.sttProvider ?? 'auto'
+    };
 }
 
 export function CapturePanel() {
@@ -28,6 +48,14 @@ export function CapturePanel() {
     const activeMimeRef = useRef('audio/webm');
     const liveTextRef = useRef<HTMLDivElement>(null);
     const [activeAnalyser, setActiveAnalyser] = useState<AnalyserNode | null>(null);
+
+    const recoveryRef = useRef(new SpeechRecoveryController(buildRecoveryConfig()));
+    const recoveryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const stableTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+    const userStoppingRef = useRef(false);
+    const listeningRef = useRef(false);
+    const recoveryRestartPendingRef = useRef(false);
+    const skipNextSpeechEndRef = useRef(false);
 
     const normalizeSpaces = (text: string) => (text || '').replace(/\s+/g, ' ').trim();
 
@@ -60,34 +88,120 @@ export function CapturePanel() {
         setLiveText('');
     };
 
-    const stopWaveform = useCallback(() => {
-        if (audioContextRef.current) {
-            audioContextRef.current.close().catch(() => {});
-            audioContextRef.current = null;
+    const clearRecoveryTimers = useCallback(() => {
+        if (recoveryTimerRef.current) {
+            clearTimeout(recoveryTimerRef.current);
+            recoveryTimerRef.current = null;
         }
-        analyserRef.current = null;
-        setActiveAnalyser(null);
+        if (stableTimerRef.current) {
+            clearInterval(stableTimerRef.current);
+            stableTimerRef.current = null;
+        }
+        recoveryRestartPendingRef.current = false;
     }, []);
 
-    const startWaveform = useCallback((stream: MediaStream) => {
-        stopWaveform();
-        const ac = new AudioContext();
-        audioContextRef.current = ac;
-        const source = ac.createMediaStreamSource(stream);
-        const an = ac.createAnalyser();
-        an.fftSize = 64;
-        source.connect(an);
-        analyserRef.current = an;
-        setActiveAnalyser(an);
-    }, [stopWaveform]);
+    const stopWebSpeech = useCallback(() => {
+        if (recognitionRef.current) {
+            try {
+                recognitionRef.current.stop();
+            } catch {
+                // ignore
+            }
+        }
+    }, []);
 
     const showMicUnsupported = useCallback(() => {
         micSpeechBlocked.value = true;
     }, []);
 
+    const applyRecoveryActions = useCallback(
+        (actions: RecoveryAction[]) => {
+            for (const action of actions) {
+                switch (action.type) {
+                    case 'trace':
+                        void logSpeechTrace(action.payload);
+                        break;
+                    case 'status':
+                        setStatus(action.message, action.kind);
+                        break;
+                    case 'schedule_retry':
+                        recoveryRestartPendingRef.current = true;
+                        recoveryTimerRef.current = setTimeout(() => {
+                            recoveryRestartPendingRef.current = false;
+                            if (!listeningRef.current) return;
+                            if (!recoveryRef.current.shouldAutoRestartRecognition()) return;
+                            try {
+                                recognitionRef.current?.start();
+                                applyRecoveryActions(recoveryRef.current.dispatch({ type: 'speech_start' }));
+                            } catch {
+                                // Another retry cycle may handle repeated failures.
+                            }
+                        }, action.delayMs);
+                        break;
+                    case 'evaluate_fallback': {
+                        const fallbackActions = recoveryRef.current.finalizeFallback(
+                            health.peek().stt,
+                            Date.now(),
+                            action.errorClass,
+                            action.reason
+                        );
+                        applyRecoveryActions(fallbackActions);
+                        break;
+                    }
+                    case 'fallback_provider':
+                        speechRecoveryMode.value = 'provider';
+                        stopWebSpeech();
+                        if (listeningRef.current) {
+                            setStatus('Listening via audio fallback. Tap mic to pause.', 'ok');
+                        }
+                        break;
+                    case 'fallback_degraded':
+                        speechRecoveryMode.value = 'degraded';
+                        stopWebSpeech();
+                        if (listeningRef.current) {
+                            setStatus('Push-to-talk mode — type or pause mic to commit.', 'warn');
+                        }
+                        break;
+                    case 'resume_listening':
+                        break;
+                    default:
+                        break;
+                }
+            }
+        },
+        [stopWebSpeech]
+    );
+
+    const dispatchRecovery = useCallback(
+        (event: SpeechRecoveryEvent) => {
+            applyRecoveryActions(recoveryRef.current.dispatch(event));
+        },
+        [applyRecoveryActions]
+    );
+
+    const resetRecoveryForNewChunk = useCallback(() => {
+        clearRecoveryTimers();
+        recoveryRef.current = new SpeechRecoveryController(buildRecoveryConfig());
+        speechRecoveryMode.value = 'browser';
+        dispatchRecovery({ type: 'user_start' });
+    }, [clearRecoveryTimers, dispatchRecovery]);
+
+    const startStableWindowTimer = useCallback(() => {
+        if (stableTimerRef.current) return;
+        stableTimerRef.current = setInterval(() => {
+            if (!listeningRef.current) return;
+            dispatchRecovery({ type: 'stable_window_elapsed' });
+        }, STABLE_CHECK_MS);
+    }, [dispatchRecovery]);
+
+    const stopRecordingRef = useRef<() => void>(() => {});
+
     const startWebSpeech = useCallback(() => {
+        if (speechRecoveryMode.peek() !== 'browser') {
+            return;
+        }
         const SR = (window as Record<string, unknown>).SpeechRecognition ||
-                   (window as Record<string, unknown>).webkitSpeechRecognition;
+            (window as Record<string, unknown>).webkitSpeechRecognition;
         if (!SR) {
             showMicUnsupported();
             setStatus('Voice not supported in this browser. Open in Chrome or Edge.', 'warn');
@@ -106,6 +220,9 @@ export function CapturePanel() {
                     if (res.isFinal) finalText += res[0].transcript;
                     else interim += res[0].transcript;
                 }
+                if (finalText || interim) {
+                    dispatchRecovery({ type: 'speech_result' });
+                }
                 if (finalText) {
                     chunkTranscriptRef.current = appendSpeechChunk(chunkTranscriptRef.current, finalText);
                     setLiveTextFromSpeech(chunkTranscriptRef.current);
@@ -115,25 +232,66 @@ export function CapturePanel() {
             };
             rec.onerror = (e: SpeechRecognitionErrorEvent) => {
                 if (e.error === 'no-speech' || e.error === 'aborted') return;
-                if (UNSUPPORTED_SPEECH_ERRORS.has(e.error)) {
+                if (PERMANENT_SPEECH_ERRORS.has(e.error)) {
                     showMicUnsupported();
-                    if (listening.value) stopRecording();
+                    userStoppingRef.current = true;
+                    if (listening.value) stopRecordingRef.current();
+                    userStoppingRef.current = false;
                     setStatus('Voice not supported in this browser. Open in Chrome or Edge.', 'warn');
                     return;
                 }
-                setStatus('Speech: ' + e.error, 'warn');
+                if (e.error === 'network') {
+                    skipNextSpeechEndRef.current = true;
+                    try {
+                        rec.stop();
+                    } catch {
+                        // ignore
+                    }
+                    dispatchRecovery({ type: 'speech_error_network' });
+                    return;
+                }
+                dispatchRecovery({ type: 'speech_error_other', error: e.error });
             };
             rec.onend = () => {
-                if (listening.value) try { rec.start(); } catch {}
+                if (userStoppingRef.current || !listeningRef.current) return;
+                if (recoveryRestartPendingRef.current) return;
+                if (skipNextSpeechEndRef.current) {
+                    skipNextSpeechEndRef.current = false;
+                    return;
+                }
+                const snap = recoveryRef.current.getSnapshot();
+                if (snap.mode !== 'browser' || snap.state === 'recovering') return;
+                if (!recoveryRef.current.shouldAutoRestartRecognition()) return;
+                const elapsed = snap.speechStartedAt ? Date.now() - snap.speechStartedAt : 0;
+                const earlyEnd =
+                    snap.speechStartedAt > 0 &&
+                    !snap.hadResultSinceSpeechStart &&
+                    elapsed > 0 &&
+                    elapsed < DEFAULT_BROWSER_RECOVERY_CONFIG.earlyEndThresholdMs;
+                const actions = recoveryRef.current.dispatch({
+                    type: 'speech_end',
+                    earlyEndWithoutResult: earlyEnd
+                });
+                if (actions.some((a) => a.type === 'schedule_retry' || a.type === 'evaluate_fallback')) {
+                    applyRecoveryActions(actions);
+                    return;
+                }
+                try {
+                    rec.start();
+                    dispatchRecovery({ type: 'speech_start' });
+                } catch {
+                    // ignore
+                }
             };
             recognitionRef.current = rec;
         }
-        try { recognitionRef.current.start(); } catch {}
-    }, []);
-
-    const stopWebSpeech = useCallback(() => {
-        if (recognitionRef.current) try { recognitionRef.current.stop(); } catch {}
-    }, []);
+        try {
+            recognitionRef.current.start();
+            dispatchRecovery({ type: 'speech_start' });
+        } catch {
+            // ignore duplicate start
+        }
+    }, [applyRecoveryActions, dispatchRecovery, showMicUnsupported]);
 
     const commitChunk = useCallback(async () => {
         if (flushing.value) return;
@@ -150,10 +308,13 @@ export function CapturePanel() {
         setStatus('Processing…');
 
         try {
-            const useAudio = blob && blob.size > 0 && health.peek().stt && health.peek().stt !== 'webspeech';
+            const h = health.peek();
+            const forceAudio = speechRecoveryMode.peek() === 'provider';
+            const useAudio =
+                forceAudio || (blob && blob.size > 0 && h.stt && h.stt !== 'webspeech');
             let json: Record<string, unknown>;
-            if (useAudio) {
-                json = await addAudio(blob!, blob!.type || activeMimeRef.current);
+            if (useAudio && blob && blob.size > 0) {
+                json = await addAudio(blob, blob.type || activeMimeRef.current);
             } else {
                 json = await addSegment(text);
             }
@@ -181,45 +342,92 @@ export function CapturePanel() {
     }, []);
 
     const abortRecording = useCallback(() => {
+        userStoppingRef.current = true;
         recordingArmed.value = false;
         stopWebSpeech();
+        clearRecoveryTimers();
+        dispatchRecovery({ type: 'user_stop' });
         listening.value = false;
+        listeningRef.current = false;
         chunkTranscriptRef.current = '';
         pendingBlobRef.current = null;
         clearLiveText();
         const recorder = mediaRecorderRef.current;
         if (recorder?.state === 'recording' || recorder?.state === 'paused') {
-            try { recorder.stop(); } catch {}
+            try {
+                recorder.stop();
+            } catch {
+                // ignore
+            }
         } else if (mediaStreamRef.current) {
-            mediaStreamRef.current.getTracks().forEach(t => t.stop());
+            mediaStreamRef.current.getTracks().forEach((t) => t.stop());
             mediaStreamRef.current = null;
             stopWaveform();
         }
         micProcessing.value = false;
         micRuntime.value = 'idle';
+        speechRecoveryMode.value = 'browser';
+        userStoppingRef.current = false;
         setStatus('Recording cancelled.', 'ok');
-    }, [stopWebSpeech, stopWaveform]);
+    }, [clearRecoveryTimers, dispatchRecovery, stopWebSpeech]);
+
+    const stopWaveform = useCallback(() => {
+        if (audioContextRef.current) {
+            audioContextRef.current.close().catch(() => {});
+            audioContextRef.current = null;
+        }
+        analyserRef.current = null;
+        setActiveAnalyser(null);
+    }, []);
+
+    const startWaveform = useCallback(
+        (stream: MediaStream) => {
+            stopWaveform();
+            const ac = new AudioContext();
+            audioContextRef.current = ac;
+            const source = ac.createMediaStreamSource(stream);
+            const an = ac.createAnalyser();
+            an.fftSize = 64;
+            source.connect(an);
+            analyserRef.current = an;
+            setActiveAnalyser(an);
+        },
+        [stopWaveform]
+    );
 
     const stopRecording = useCallback(() => {
+        userStoppingRef.current = true;
         listening.value = false;
+        listeningRef.current = false;
         stopWebSpeech();
+        clearRecoveryTimers();
+        dispatchRecovery({ type: 'user_stop' });
         micRuntime.value = 'processing';
         chunkTranscriptRef.current = getLiveText();
         const recorder = mediaRecorderRef.current;
         if (recorder?.state === 'recording') {
             micProcessing.value = true;
-            try { recorder.requestData(); } catch {}
+            try {
+                recorder.requestData();
+            } catch {
+                // ignore
+            }
             recorder.stop();
         } else {
             void commitChunk();
         }
-    }, [stopWebSpeech, commitChunk]);
+        userStoppingRef.current = false;
+        speechRecoveryMode.value = 'browser';
+    }, [clearRecoveryTimers, commitChunk, dispatchRecovery, stopWebSpeech]);
+
+    stopRecordingRef.current = stopRecording;
 
     const startRecording = useCallback(async () => {
         if (!isMicCapableBrowser() || !navigator.mediaDevices?.getUserMedia) {
             setStatus('Microphone needs Chrome or Edge. Copy the URL above.', 'warn');
             return;
         }
+        resetRecoveryForNewChunk();
         recordingArmed.value = true;
         liveEditLock.value = false;
         if (document.activeElement === liveTextRef.current) {
@@ -232,7 +440,7 @@ export function CapturePanel() {
 
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
         if (!recordingArmed.value) {
-            stream.getTracks().forEach(t => t.stop());
+            stream.getTracks().forEach((t) => t.stop());
             micRuntime.value = 'idle';
             return;
         }
@@ -254,7 +462,7 @@ export function CapturePanel() {
                 audioChunksRef.current = [];
                 pendingBlobRef.current = null;
                 if (mediaStreamRef.current) {
-                    mediaStreamRef.current.getTracks().forEach(t => t.stop());
+                    mediaStreamRef.current.getTracks().forEach((t) => t.stop());
                     mediaStreamRef.current = null;
                 }
                 mediaRecorderRef.current = null;
@@ -266,7 +474,7 @@ export function CapturePanel() {
             }
             audioChunksRef.current = [];
             if (mediaStreamRef.current) {
-                mediaStreamRef.current.getTracks().forEach(t => t.stop());
+                mediaStreamRef.current.getTracks().forEach((t) => t.stop());
                 mediaStreamRef.current = null;
             }
             mediaRecorderRef.current = null;
@@ -276,26 +484,39 @@ export function CapturePanel() {
 
         micRuntime.value = 'warming up';
         setStatus('Warming up mic…');
-        await new Promise(r => setTimeout(r, 450));
+        await new Promise((r) => setTimeout(r, 450));
         if (!recordingArmed.value) {
-            if (recorder.state !== 'inactive') try { recorder.stop(); } catch {}
+            if (recorder.state !== 'inactive') {
+                try {
+                    recorder.stop();
+                } catch {
+                    // ignore
+                }
+            }
             return;
         }
 
         recorder.start(250);
         listening.value = true;
+        listeningRef.current = true;
         micRuntime.value = 'listening';
         setStatus('Listening. Tap mic to pause.');
+        startStableWindowTimer();
         startWebSpeech();
-    }, [startWaveform, stopWaveform, startWebSpeech, commitChunk]);
+    }, [commitChunk, resetRecoveryForNewChunk, startStableWindowTimer, startWaveform, startWebSpeech, stopWaveform]);
 
     const toggleMic = useCallback(async () => {
         if (listening.value) stopRecording();
         else {
-            try { await startRecording(); }
-            catch { setStatus('Mic blocked. Allow microphone access.', 'warn'); }
+            try {
+                await startRecording();
+            } catch {
+                setStatus('Mic blocked. Allow microphone access.', 'warn');
+            }
         }
     }, [startRecording, stopRecording]);
+
+    useEffect(() => () => clearRecoveryTimers(), [clearRecoveryTimers]);
 
     const isMicCapable = isMicCapableBrowser() && !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
     const showUnsupported = micSpeechBlocked.value || !isMicCapable;
@@ -306,11 +527,14 @@ export function CapturePanel() {
         }
     }, [isMicCapable]);
 
-    const cancellable = recordingArmed.value || listening.value || micProcessing.value
-        || micRuntime.value === 'requesting access'
-        || micRuntime.value === 'warming up'
-        || micRuntime.value === 'listening'
-        || micRuntime.value === 'processing';
+    const cancellable =
+        recordingArmed.value ||
+        listening.value ||
+        micProcessing.value ||
+        micRuntime.value === 'requesting access' ||
+        micRuntime.value === 'warming up' ||
+        micRuntime.value === 'listening' ||
+        micRuntime.value === 'processing';
 
     const h = health.value;
     const teacherUrl = (h?.url as string) || 'http://127.0.0.1:3721/';
@@ -322,9 +546,9 @@ export function CapturePanel() {
                     <strong>This browser cannot use voice</strong>
                     <span>
                         Cursor's built-in browser and some embedded views fail with{' '}
-                        <em>Speech: network</em>. Run <em>Teacher: Open Web UI</em> in{' '}
-                        <strong>Chrome</strong> or <strong>Edge</strong> instead, then bookmark
-                        the URL below.
+                        <em>Speech: network</em>. Teacher retries automatically; if problems persist, run{' '}
+                        <em>Teacher: Open Web UI</em> in <strong>Chrome</strong> or <strong>Edge</strong>, then
+                        bookmark the URL below.
                     </span>
                     <div class="copy-row">
                         <code>{teacherUrl}</code>
@@ -343,7 +567,9 @@ export function CapturePanel() {
                     <MicButton
                         active={listening.value}
                         processing={micProcessing.value}
-                        onClick={() => { toggleMic().catch(() => {}); }}
+                        onClick={() => {
+                            toggleMic().catch(() => {});
+                        }}
                     >
                         <Waveform analyser={activeAnalyser} />
                     </MicButton>
@@ -365,14 +591,20 @@ export function CapturePanel() {
                 spellcheck
                 aria-live="polite"
                 data-placeholder="Speak or type here. Pause the mic to add to session."
-                onFocus={() => { liveEditLock.value = true; }}
+                onFocus={() => {
+                    liveEditLock.value = true;
+                }}
                 onBlur={() => {
                     liveEditLock.value = false;
                     chunkTranscriptRef.current = getLiveText();
                     const el = liveTextRef.current;
                     if (el) el.classList.toggle('empty', !el.innerText.trim());
-                    if (listening.value && recognitionRef.current) {
-                        try { recognitionRef.current.start(); } catch {}
+                    if (listening.value && recognitionRef.current && speechRecoveryMode.peek() === 'browser') {
+                        try {
+                            recognitionRef.current.start();
+                        } catch {
+                            // ignore
+                        }
                     }
                 }}
                 onInput={() => {

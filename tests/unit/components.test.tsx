@@ -76,6 +76,9 @@ function makeTestSettings(overrides: Record<string, unknown> = {}) {
         whisper: { binaryPath: '', modelPath: '', binaryExists: false, modelExists: false, ready: false, statusLabel: 'not configured' },
         whisperReleasesUrl: 'https://github.com/ggml-org/whisper.cpp/releases',
         whisperModelsUrl: 'https://huggingface.co/ggerganov/whisper.cpp/tree/main',
+        browserRecoveryMaxRetries: 4,
+        browserRecoveryEnableAutoFallback: true,
+        browserRecoveryResetWindowSec: 75,
         ...overrides,
     } as any;
 }

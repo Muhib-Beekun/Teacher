@@ -3,6 +3,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
 import { BrowserSessionBridge } from '../web/BrowserSessionBridge';
+import { writeSpeechTrace } from '../trace/TraceLog';
 
 const DEFAULT_PORT = 3721;
 const MAX_PORT_TRIES = 20;
@@ -287,6 +288,38 @@ export class WebAppServer {
 
         if (req.method === 'GET' && url === '/api/stt-audit') {
             this.json(res, 200, { ok: true, audit: bridge.getSttAuditReport() });
+            return;
+        }
+
+        if (req.method === 'POST' && url === '/api/trace/speech') {
+            const body = await this.readBody(req, res);
+            if (!body) return;
+            try {
+                const parsed = JSON.parse(body.toString('utf8')) as Record<string, unknown>;
+                const event = typeof parsed.event === 'string' ? parsed.event : '';
+                if (!event) {
+                    this.json(res, 400, { ok: false, error: 'Missing event' });
+                    return;
+                }
+                writeSpeechTrace({
+                    event,
+                    attempt: typeof parsed.attempt === 'number' ? parsed.attempt : undefined,
+                    maxRetries: typeof parsed.maxRetries === 'number' ? parsed.maxRetries : undefined,
+                    errorClass: typeof parsed.errorClass === 'string' ? parsed.errorClass : undefined,
+                    delayMs: typeof parsed.delayMs === 'number' ? parsed.delayMs : undefined,
+                    fallback: typeof parsed.fallback === 'string' ? parsed.fallback : undefined,
+                    elapsedSessionMs:
+                        typeof parsed.elapsedSessionMs === 'number' ? parsed.elapsedSessionMs : undefined,
+                    consecutiveFailures:
+                        typeof parsed.consecutiveFailures === 'number' ? parsed.consecutiveFailures : undefined,
+                    rollingFailures:
+                        typeof parsed.rollingFailures === 'number' ? parsed.rollingFailures : undefined
+                });
+                this.json(res, 200, { ok: true });
+            } catch (err) {
+                const msg = err instanceof Error ? err.message : String(err);
+                this.json(res, 400, { ok: false, error: msg });
+            }
             return;
         }
 
