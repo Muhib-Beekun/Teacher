@@ -278,9 +278,12 @@ export class BrowserSessionBridge {
 
     public async reset(): Promise<SessionSnapshot> {
         this.session.reset();
-        await this.deps.rebuildContext();
         this.notifyUpdated();
-        return this.getSnapshot('Session cleared. Workspace index refreshed.');
+        const snapshot = this.getSnapshot('Session cleared.');
+        void this.deps.rebuildContext()
+            .then(() => this.notifyUpdated())
+            .catch(() => {});
+        return snapshot;
     }
 
     public getTranscriptPlainText(): string {

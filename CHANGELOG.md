@@ -40,6 +40,8 @@ The first minor release — a ground-up rewrite of the web UI, new local inferen
 
 ### Changed
 
+- **Clear session is instant** — session panes reset immediately; workspace index refresh runs in the background without blocking the UI.
+- **Tiered workspace index** — pin (open files), warm (recently closed symbols, LRU cap), cold (basename-only, lazy), and eviction under hard caps. Tab switches re-rank from cache instead of full workspace rescans.
 - **`.env` is no longer the primary config path.** VS Code settings and the Teacher Settings UI are preferred. `.env` vars now warn that they lock the Settings UI fields.
 - **Settings UI redesigned** — split by concern (collapsible sections), unified type scale and control sizing, cloud provider combobox with presets (OpenAI, xAI, Groq, DeepSeek, OpenRouter, Together, Fireworks, Mistral, Cerebras, Gemini), masked API key save.
 - **Settings status** shows effective inference configuration from workspace `.env` (overrides VS Code settings) separately from the active compile provider.

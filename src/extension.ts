@@ -11,7 +11,6 @@ import { getLlmApiKey, getLlmKeySource, promptDeepgramApiKey, promptLlmApiKey, s
 import { TeacherSessionPanel } from './ui/TeacherSessionPanel';
 import { BrowserSessionBridge, ContextRebuildMode } from './web/BrowserSessionBridge';
 
-const CONTEXT_REBUILD_DEBOUNCE_MS = 8000;
 const CURSOR_SETTINGS_FILTER = '@ext:muhib-beekun.teacher';
 
 export function activate(context: vscode.ExtensionContext): void {
@@ -35,7 +34,7 @@ export function activate(context: vscode.ExtensionContext): void {
         getVoiceContext: () => contextIndex.getContext(),
         getRebuildMode,
         rebuildContext: async (recentUtterance) => {
-            await contextIndex.rebuild(recentUtterance ? { recentUtterance } : {});
+            await contextIndex.refresh(recentUtterance ? { recentUtterance } : {});
         },
         ensureCodewordsFile: async () => {
             for (const folder of vscode.workspace.workspaceFolders ?? []) {
@@ -158,6 +157,9 @@ export function activate(context: vscode.ExtensionContext): void {
             for (const folder of e.added) {
                 await ensureCodewordsFile(context.extensionPath, folder);
             }
+            if (e.added.length || e.removed.length) {
+                contextIndex.onWorkspaceFoldersChanged();
+            }
         })
     );
 
@@ -180,33 +182,50 @@ export function activate(context: vscode.ExtensionContext): void {
         void vscode.window.showErrorMessage(`Teacher web server failed: ${msg}`);
     });
 
-    void contextIndex.rebuild();
-
-    const scheduleContextRebuild = debounce(() => {
-        void contextIndex.rebuild();
-    }, CONTEXT_REBUILD_DEBOUNCE_MS);
+    void contextIndex.initialize();
 
     context.subscriptions.push(
         output,
         { dispose: () => webApp.stop() },
-        vscode.workspace.onDidChangeTextDocument(() => {
-            if (getRebuildMode() === 'onFileChange') {
-                scheduleContextRebuild();
+        { dispose: () => contextIndex.dispose() },
+        vscode.workspace.onDidOpenTextDocument((doc) => {
+            if (doc.uri.scheme === 'file') {
+                contextIndex.onDocumentOpened(doc.uri);
             }
         }),
-        vscode.workspace.onDidOpenTextDocument(() => {
-            if (getRebuildMode() === 'onFileChange') {
-                scheduleContextRebuild();
+        vscode.workspace.onDidCloseTextDocument((doc) => {
+            if (doc.uri.scheme === 'file') {
+                contextIndex.onDocumentClosed(doc.uri);
+            }
+        }),
+        vscode.workspace.onDidChangeTextDocument((event) => {
+            if (getRebuildMode() === 'onFileChange' && event.document.uri.scheme === 'file') {
+                contextIndex.onDocumentSaved(event.document.uri);
             }
         }),
         vscode.window.onDidChangeActiveTextEditor(() => {
+            contextIndex.scheduleRankRefresh();
+        }),
+        vscode.workspace.onDidCreateFiles((event) => {
             if (getRebuildMode() === 'onFileChange') {
-                scheduleContextRebuild();
+                contextIndex.onFilesCreated(event.files);
+            }
+        }),
+        vscode.workspace.onDidDeleteFiles((event) => {
+            if (getRebuildMode() === 'onFileChange') {
+                contextIndex.onFilesDeleted(event.files);
+            }
+        }),
+        vscode.workspace.onDidRenameFiles((event) => {
+            if (getRebuildMode() === 'onFileChange') {
+                for (const { oldUri, newUri } of event.files) {
+                    contextIndex.onFilesRenamed(oldUri, newUri);
+                }
             }
         }),
 
         vscode.commands.registerCommand('teacher.startSession', async () => {
-            await contextIndex.rebuild();
+            await contextIndex.refresh();
             await panel.startSession();
         }),
 
@@ -280,13 +299,3 @@ export function activate(context: vscode.ExtensionContext): void {
 }
 
 export function deactivate(): void { }
-
-function debounce(fn: () => void, ms: number): () => void {
-    let timer: ReturnType<typeof setTimeout> | undefined;
-    return () => {
-        if (timer) {
-            clearTimeout(timer);
-        }
-        timer = setTimeout(fn, ms);
-    };
-}
