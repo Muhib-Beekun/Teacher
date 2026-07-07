@@ -5,6 +5,13 @@ All notable changes to **Teacher** are documented in this file.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).  
 Version numbers match `package.json` and `teacher-<version>.vsix` builds.
 
+## [0.1.1] - 2026-07-06
+
+### Changed
+
+- **Clear session is instant** — session panes reset immediately; workspace index refresh runs in the background without blocking the UI.
+- **Tiered workspace index** — pin (open files), warm (recently closed symbols, LRU cap), cold (basename-only, lazy), and eviction under hard caps. Tab switches re-rank from cache instead of full workspace rescans. File saves and create/delete/rename events patch the cache incrementally when index rebuild mode is `onFileChange`.
+
 ## [0.1.0] - 2026-07-04
 
 The first minor release — a ground-up rewrite of the web UI, new local inference support, comprehensive testing, and dozens of bug fixes.
@@ -40,8 +47,6 @@ The first minor release — a ground-up rewrite of the web UI, new local inferen
 
 ### Changed
 
-- **Clear session is instant** — session panes reset immediately; workspace index refresh runs in the background without blocking the UI.
-- **Tiered workspace index** — pin (open files), warm (recently closed symbols, LRU cap), cold (basename-only, lazy), and eviction under hard caps. Tab switches re-rank from cache instead of full workspace rescans.
 - **`.env` is no longer the primary config path.** VS Code settings and the Teacher Settings UI are preferred. `.env` vars now warn that they lock the Settings UI fields.
 - **Settings UI redesigned** — split by concern (collapsible sections), unified type scale and control sizing, cloud provider combobox with presets (OpenAI, xAI, Groq, DeepSeek, OpenRouter, Together, Fireworks, Mistral, Cerebras, Gemini), masked API key save.
 - **Settings status** shows effective inference configuration from workspace `.env` (overrides VS Code settings) separately from the active compile provider.
