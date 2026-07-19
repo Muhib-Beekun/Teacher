@@ -59,6 +59,15 @@ describe('SpeechRecoveryController', () => {
         expect(c.getSnapshot().consecutiveFailures).toBe(1);
     });
 
+    it('allows auto-restart while recovering after a retryable failure', () => {
+        const c = controller();
+        c.dispatch({ type: 'user_start' }, 1_000);
+        c.dispatch({ type: 'speech_start' }, 1_010);
+        c.dispatch({ type: 'speech_error_network' }, 1_020);
+        expect(c.getSnapshot().state).toBe('recovering');
+        expect(c.shouldAutoRestartRecognition()).toBe(true);
+    });
+
     it('does not count user stop as failure', () => {
         const c = controller();
         c.dispatch({ type: 'user_start' }, 1_000);

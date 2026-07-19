@@ -87,7 +87,8 @@ export function activate(context: vscode.ExtensionContext): void {
         sendBrief,
         sttService,
         compileService,
-        openWebUi
+        openWebUi,
+        getWebUiUrl: () => webApp.getUrl()
     });
 
     webApp.setActionHandler(async (action) => {

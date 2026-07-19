@@ -10,6 +10,8 @@ export interface SessionPanelDeps {
     sttService: SttService;
     compileService: CompileService;
     openWebUi: () => Promise<void>;
+    /** Settled sidecar URL (after port fallback), not the preferred config port. */
+    getWebUiUrl: () => string;
 }
 
 export class TeacherSessionPanel {
@@ -133,17 +135,28 @@ export class TeacherSessionPanel {
         }
 
         const snapshot = this.deps.bridge.getSnapshot(status);
+        const webUiUrl = this.deps.getWebUiUrl();
 
         this.panel.webview.postMessage({
             command: 'update',
             transcriptHtml: snapshot.transcriptHtml,
             compiled: snapshot.compiled,
             sttLabel: snapshot.sttLabel,
-            status: snapshot.status
+            status: snapshot.status,
+            webUiUrl
         });
     }
 
+    private escapeHtml(text: string): string {
+        return text
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
+    }
+
     private renderShellHtml(): string {
+        const webUiUrl = this.escapeHtml(this.deps.getWebUiUrl());
         return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -162,22 +175,29 @@ export class TeacherSessionPanel {
     p { margin: 0 0 16px; color: var(--muted); font-size: 13px; line-height: 1.5; }
     button { border: none; border-radius: 10px; padding: 10px 16px; font-weight: 700; cursor: pointer; width: 100%; margin-bottom: 8px; background: linear-gradient(120deg, var(--accent), #5d55f0); color: #fff; }
     .hint { font-size: 11px; color: var(--muted); margin-top: 12px; }
+    #webUiUrl { word-break: break-all; }
   </style>
 </head>
 <body>
   <div class="card">
     <h1>Teacher runs in your browser</h1>
-    <p>Mic and session UI live at <b>http://127.0.0.1:3721</b> (starts when the extension activates). Use the web UI to speak, scaffold your brief, and copy into Cursor.</p>
+    <p>Mic and session UI live at <b id="webUiUrl">${webUiUrl}</b> (starts when the extension activates). Use the web UI to speak, scaffold your brief, and copy into Cursor.</p>
     <button id="open">Open Teacher Web UI</button>
-    <p class="hint">This panel mirrors session state from the browser. Send to Agent still works from the command palette.</p>
+    <p class="hint">Opens in your system browser (Chrome/Edge). This panel mirrors session state; Send to Agent still works from the command palette.</p>
   </div>
   <script>
     const vscode = acquireVsCodeApi();
     document.getElementById('open').addEventListener('click', () => vscode.postMessage({ command: 'openWebUi' }));
     window.addEventListener('message', (event) => {
       const msg = event.data;
-      if (msg.command === 'update' && msg.status) {
-        document.querySelector('.hint').textContent = msg.status;
+      if (msg.command === 'update') {
+        if (msg.webUiUrl) {
+          const el = document.getElementById('webUiUrl');
+          if (el) el.textContent = msg.webUiUrl;
+        }
+        if (msg.status) {
+          document.querySelector('.hint').textContent = msg.status;
+        }
       }
     });
   </script>

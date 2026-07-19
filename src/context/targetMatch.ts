@@ -1,6 +1,7 @@
 import { VoiceSessionContext } from './VoiceSessionContext';
 import { looksLikeResolvableSymbol, linkSymbolToOpenFile } from './targetMatchInternals';
 import { speechMentionsSymbol, compactAlpha } from '../stt/symbolPhraseMatch';
+import { extractPathTokens, isPathExcluded } from './pathTokens';
 
 /** Infer ## Target file paths from speech + vectorless workspace context. */
 export function extractWorkspaceTargets(latestSpeech: string, voiceContext: VoiceSessionContext): string[] {
@@ -11,12 +12,19 @@ export function extractWorkspaceTargets(latestSpeech: string, voiceContext: Voic
 
     const speech = latestSpeech;
     const speechLower = speech.toLowerCase();
+    const pathHits = extractPathTokens(speech);
+    const excluded = new Set(pathHits.filter((h) => h.excluded).map((h) => h.path));
 
-    for (const match of speech.match(/[`'"]?([\w./\\-]+\.(ts|tsx|js|jsx|py|go|rs|md|html|json|mjs|cjs))[`'"]?/gi) ?? []) {
-        targets.add(match.replace(/[`'"]/g, ''));
+    for (const hit of pathHits) {
+        if (!hit.excluded) {
+            targets.add(hit.path);
+        }
     }
 
     for (const file of voiceContext.targetFiles) {
+        if (isPathExcluded(file, excluded)) {
+            continue;
+        }
         const base = file.split(/[/\\]/).pop() ?? file;
         const baseNoExt = base.replace(/\.[^.]+$/, '');
         if (
@@ -25,11 +33,18 @@ export function extractWorkspaceTargets(latestSpeech: string, voiceContext: Voic
             fuzzyMentionsBasename(speechLower, baseNoExt) ||
             fuzzyMentionsBasename(speechLower, base)
         ) {
+            // Explicit minus on this basename/path wins over fuzzy mention.
+            if (isPathExcluded(base, excluded)) {
+                continue;
+            }
             targets.add(file);
         }
     }
 
     for (const term of voiceContext.dictionary_context) {
+        if (isPathExcluded(term, excluded)) {
+            continue;
+        }
         const lower = term.toLowerCase();
         if (term.includes('.') && speechLower.includes(lower)) {
             targets.add(term);
@@ -42,12 +57,12 @@ export function extractWorkspaceTargets(latestSpeech: string, voiceContext: Voic
             continue;
         }
         const linked = linkSymbolToOpenFile(term, voiceContext.targetFiles);
-        if (linked) {
+        if (linked && !isPathExcluded(linked, excluded)) {
             targets.add(linked);
         }
     }
 
-    return [...targets];
+    return [...targets].filter((t) => !isPathExcluded(t, excluded));
 }
 
 /** @deprecated use speechMentionsSymbol — kept for tests importing fuzzyMentions */

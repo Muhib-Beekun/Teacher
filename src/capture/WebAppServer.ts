@@ -4,6 +4,7 @@ import * as path from 'path';
 import * as vscode from 'vscode';
 import { BrowserSessionBridge } from '../web/BrowserSessionBridge';
 import { writeSpeechTrace } from '../trace/TraceLog';
+import { openSystemBrowser } from './openSystemBrowser';
 
 const DEFAULT_PORT = 3721;
 const MAX_PORT_TRIES = 20;
@@ -68,8 +69,31 @@ export class WebAppServer {
         return this.listenWithFallback(preferred, bridge);
     }
 
-    public async openInBrowser(): Promise<void> {
-        await vscode.env.openExternal(vscode.Uri.parse(this.getUrl()));
+    /**
+     * Prefer OS default browser (outside Cursor Simple Browser / sandbox).
+     * Falls back to `openExternal`, then an info toast with Copy URL.
+     */
+    public async openInBrowser(): Promise<{ url: string; openedExternally: boolean }> {
+        const url = this.getUrl();
+        const openedExternally = await openSystemBrowser(url);
+        if (openedExternally) {
+            return { url, openedExternally: true };
+        }
+
+        try {
+            await vscode.env.openExternal(vscode.Uri.parse(url));
+        } catch {
+            // ignore — toast below still gives the user a path forward
+        }
+
+        const pick = await vscode.window.showInformationMessage(
+            `Open Teacher Web UI in Chrome or Edge: ${url}`,
+            'Copy URL'
+        );
+        if (pick === 'Copy URL') {
+            await vscode.env.clipboard.writeText(url);
+        }
+        return { url, openedExternally: false };
     }
 
     public stop(): void {

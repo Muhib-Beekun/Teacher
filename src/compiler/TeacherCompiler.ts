@@ -41,7 +41,10 @@ function compileTeacher(segments: Segment[], voiceContext: VoiceSessionContext):
     const constraints = extractConstraints(active);
     const verification = extractVerification(active);
     const latestText = intentSegments.length ? intentSegments[intentSegments.length - 1].text : '';
-    const target = extractWorkspaceTargets(latestText, voiceContext);
+    // Scan all intent segments so pasted paths and `-path` exclusions from earlier
+    // prompts still affect ## Target (not only the latest chunk).
+    const intentSpeech = intentSegments.map((s) => s.text).filter(Boolean).join('\n');
+    const target = extractWorkspaceTargets(intentSpeech || latestText, voiceContext);
     const priorChunks = intentSegments.slice(0, -1).map((s) => s.text).filter(Boolean);
     const supersededQuotes = [
         ...superseded.map((s) => s.text).filter(Boolean),

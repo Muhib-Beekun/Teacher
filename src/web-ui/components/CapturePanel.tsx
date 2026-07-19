@@ -15,9 +15,11 @@ import {
     DEFAULT_BROWSER_RECOVERY_CONFIG
 } from '../speechRecovery';
 import { alertForRecoveryAction, speechAlertQueue } from '../speechAlertQueue';
+import { normalizePastedFilePath } from '../../context/pathTokens';
 
 const PERMANENT_SPEECH_ERRORS = new Set(['service-not-allowed', 'audio-capture']);
 const STABLE_CHECK_MS = 15_000;
+const RETRY_START_FAILURE_DELAY_MS = 400;
 
 function isMicCapableBrowser(): boolean {
     const ua = navigator.userAgent;
@@ -129,20 +131,34 @@ export function CapturePanel() {
                     case 'status':
                         setStatus(action.message, action.kind);
                         break;
-                    case 'schedule_retry':
+                    case 'schedule_retry': {
+                        if (recoveryTimerRef.current) {
+                            clearTimeout(recoveryTimerRef.current);
+                            recoveryTimerRef.current = null;
+                        }
                         recoveryRestartPendingRef.current = true;
-                        recoveryTimerRef.current = setTimeout(() => {
-                            recoveryRestartPendingRef.current = false;
-                            if (!listeningRef.current) return;
-                            if (!recoveryRef.current.shouldAutoRestartRecognition()) return;
-                            try {
-                                recognitionRef.current?.start();
-                                applyRecoveryActions(recoveryRef.current.dispatch({ type: 'speech_start' }));
-                            } catch {
-                                // Another retry cycle may handle repeated failures.
-                            }
-                        }, action.delayMs);
+                        const attemptRestart = (delayMs: number, allowRetryOnStartFail: boolean) => {
+                            recoveryTimerRef.current = setTimeout(() => {
+                                recoveryRestartPendingRef.current = false;
+                                if (!listeningRef.current) return;
+                                if (!recoveryRef.current.shouldAutoRestartRecognition()) return;
+                                try {
+                                    recognitionRef.current?.start();
+                                    applyRecoveryActions(
+                                        recoveryRef.current.dispatch({ type: 'speech_start' })
+                                    );
+                                } catch {
+                                    // InvalidStateError / race — one quick re-arm, then wait for onend/error.
+                                    if (allowRetryOnStartFail) {
+                                        recoveryRestartPendingRef.current = true;
+                                        attemptRestart(RETRY_START_FAILURE_DELAY_MS, false);
+                                    }
+                                }
+                            }, delayMs);
+                        };
+                        attemptRestart(action.delayMs, true);
                         break;
+                    }
                     case 'evaluate_fallback': {
                         const fallbackActions = recoveryRef.current.finalizeFallback(
                             health.peek().stt,
@@ -620,6 +636,34 @@ export function CapturePanel() {
                     chunkTranscriptRef.current = getLiveText();
                     const el = liveTextRef.current;
                     if (el) el.classList.toggle('empty', !el.innerText.trim());
+                }}
+                onPaste={(e) => {
+                    const raw = e.clipboardData?.getData('text/plain') ?? '';
+                    const path = normalizePastedFilePath(raw);
+                    if (!path) return;
+                    e.preventDefault();
+                    const el = liveTextRef.current;
+                    if (!el) return;
+                    const selection = window.getSelection();
+                    const current = getLiveText();
+                    let next: string;
+                    if (selection && selection.rangeCount > 0 && el.contains(selection.anchorNode)) {
+                        // Insert cleaned path at caret when possible; otherwise append.
+                        const range = selection.getRangeAt(0);
+                        range.deleteContents();
+                        const node = document.createTextNode(path);
+                        range.insertNode(node);
+                        range.setStartAfter(node);
+                        range.collapse(true);
+                        selection.removeAllRanges();
+                        selection.addRange(range);
+                        next = normalizeSpaces(el.innerText.replace(/\u00a0/g, ' '));
+                    } else {
+                        next = current ? `${current} ${path}` : path;
+                        el.innerText = next;
+                    }
+                    el.classList.toggle('empty', !next.trim());
+                    chunkTranscriptRef.current = next;
                 }}
             />
         </section>

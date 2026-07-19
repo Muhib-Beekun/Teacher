@@ -258,7 +258,9 @@ export class SpeechRecoveryController {
         if (mode !== 'browser') {
             return false;
         }
-        return state === 'listening';
+        // Retries set state to `recovering` until speech_start/result — must allow restart
+        // while recovering or the retry timer hangs after the alert tone (~1/4 sessions).
+        return state === 'listening' || state === 'recovering';
     }
 
     public shouldUseAudioFallback(): boolean {
