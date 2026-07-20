@@ -92,16 +92,29 @@ export interface PhraseSymbolFix {
     end: number;
 }
 
+/** Stem for phrase matching — strip a trailing file extension when present. */
+function symbolStemForPhraseMatch(term: string): string | null {
+    if (!term || term.includes('/')) {
+        return null;
+    }
+    const stem = term.includes('.') ? term.replace(/\.[^.]+$/, '') : term;
+    if (!looksLikeCodeSymbol(stem)) {
+        return null;
+    }
+    return stem;
+}
+
 /** Find multi-word spoken phrases that should be a single camelCase dictionary symbol. */
 export function findPhraseSymbolFixes(text: string, dictionary: string[]): PhraseSymbolFix[] {
     const fixes: PhraseSymbolFix[] = [];
     const lower = text.toLowerCase();
 
     for (const term of dictionary) {
-        if (!looksLikeCodeSymbol(term) || term.includes('.') || term.includes('/')) {
+        const stem = symbolStemForPhraseMatch(term);
+        if (!stem) {
             continue;
         }
-        const parts = splitCamelCase(term).map((p) => p.toLowerCase());
+        const parts = splitCamelCase(stem).map((p) => p.toLowerCase());
         if (parts.length < 2) {
             continue;
         }
@@ -111,14 +124,14 @@ export function findPhraseSymbolFixes(text: string, dictionary: string[]): Phras
         if (idx >= 0) {
             fixes.push({
                 heard: text.slice(idx, idx + phrase.length),
-                corrected: term,
+                corrected: stem,
                 start: idx,
                 end: idx + phrase.length
             });
             continue;
         }
 
-        const windowFix = findSlidingWindowFix(text, term, parts);
+        const windowFix = findSlidingWindowFix(text, stem, parts);
         if (windowFix) {
             fixes.push(windowFix);
         }

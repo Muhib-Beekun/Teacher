@@ -517,10 +517,45 @@ export class WorkspaceContextIndex {
 function flattenSymbolNames(symbols: vscode.DocumentSymbol[]): string[] {
     const names: string[] = [];
     for (const sym of symbols) {
+        // Markdown providers expose headings as String symbols; skip those and
+        // other non-identifier kinds so they cannot crowd out code terms.
+        if (!isCodeLikeSymbolKind(sym.kind) || !isUsefulContextTerm(sym.name)) {
+            if (sym.children?.length) {
+                names.push(...flattenSymbolNames(sym.children));
+            }
+            continue;
+        }
         names.push(sym.name);
         if (sym.children?.length) {
             names.push(...flattenSymbolNames(sym.children));
         }
     }
     return names;
+}
+
+function isCodeLikeSymbolKind(kind: vscode.SymbolKind): boolean {
+    switch (kind) {
+        case vscode.SymbolKind.File:
+        case vscode.SymbolKind.Module:
+        case vscode.SymbolKind.Namespace:
+        case vscode.SymbolKind.Package:
+        case vscode.SymbolKind.Class:
+        case vscode.SymbolKind.Method:
+        case vscode.SymbolKind.Property:
+        case vscode.SymbolKind.Field:
+        case vscode.SymbolKind.Constructor:
+        case vscode.SymbolKind.Enum:
+        case vscode.SymbolKind.Interface:
+        case vscode.SymbolKind.Function:
+        case vscode.SymbolKind.Variable:
+        case vscode.SymbolKind.Constant:
+        case vscode.SymbolKind.EnumMember:
+        case vscode.SymbolKind.Struct:
+        case vscode.SymbolKind.TypeParameter:
+            return true;
+        default:
+            // String / Number / Boolean / Array / Object / Key / Null / Event / Operator
+            // — common for markdown headings and literal noise.
+            return false;
+    }
 }

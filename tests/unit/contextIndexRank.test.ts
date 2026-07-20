@@ -45,4 +45,13 @@ describe('contextIndexRank', () => {
         expect(isUsefulContextTerm('___')).toBe(false);
         expect(isUsefulContextTerm('CompileService')).toBe(true);
     });
+
+    it('rejects markdown headings and spaced prose that crowd the STT dictionary', () => {
+        expect(isUsefulContextTerm('# AmpliJob')).toBe(false);
+        expect(isUsefulContextTerm('## About the client')).toBe(false);
+        expect(isUsefulContextTerm('Open technical items')).toBe(false);
+        expect(isUsefulContextTerm('CapturePanel')).toBe(true);
+        expect(isUsefulContextTerm('BrowserSessionBridge')).toBe(true);
+        expect(isUsefulContextTerm('teacher-app.js')).toBe(true);
+    });
 });

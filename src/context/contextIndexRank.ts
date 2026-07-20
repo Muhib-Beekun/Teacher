@@ -56,5 +56,14 @@ export function isUsefulContextTerm(term: string): boolean {
     if (/^[\d_]+$/.test(term)) {
         return false;
     }
+    // Markdown heading symbols / prose (often from open .md files) used to fill the
+    // 200-term STT dictionary after the tiered index, so code symbols never ranked
+    // and heard→corrected UI stopped appearing.
+    if (/^\s*#/.test(term) || /\s/.test(term)) {
+        return false;
+    }
+    if (!/[A-Za-z]/.test(term)) {
+        return false;
+    }
     return true;
 }
