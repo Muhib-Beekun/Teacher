@@ -29,6 +29,7 @@ Version numbers match `package.json` and `teacher-<version>.vsix` builds.
 ### Fixed
 
 - **Mic retry hang** — after the retry alert tone, recognition restart no longer bails while state is `recovering` (was stuck on “retrying…” ~1/4 of the time).
+- **Rich/hyperlink paste crash** — live prompt paste always inserts plain text (and pulls file paths from link `href`s) so HTML clipboard data cannot white-screen the UI.
 
 ## [0.1.2] - 2026-07-07
 

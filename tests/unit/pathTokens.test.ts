@@ -1,9 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import {
+    extractHrefValues,
     extractPathTokens,
     isPathExcluded,
     normalizeFilePathToken,
-    normalizePastedFilePath
+    normalizePastedFilePath,
+    resolveClipboardToPromptText,
+    stripHtmlToPlainText
 } from '../../src/context/pathTokens';
 import { extractWorkspaceTargets } from '../../src/context/targetMatch';
 import { emptyVoiceSessionContext } from '../../src/context/VoiceSessionContext';
@@ -40,6 +43,24 @@ describe('pathTokens', () => {
         expect(isPathExcluded('src/b.ts', excluded)).toBe(true);
         expect(isPathExcluded('b.ts', excluded)).toBe(true);
         expect(isPathExcluded('src/a.ts', excluded)).toBe(false);
+    });
+
+    it('resolves hyperlink clipboard HTML to a file path without markup', () => {
+        const html =
+            '<html><body><!--StartFragment--><a href="file:///C:/Users/Public/Projects/Teacher/src/foo.ts">foo.ts</a><!--EndFragment--></body></html>';
+        expect(extractHrefValues(html)).toEqual([
+            'file:///C:/Users/Public/Projects/Teacher/src/foo.ts'
+        ]);
+        expect(resolveClipboardToPromptText('foo.ts', html)).toBe(
+            'C:/Users/Public/Projects/Teacher/src/foo.ts'
+        );
+        expect(resolveClipboardToPromptText('', html)).toBe(
+            'C:/Users/Public/Projects/Teacher/src/foo.ts'
+        );
+        expect(stripHtmlToPlainText('<a href="x">hello &amp; world</a>')).toBe('hello & world');
+        expect(resolveClipboardToPromptText('just some words', '<b>ignored</b>')).toBe(
+            'just some words'
+        );
     });
 });
 

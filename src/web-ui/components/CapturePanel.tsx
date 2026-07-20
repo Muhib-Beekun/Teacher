@@ -15,7 +15,7 @@ import {
     DEFAULT_BROWSER_RECOVERY_CONFIG
 } from '../speechRecovery';
 import { alertForRecoveryAction, speechAlertQueue } from '../speechAlertQueue';
-import { normalizePastedFilePath } from '../../context/pathTokens';
+import { resolveClipboardToPromptText } from '../../context/pathTokens';
 
 const PERMANENT_SPEECH_ERRORS = new Set(['service-not-allowed', 'audio-capture']);
 const STABLE_CHECK_MS = 15_000;
@@ -638,32 +638,48 @@ export function CapturePanel() {
                     if (el) el.classList.toggle('empty', !el.innerText.trim());
                 }}
                 onPaste={(e) => {
-                    const raw = e.clipboardData?.getData('text/plain') ?? '';
-                    const path = normalizePastedFilePath(raw);
-                    if (!path) return;
+                    // Always take over paste: rich/hyperlink HTML in contentEditable
+                    // can white-screen the Preact UI. Insert plain text only.
                     e.preventDefault();
-                    const el = liveTextRef.current;
-                    if (!el) return;
-                    const selection = window.getSelection();
-                    const current = getLiveText();
-                    let next: string;
-                    if (selection && selection.rangeCount > 0 && el.contains(selection.anchorNode)) {
-                        // Insert cleaned path at caret when possible; otherwise append.
-                        const range = selection.getRangeAt(0);
-                        range.deleteContents();
-                        const node = document.createTextNode(path);
-                        range.insertNode(node);
-                        range.setStartAfter(node);
-                        range.collapse(true);
-                        selection.removeAllRanges();
-                        selection.addRange(range);
-                        next = normalizeSpaces(el.innerText.replace(/\u00a0/g, ' '));
-                    } else {
-                        next = current ? `${current} ${path}` : path;
-                        el.innerText = next;
+                    try {
+                        const el = liveTextRef.current;
+                        if (!el) return;
+                        const plain = e.clipboardData?.getData('text/plain') ?? '';
+                        const html = e.clipboardData?.getData('text/html') ?? '';
+                        const insert = resolveClipboardToPromptText(plain, html);
+                        if (!insert) return;
+
+                        el.focus();
+                        let inserted = false;
+                        try {
+                            inserted = document.execCommand('insertText', false, insert);
+                        } catch {
+                            inserted = false;
+                        }
+                        if (!inserted) {
+                            const selection = window.getSelection();
+                            const anchor = selection?.anchorNode ?? null;
+                            if (selection && selection.rangeCount > 0 && anchor && el.contains(anchor)) {
+                                const range = selection.getRangeAt(0);
+                                range.deleteContents();
+                                const node = document.createTextNode(insert);
+                                range.insertNode(node);
+                                const after = document.createRange();
+                                after.setStartAfter(node);
+                                after.collapse(true);
+                                selection.removeAllRanges();
+                                selection.addRange(after);
+                            } else {
+                                const current = getLiveText();
+                                el.innerText = current ? `${current} ${insert}` : insert;
+                            }
+                        }
+                        const next = normalizeSpaces(el.innerText.replace(/\u00a0/g, ' '));
+                        el.classList.toggle('empty', !next.trim());
+                        chunkTranscriptRef.current = next;
+                    } catch {
+                        setStatus('Paste failed — try copying as plain text.', 'warn');
                     }
-                    el.classList.toggle('empty', !next.trim());
-                    chunkTranscriptRef.current = next;
                 }}
             />
         </section>

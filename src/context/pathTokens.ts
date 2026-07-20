@@ -67,6 +67,78 @@ export function normalizePastedFilePath(raw: string): string | null {
     return normalized;
 }
 
+/** Pull href values from clipboard HTML (hyperlink copies). */
+export function extractHrefValues(html: string): string[] {
+    if (!html) {
+        return [];
+    }
+    const out: string[] = [];
+    const re = /href\s*=\s*(["'])(.*?)\1/gi;
+    let match: RegExpExecArray | null;
+    while ((match = re.exec(html)) !== null) {
+        const href = (match[2] ?? '').trim();
+        if (href) {
+            out.push(href);
+        }
+    }
+    return out;
+}
+
+/** Strip tags from HTML clipboard data without using the DOM. */
+export function stripHtmlToPlainText(html: string): string {
+    return (html || '')
+        .replace(/<br\s*\/?>/gi, '\n')
+        .replace(/<\/p>/gi, '\n')
+        .replace(/<[^>]+>/g, ' ')
+        .replace(/&nbsp;/gi, ' ')
+        .replace(/&amp;/gi, '&')
+        .replace(/&lt;/gi, '<')
+        .replace(/&gt;/gi, '>')
+        .replace(/&quot;/gi, '"')
+        .replace(/\s+/g, ' ')
+        .trim();
+}
+
+function isBasenameOnlyPath(path: string): boolean {
+    return !/[\\/]/.test(path) && !/^[A-Za-z]:/.test(path);
+}
+
+/**
+ * Resolve clipboard plain + HTML into safe prompt text.
+ * Prefers a file path from plain text or from a hyperlink href; never returns markup.
+ * When plain is only a basename (typical hyperlink copy) and href has a fuller path, use href.
+ */
+export function resolveClipboardToPromptText(plain: string, html = ''): string {
+    const plainNorm = (plain || '').replace(/\u00a0/g, ' ').trim();
+    const fromPlain = normalizePastedFilePath(plainNorm);
+
+    for (const href of extractHrefValues(html)) {
+        let candidate = href.trim();
+        try {
+            candidate = decodeURIComponent(candidate);
+        } catch {
+            // keep undecoded
+        }
+        const fromHref = normalizePastedFilePath(candidate);
+        if (!fromHref) {
+            continue;
+        }
+        if (!fromPlain) {
+            return fromHref;
+        }
+        if (isBasenameOnlyPath(fromPlain) && !isBasenameOnlyPath(fromHref)) {
+            return fromHref;
+        }
+    }
+
+    if (fromPlain) {
+        return fromPlain;
+    }
+
+    const stripped = plainNorm || stripHtmlToPlainText(html);
+    return normalizePastedFilePath(stripped) ?? stripped;
+}
+
 /** Extract include/exclude path tokens from speech or typed prompt text. */
 export function extractPathTokens(speech: string): PathTokenHit[] {
     const hits: PathTokenHit[] = [];
