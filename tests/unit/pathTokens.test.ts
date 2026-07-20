@@ -62,6 +62,17 @@ describe('pathTokens', () => {
             'just some words'
         );
     });
+
+    it('does not hang on versioned non-target paths like .vsix (ReDoS regression)', () => {
+        const vsix = 'C:\\Users\\Public\\Projects\\Teacher\\teacher-0.1.3.vsix';
+        const t0 = Date.now();
+        expect(normalizePastedFilePath(vsix)).toBeNull();
+        expect(resolveClipboardToPromptText(vsix, '')).toBe(vsix);
+        expect(resolveClipboardToPromptText('teacher-0.1.3.vsix', `<a href="file:///${vsix.replace(/\\/g, '/')}">x</a>`)).toBe(
+            'teacher-0.1.3.vsix'
+        );
+        expect(Date.now() - t0).toBeLessThan(100);
+    });
 });
 
 describe('extractWorkspaceTargets', () => {

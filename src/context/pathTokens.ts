@@ -1,20 +1,8 @@
 /** File extensions Teacher treats as workspace targets when spoken/typed/pasted. */
 export const TARGET_FILE_EXTENSIONS = 'ts|tsx|js|jsx|py|go|rs|md|html|json|mjs|cjs';
 
-const EXT_GROUP = `(?:${TARGET_FILE_EXTENSIONS})`;
-
-/**
- * Path-like token with optional leading minus (exclude) and optional quotes.
- * Captures: [1]=minus?, [2]=path
- */
-export const PATH_TOKEN_RE = new RegExp(
-    `(?:^|[\\s,;([{])(-)?[\`'"]?((?:[A-Za-z]:)?(?:[\\\\/]?[\\w.@+-]+)+\\.${EXT_GROUP})[\`'"]?(?=$|[\\s,;)\\]])`,
-    'gi'
-);
-
-const LOOKS_LIKE_FILE_PATH = new RegExp(
-    `^(?:[A-Za-z]:)?(?:[\\\\/]?[\\w.@+-]+)+\\.${EXT_GROUP}$`,
-    'i'
+export const TARGET_EXT_SET = new Set(
+    TARGET_FILE_EXTENSIONS.split('|').map((e) => e.toLowerCase())
 );
 
 export interface PathTokenHit {
@@ -53,15 +41,34 @@ export function normalizeFilePathToken(raw: string): string {
 }
 
 /**
+ * True when text looks like a single file path with a known code extension.
+ * Uses basename last-dot extension only — never a backtracking path regex
+ * (versioned names like teacher-0.1.3.vsix used to hang the UI via ReDoS).
+ */
+export function looksLikeTargetFilePath(text: string): boolean {
+    if (!text || /\s/.test(text)) {
+        return false;
+    }
+    // Path-ish characters only (Windows drive, separators, common name chars).
+    if (!/^(?:[A-Za-z]:)?[\\/]?[\w.@+-]+(?:[\\/][\w.@+-]+)*$/.test(text)) {
+        return false;
+    }
+    const base = text.split(/[/\\]/).pop() ?? text;
+    const dot = base.lastIndexOf('.');
+    if (dot <= 0 || dot === base.length - 1) {
+        return false;
+    }
+    const ext = base.slice(dot + 1).toLowerCase();
+    return TARGET_EXT_SET.has(ext);
+}
+
+/**
  * If clipboard text is a single file path (or file:// URI), return a clean path
  * suitable for insertion into the live prompt. Otherwise null.
  */
 export function normalizePastedFilePath(raw: string): string | null {
     const normalized = normalizeFilePathToken(raw);
-    if (!normalized || /\s/.test(normalized)) {
-        return null;
-    }
-    if (!LOOKS_LIKE_FILE_PATH.test(normalized)) {
+    if (!looksLikeTargetFilePath(normalized)) {
         return null;
     }
     return normalized;
@@ -143,19 +150,28 @@ export function resolveClipboardToPromptText(plain: string, html = ''): string {
 export function extractPathTokens(speech: string): PathTokenHit[] {
     const hits: PathTokenHit[] = [];
     const seen = new Set<string>();
-    PATH_TOKEN_RE.lastIndex = 0;
-    let match: RegExpExecArray | null;
-    while ((match = PATH_TOKEN_RE.exec(speech)) !== null) {
-        const path = normalizeFilePathToken(match[2] ?? '');
-        if (!path) {
+    // Whitespace/punctuation tokenization — no backtracking path regex.
+    const parts = speech.match(/-?[`'"]?[^\s,;()[\]{}]+[`'"]?/g) ?? [];
+    for (const part of parts) {
+        let excluded = false;
+        let token = part;
+        if (token.startsWith('-') && token.length > 1) {
+            const maybePath = normalizeFilePathToken(token.slice(1));
+            if (looksLikeTargetFilePath(maybePath)) {
+                excluded = true;
+                token = token.slice(1);
+            }
+        }
+        const path = normalizeFilePathToken(token);
+        if (!looksLikeTargetFilePath(path)) {
             continue;
         }
-        const key = `${match[1] ? '-' : '+'}:${path.toLowerCase()}`;
+        const key = `${excluded ? '-' : '+'}:${path.toLowerCase()}`;
         if (seen.has(key)) {
             continue;
         }
         seen.add(key);
-        hits.push({ path, excluded: !!match[1] });
+        hits.push({ path, excluded });
     }
     return hits;
 }

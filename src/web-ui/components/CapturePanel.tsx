@@ -638,8 +638,8 @@ export function CapturePanel() {
                     if (el) el.classList.toggle('empty', !el.innerText.trim());
                 }}
                 onPaste={(e) => {
-                    // Always take over paste: rich/hyperlink HTML in contentEditable
-                    // can white-screen the Preact UI. Insert plain text only.
+                    // Always plain text only. Avoid Selection/Range APIs and path-regex
+                    // ReDoS (e.g. teacher-0.1.3.vsix used to freeze the UI).
                     e.preventDefault();
                     try {
                         const el = liveTextRef.current;
@@ -648,33 +648,9 @@ export function CapturePanel() {
                         const html = e.clipboardData?.getData('text/html') ?? '';
                         const insert = resolveClipboardToPromptText(plain, html);
                         if (!insert) return;
-
-                        el.focus();
-                        let inserted = false;
-                        try {
-                            inserted = document.execCommand('insertText', false, insert);
-                        } catch {
-                            inserted = false;
-                        }
-                        if (!inserted) {
-                            const selection = window.getSelection();
-                            const anchor = selection?.anchorNode ?? null;
-                            if (selection && selection.rangeCount > 0 && anchor && el.contains(anchor)) {
-                                const range = selection.getRangeAt(0);
-                                range.deleteContents();
-                                const node = document.createTextNode(insert);
-                                range.insertNode(node);
-                                const after = document.createRange();
-                                after.setStartAfter(node);
-                                after.collapse(true);
-                                selection.removeAllRanges();
-                                selection.addRange(after);
-                            } else {
-                                const current = getLiveText();
-                                el.innerText = current ? `${current} ${insert}` : insert;
-                            }
-                        }
-                        const next = normalizeSpaces(el.innerText.replace(/\u00a0/g, ' '));
+                        const current = getLiveText();
+                        const next = normalizeSpaces(current ? `${current} ${insert}` : insert);
+                        el.textContent = next;
                         el.classList.toggle('empty', !next.trim());
                         chunkTranscriptRef.current = next;
                     } catch {
