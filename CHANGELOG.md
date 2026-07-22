@@ -5,6 +5,24 @@ All notable changes to **Teacher** are documented in this file.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).  
 Version numbers match `package.json` and `teacher-<version>.vsix` builds.
 
+## [0.1.4] - 2026-07-22
+
+### Added
+
+- **Paste path recognition** — pasting a file path (or `file://` URI) into the live prompt inserts a cleaned path that Teacher recognizes for `## Target`.
+
+### Changed
+
+- **Open Web UI** tries to launch the OS system browser (best-effort; Cursor may still open an embedded view depending on environment), with `openExternal` + Copy URL toast as fallback.
+- Session panel prompt shows the **settled** sidecar URL after port fallback (not a hardcoded `3721`).
+
+### Fixed
+
+- **Mic retry hang** — after the retry alert tone, recognition restart no longer bails while state is `recovering` (was stuck on “retrying…” ~1/4 of the time).
+- **Rich/hyperlink paste crash** — live prompt paste always inserts plain text (and pulls file paths from link `href`s) so HTML clipboard data cannot white-screen the UI.
+- **Paste hang on versioned paths** — path detection no longer uses a backtracking regex; pasting names like `teacher-0.1.3.vsix` no longer freezes the UI.
+- **Heard → corrected UI missing** — STT dictionary no longer fills with markdown headings from open `.md` files (tiered-index regression), so Your Words again shows “STT heard” / auto-corrected highlights when workspace terms match.
+
 ## [0.1.3] - 2026-07-07
 
 ### Added
@@ -15,23 +33,12 @@ Version numbers match `package.json` and `teacher-<version>.vsix` builds.
 - **Pin-state detection** — reads profile `extensions.json` when available; tries to clear pin before Open VSX install; shows pin hint in Host & updates.
 - **Update integration tests** — mocked Open VSX fetch, VSIX download, and install command flow.
 - **CONFIGURATION.md** — update commands, remote-host scope, pin-state, browser recovery, reload requirement, and troubleshooting.
-- **Minus-prefix target exclusion** — type or speak `-path/to/file.ts` during prompting to keep that file out of `## Target`.
-- **Paste path auto-include** — pasting a file path (or `file://` URI) into the live prompt inserts a cleaned path that is included in `## Target`.
 
 ### Changed
 
 - Status block shows separate **Installed** and **Latest** version lines when known.
 - Host & updates button row wraps in narrow settings panel.
 - **Open VSX 404 retry** — one automatic retry when `/latest` 404s shortly after publish.
-- **Open Web UI** prefers the OS system browser (outside Cursor Simple Browser); falls back to `openExternal` plus a Copy URL toast when needed.
-- Session panel prompt shows the **settled** sidecar URL after port fallback (not a hardcoded `3721`).
-
-### Fixed
-
-- **Mic retry hang** — after the retry alert tone, recognition restart no longer bails while state is `recovering` (was stuck on “retrying…” ~1/4 of the time).
-- **Rich/hyperlink paste crash** — live prompt paste always inserts plain text (and pulls file paths from link `href`s) so HTML clipboard data cannot white-screen the UI.
-- **Paste hang on versioned paths** — path detection no longer uses a backtracking regex; pasting names like `teacher-0.1.3.vsix` no longer freezes the UI.
-- **Heard → corrected UI missing** — STT dictionary no longer fills with markdown headings from open `.md` files (tiered-index regression), so Your Words again shows “STT heard” / auto-corrected highlights when workspace terms match.
 
 ## [0.1.2] - 2026-07-07
 
