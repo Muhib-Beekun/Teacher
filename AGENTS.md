@@ -120,6 +120,7 @@ To configure Teacher for **xAI Grok** with cloud-only compile:
 | `teacher.send.target`                     | string  | `composer`                     | Send destination |
 | `teacher.send.autoPaste`                  | boolean | `true`                         | Auto-paste into Composer |
 | `teacher.send.autoSubmit`                 | boolean | `true`                         | Auto-submit after paste |
+| `teacher.send.dispatchMode`               | string  | `handoff`                      | Machine wake default: `handoff` / `raw` / `relay` |
 | `teacher.context.maxTerms`                | number  | `200`                          | Max workspace context terms |
 | `teacher.context.rebuildMode`             | string  | `clearSession`                 | When to rebuild STT index |
 | `teacher.context.codewordsPath`           | string  | `.teacher/codewords.txt`       | Workspace glossary file |
@@ -160,6 +161,25 @@ To configure Teacher for **xAI Grok** with cloud-only compile:
   (e.g. remote SSH without secrets forwarding).
 
 - **Do not** commit `.env` or API keys.
+
+## Machine dispatch (relay / harness)
+
+External automations can wake the VS Code agent with **deterministic** text via the localhost Web UI server (no LLM compile on `raw`/`relay`):
+
+```http
+POST /api/dispatch
+Content-Type: application/json
+
+{"text":"ok","mode":"raw","submit":true}
+```
+
+| mode | Behavior |
+|------|----------|
+| `raw` | Paste/submit exact `text` (no `# Teacher session handoff`, no compile) |
+| `relay` | Fixed A2A auditor template filled from `meta` (pass, outbox_hash, …); no compile |
+| `handoff` | Existing voice packet (`buildAgentHandoff`); may compile if `text` appended |
+
+Also accepted on `POST /api/send` when `mode` is `raw`/`relay` (and optional `text`). Voice `Teacher: Send` and default `/api/send` without mode remain handoff. Cap: 32KB `text`. Consumer example (outside this repo): AmpliJob `automation/a2a-relay/` outbox ticks (`AGENT_LOOP_TICK_a2a`).
 
 ## Verifying configuration
 

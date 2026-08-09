@@ -5,6 +5,7 @@ import { ensureCodewordsFile } from './config/CodewordsManager';
 import { WebAppServer } from './capture/WebAppServer';
 import { WorkspaceContextIndex } from './context/WorkspaceContextIndex';
 import { sendBrief } from './insert/InsertRouter';
+import { runDispatch } from './web/runDispatch';
 import { CompileService } from './providers/compile/CompileService';
 import { SttService } from './providers/stt/SttService';
 import { getLlmApiKey, getLlmKeySource, promptDeepgramApiKey, promptLlmApiKey, setLlmApiKey } from './secrets/SecretStorage';
@@ -157,6 +158,10 @@ export function activate(context: vscode.ExtensionContext): void {
             return { ok: true, message: 'Pasted into Composer. Press Enter if needed.' };
         }
         return { ok: true, message: 'Brief copied to clipboard.' };
+    });
+
+    webApp.setDispatchHandler(async (request) => {
+        return runDispatch(bridge, request, (line) => output.appendLine(line));
     });
 
     bridge.onUpdated = () => {

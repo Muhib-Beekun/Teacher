@@ -2,7 +2,7 @@
     "name": "teacher",
     "displayName": "Teacher",
     "description": "Lecture your AI: continuous voice sessions that teach the agent what you meant. Workspace-aware STT and structured agent briefs for Cursor and VS Code.",
-    "version": "0.1.4",
+    "version": "0.1.5",
     "publisher": "muhib-beekun",
     "icon": "icon.png",
     "author": "Muhib Beekun",
@@ -228,6 +228,16 @@
                     "default": true,
                     "description": "After paste, attempt to submit the agent prompt automatically (best-effort; depends on Cursor version)."
                 },
+                "teacher.send.dispatchMode": {
+                    "type": "string",
+                    "enum": [
+                        "handoff",
+                        "raw",
+                        "relay"
+                    ],
+                    "default": "handoff",
+                    "description": "Default packet for POST /api/dispatch (and /api/send with mode). handoff = voice session packet (compile). raw = exact text, no compile. relay = fixed A2A auditor template + meta fields, no compile."
+                },
                 "teacher.stt.homonymPass": {
                     "type": "boolean",
                     "default": true,
@@ -381,6 +391,7 @@
         "test:web-app": "npm run build && node tools/test-web-app.mjs",
         "test:compiler": "npm run build && node tools/test-compiler.mjs",
         "test:unit": "npx vitest run",
+        "test:dispatch": "npm run build && node tools/test-relay-dispatch.mjs",
         "test:ui": "npx playwright test",
         "test:compile-providers": "npm run build && node tools/test-compile-providers.mjs",
         "test:stt-context": "npm run build && node tools/test-stt-context.mjs",

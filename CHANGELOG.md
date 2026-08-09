@@ -5,6 +5,21 @@ All notable changes to **Teacher** are documented in this file.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).  
 Version numbers match `package.json` and `teacher-<version>.vsix` builds.
 
+## [0.1.5] - 2026-08-09
+
+### Added
+
+- **Machine dispatch / relay-wake** — `POST /api/dispatch` (and `/api/send` with `mode`) wakes the agent with deterministic text for file-bus harnesses:
+  - `raw` — exact text, no handoff wrapper, no compile
+  - `relay` — fixed A2A auditor template + `meta` fields (pass, outbox_hash, …), no compile
+  - `handoff` — existing session packet (default)
+- Setting `teacher.send.dispatchMode` (`handoff` | `raw` | `relay`, default `handoff`).
+- `tools/test-relay-dispatch.mjs` for raw/relay packet assertions.
+
+### Changed
+
+- `sendBrief` accepts optional paste/submit overrides so dispatch can set `submit` per request.
+
 ## [0.1.4] - 2026-07-22
 
 ### Added

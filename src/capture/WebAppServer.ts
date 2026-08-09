@@ -5,6 +5,7 @@ import * as vscode from 'vscode';
 import { BrowserSessionBridge } from '../web/BrowserSessionBridge';
 import { writeSpeechTrace } from '../trace/TraceLog';
 import { openSystemBrowser } from './openSystemBrowser';
+import { DispatchRequest, DispatchResponse } from '../web/runDispatch';
 
 const DEFAULT_PORT = 3721;
 const MAX_PORT_TRIES = 20;
@@ -17,6 +18,7 @@ export class WebAppServer {
     private output?: vscode.OutputChannel;
     private healthExtras?: () => Promise<Record<string, unknown>>;
     private onSend?: (source: 'brief' | 'words', briefVersion?: number) => Promise<{ ok: boolean; message: string }>;
+    private onDispatch?: (request: DispatchRequest) => Promise<DispatchResponse>;
 
     private onAction?: (action: string) => Promise<{ ok: boolean; message: string }>;
     private onLlmKey?: (key: string) => Promise<void>;
@@ -41,6 +43,10 @@ export class WebAppServer {
 
     public setSendHandler(fn: (source: 'brief' | 'words', briefVersion?: number) => Promise<{ ok: boolean; message: string }>): void {
         this.onSend = fn;
+    }
+
+    public setDispatchHandler(fn: (request: DispatchRequest) => Promise<DispatchResponse>): void {
+        this.onDispatch = fn;
     }
 
     public setLlmKeyHandler(fn: (key: string) => Promise<void>): void {
@@ -404,27 +410,69 @@ export class WebAppServer {
             return;
         }
 
-        if (req.method === 'POST' && url === '/api/send') {
-            if (!this.onSend) {
-                this.json(res, 501, { ok: false, error: 'Send not available' });
+        if (req.method === 'POST' && url === '/api/dispatch') {
+            if (!this.onDispatch) {
+                this.json(res, 501, { ok: false, error: 'Dispatch not available' });
                 return;
             }
+            const body = await this.readBody(req, res);
+            if (!body) return;
+            try {
+                const parsed = JSON.parse(body.toString('utf8')) as DispatchRequest;
+                const result = await this.onDispatch(parsed);
+                this.json(res, result.ok ? 200 : 400, result as unknown as Record<string, unknown>);
+            } catch (err) {
+                const msg = err instanceof Error ? err.message : String(err);
+                this.json(res, 500, { ok: false, error: msg });
+            }
+            return;
+        }
+
+        if (req.method === 'POST' && url === '/api/send') {
             try {
                 const body = await this.readBody(req, res);
                 let source: 'brief' | 'words' = 'brief';
                 let briefVersion: number | undefined;
+                let dispatchReq: DispatchRequest | undefined;
                 if (body?.length) {
                     try {
-                        const parsed = JSON.parse(body.toString('utf8')) as { source?: string; briefVersion?: number };
+                        const parsed = JSON.parse(body.toString('utf8')) as {
+                            source?: string;
+                            briefVersion?: number;
+                            mode?: string;
+                            text?: string;
+                            submit?: boolean;
+                            meta?: DispatchRequest['meta'];
+                        };
                         if (parsed.source === 'words') {
                             source = 'words';
                         }
                         if (typeof parsed.briefVersion === 'number') {
                             briefVersion = parsed.briefVersion;
                         }
+                        // Backward-compat machine path: /api/send with mode raw|relay (+ text).
+                        if (parsed.mode === 'raw' || parsed.mode === 'relay' || parsed.mode === 'handoff') {
+                            if (parsed.mode !== 'handoff' || typeof parsed.text === 'string') {
+                                dispatchReq = {
+                                    mode: parsed.mode,
+                                    text: parsed.text,
+                                    submit: parsed.submit,
+                                    meta: parsed.meta
+                                };
+                            }
+                        }
                     } catch {
                         /* default brief */
                     }
+                }
+                if (dispatchReq && this.onDispatch) {
+                    const result = await this.onDispatch(dispatchReq);
+                    this.json(res, result.ok ? 200 : 400, result as unknown as Record<string, unknown>);
+                    return;
+                }
+                if (!this.onSend) {
+                    this.json(res, 501, { ok: false, error: 'Send not available' });
+                    return;
                 }
                 const result = await this.onSend(source, briefVersion);
                 this.json(res, result.ok ? 200 : 400, result);

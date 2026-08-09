@@ -8,6 +8,13 @@ export interface SendResult {
     submitted: boolean;
 }
 
+export interface SendOptions {
+    /** Override teacher.send.autoPaste for this call. */
+    autoPaste?: boolean;
+    /** Override teacher.send.autoSubmit for this call. */
+    autoSubmit?: boolean;
+}
+
 const FOCUS_COMMANDS = [
     'composer.focusComposer',
     'aichat.focus',
@@ -23,11 +30,11 @@ const SUBMIT_COMMANDS = [
     'aichat.submitChat'
 ];
 
-export async function sendBrief(text: string): Promise<SendResult> {
+export async function sendBrief(text: string, options?: SendOptions): Promise<SendResult> {
     const config = vscode.workspace.getConfiguration('teacher.send');
     const target = config.get<SendTarget>('target', 'composer');
-    const autoPaste = config.get<boolean>('autoPaste', true);
-    const autoSubmit = config.get<boolean>('autoSubmit', true);
+    const autoPaste = options?.autoPaste ?? config.get<boolean>('autoPaste', true);
+    const autoSubmit = options?.autoSubmit ?? config.get<boolean>('autoSubmit', true);
 
     switch (target) {
         case 'editor':

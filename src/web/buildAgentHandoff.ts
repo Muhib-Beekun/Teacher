@@ -2,6 +2,13 @@ import { formatSegmentLabel } from '../session/RetractionDetector';
 import { SessionManager } from '../session/SessionManager';
 import { formatBriefMarkdown } from '../compiler/parseCompiledMarkdown';
 
+export {
+    buildRelayDispatchText,
+    resolveDispatchPayload,
+    type DispatchMeta,
+    type DispatchMode
+} from './dispatchPacket';
+
 /** Full handoff for Cursor agent: compiled brief + complete Your Words audit trail. */
 export function buildAgentHandoff(session: SessionManager): string {
     const briefMd = session.getCompiledMarkdown().trim();
